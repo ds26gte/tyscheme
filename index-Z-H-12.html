@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<!--
+Generated from index.tex by tex2page, v 20150301
+(running on Racket 6.2.0.3, :unix), 
+(c) Dorai Sitaram, 
+http://www.ccs.neu.edu/~dorai/tex2page/index.html
+-->
+<head>
+<meta charset="utf-8">
+<title>
+Teach Yourself Scheme in Fixnum Days
+</title>
+<link rel="stylesheet" href="index-Z-S.css" title=default />
+<meta name=robots content="index,follow">
+<meta name=description content="A practical introduction to the programming language Scheme">  <meta name=author content="Dorai Sitaram">  <link rev=made href="mailto:ds26gte @ yahoo.com"> </head>
+<body>
+<div id=slidecontent>
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-11.html">previous</a></span><span>, <a href="index-Z-H-13.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+<p></p>
+<a name="node_chap_10"></a>
+<h1 class=chapter>
+<div class=chapterheading><a href="index-Z-H-1.html#node_toc_node_chap_10">Chapter 10</a></div><br>
+<a href="index-Z-H-1.html#node_toc_node_chap_10">Alists and tables</a></h1>
+<p><a name="node_idx_406"></a><a name="node_idx_408"></a>An <em>association list</em>, or <em>alist</em>, is a Scheme
+list of a special format.  Each element of the list is
+a cons cell, the car of which is called a <em>key</em>,
+the cdr being the <em>value</em> associated with the key.
+Eg,</p>
+<p>
+</p>
+<pre class=scheme>((<span class=variable>a</span> . <span class=selfeval>1</span>) (<span class=variable>b</span> . <span class=selfeval>2</span>) (<span class=variable>c</span> . <span class=selfeval>3</span>))
+</pre>
+<p class=noindent></p>
+<p>
+<a name="node_idx_410"></a></p>
+<p>
+The procedure call <code class=scheme>(<span class=variable>assv</span> <span class=variable>k</span> <span class=variable>al</span>)</code> finds the cons cell
+associated with key <code class=scheme><span class=variable>k</span></code> in alist <code class=scheme><span class=variable>al</span></code>.  The keys of
+the alist are compared against the given <code class=scheme><span class=variable>k</span></code> using
+the equality predicate <code class=scheme><span class=variable>eqv?</span></code>.  In general, though we
+may want a different predicate for key comparison.  For
+instance, if the keys were case-insensitive strings,
+the predicate <code class=scheme><span class=variable>eqv?</span></code> is not very useful.</p>
+<p>
+<a name="node_idx_412"></a></p>
+<p>
+We now define a structure called <code class=scheme><span class=variable>table</span></code>, which is a
+souped-up alist that allows user-defined predicates on
+its keys.  Its fields are <code class=scheme><span class=variable>equ</span></code> and <code class=scheme><span class=variable>alist</span></code>.</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>defstruct</span> <span class=variable>table</span> (<span class=variable>equ</span> <span class=variable>eqv?</span>) (<span class=variable>alist</span> <span class=keyword>'</span>()))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>(The default predicate is <code class=scheme><span class=variable>eqv?</span></code> --- as for an
+ordinary alist --- and the alist is initially empty.)</p>
+<p>
+We will use the procedure <code class=scheme><span class=variable>table&#x2011;get</span></code> to get the
+value (as opposed to the cons cell) associated with a
+given key.  <code class=scheme><span class=variable>table&#x2011;get</span></code> takes a table and key
+arguments, followed by an optional default value that
+is returned if the key was not found in the table:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>table-get</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tbl</span> <span class=variable>k</span> . <span class=variable>d</span>)
+    (<span class=keyword>let</span> ((<span class=variable>c</span> (<span class=variable>lassoc</span> <span class=variable>k</span> (<span class=variable>table.alist</span> <span class=variable>tbl</span>) (<span class=variable>table.equ</span> <span class=variable>tbl</span>))))
+      (<span class=keyword>cond</span> (<span class=variable>c</span> (<span class=variable>cdr</span> <span class=variable>c</span>))
+            ((<span class=variable>pair?</span> <span class=variable>d</span>) (<span class=variable>car</span> <span class=variable>d</span>))))))
+</pre>
+<p class=noindent></p>
+<p>
+The procedure <code class=scheme><span class=variable>lassoc</span></code>, used in <code class=scheme><span class=variable>table&#x2011;get</span></code>, is
+defined as:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>lassoc</span>
+  (<span class=keyword>lambda</span> (<span class=variable>k</span> <span class=variable>al</span> <span class=variable>equ?</span>)
+    (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>al</span> <span class=variable>al</span>))
+      (<span class=keyword>if</span> (<span class=variable>null?</span> <span class=variable>al</span>) <span class=selfeval>#f</span>
+          (<span class=keyword>let</span> ((<span class=variable>c</span> (<span class=variable>car</span> <span class=variable>al</span>)))
+            (<span class=keyword>if</span> (<span class=variable>equ?</span> (<span class=variable>car</span> <span class=variable>c</span>) <span class=variable>k</span>) <span class=variable>c</span>
+                (<span class=variable>loop</span> (<span class=variable>cdr</span> <span class=variable>al</span>))))))))
+</pre>
+<p class=noindent></p>
+<p>
+The procedure <code class=scheme><span class=variable>table&#x2011;put!</span></code> is used to update a key's
+value in the given table:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>table-put!</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tbl</span> <span class=variable>k</span> <span class=variable>v</span>)
+    (<span class=keyword>let</span> ((<span class=variable>al</span> (<span class=variable>table.alist</span> <span class=variable>tbl</span>)))
+      (<span class=keyword>let</span> ((<span class=variable>c</span> (<span class=variable>lassoc</span> <span class=variable>k</span> <span class=variable>al</span> (<span class=variable>table.equ</span> <span class=variable>tbl</span>))))
+        (<span class=keyword>if</span> <span class=variable>c</span> (<span class=variable>set-cdr!</span> <span class=variable>c</span> <span class=variable>v</span>)
+            (<span class=variable>set!table.alist</span> <span class=variable>tbl</span> (<span class=variable>cons</span> (<span class=variable>cons</span> <span class=variable>k</span> <span class=variable>v</span>) <span class=variable>al</span>)))))))
+</pre>
+<p class=noindent></p>
+<p>
+The procedure <code class=scheme><span class=variable>table&#x2011;for&#x2011;each</span></code> calls the given
+procedure on every key/value pair in the table</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>table-for-each</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tbl</span> <span class=variable>p</span>)
+    (<span class=variable>for-each</span>
+     (<span class=keyword>lambda</span> (<span class=variable>c</span>)
+       (<span class=variable>p</span> (<span class=variable>car</span> <span class=variable>c</span>) (<span class=variable>cdr</span> <span class=variable>c</span>)))
+     (<span class=variable>table.alist</span> <span class=variable>tbl</span>))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+<p>
+</p>
+<div class=smallskip></div>
+<p style="margin-top: 0pt; margin-bottom: 0pt">
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-11.html">previous</a></span><span>, <a href="index-Z-H-13.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+</p>
+<p></p>
+</div>
+</body>
+</html>

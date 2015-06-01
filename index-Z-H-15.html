@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html>
+<!--
+Generated from index.tex by tex2page, v 20150301
+(running on Racket 6.2.0.3, :unix), 
+(c) Dorai Sitaram, 
+http://www.ccs.neu.edu/~dorai/tex2page/index.html
+-->
+<head>
+<meta charset="utf-8">
+<title>
+Teach Yourself Scheme in Fixnum Days
+</title>
+<link rel="stylesheet" href="index-Z-S.css" title=default />
+<meta name=robots content="index,follow">
+<meta name=description content="A practical introduction to the programming language Scheme">  <meta name=author content="Dorai Sitaram">  <link rev=made href="mailto:ds26gte @ yahoo.com"> </head>
+<body>
+<div id=slidecontent>
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-14.html">previous</a></span><span>, <a href="index-Z-H-16.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+<p></p>
+<a name="node_chap_13"></a>
+<h1 class=chapter>
+<div class=chapterheading><a href="index-Z-H-1.html#node_toc_node_chap_13">Chapter 13</a></div><br>
+<a href="index-Z-H-1.html#node_toc_node_chap_13">Jumps</a></h1>
+<p><a name="node_idx_456"></a>One of the signal features of Scheme is its support for
+jumps or <em>nonlocal control</em>.  Specifically, Scheme
+allows program control to jump to <em>arbitrary</em>
+locations in the program, in contrast to the more
+restrained forms of program control flow allowed by
+conditionals and procedure calls.  Scheme's nonlocal
+control operator is a procedure named
+<code class=scheme><span class=variable>call&#x2011;with&#x2011;current&#x2011;continuation</span></code>.   We will
+see how this operator can be used to create a
+breathtaking variety of control idioms.</p>
+<p>
+</p>
+<a name="node_sec_13.1"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_13.1">13.1&nbsp;&nbsp;<code class=scheme><span class=variable>call&#x2011;with&#x2011;current&#x2011;continuation</span></code></a></h2>
+<p><a name="node_idx_458"></a><a name="node_idx_460"></a>The operator <code class=scheme><span class=variable>call&#x2011;with&#x2011;current&#x2011;continuation</span></code> <em>call</em>s its argument, which must be a unary procedure,
+<em>with</em> a value called the ``<em>current
+continuation</em>''.  If nothing else, this explains the
+name of the operator.  But it is a long name, and is
+often abbreviated
+<code class=scheme><span class=variable>call/cc</span></code>.<a name="node_call_footnote_Temp_8"></a><sup><small><a href="#node_footnote_Temp_8">1</a></small></sup></p>
+<p>
+The current continuation at any point in the execution
+of a program is an abstraction of the <em>rest of the
+program</em>.  Thus in the program</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>+</span> <span class=selfeval>1</span> (<span class=variable>call/cc</span>
+       (<span class=keyword>lambda</span> (<span class=variable>k</span>)
+         (<span class=variable>+</span> <span class=selfeval>2</span> (<span class=variable>k</span> <span class=selfeval>3</span>)))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>the rest of the program, from the point of view of the
+<code class=scheme><span class=variable>call/cc</span></code>-application, is the following
+program-with-a-hole (with <code class=scheme>[]</code> representing the
+hole):</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>+</span> <span class=selfeval>1</span> [])
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>In other words, this continuation is a program that
+will add <code class=scheme><span class=selfeval>1</span></code> to whatever is used to fill its hole.</p>
+<p>
+This is what the argument of <code class=scheme><span class=variable>call/cc</span></code> is <em>called
+with</em>.  Remember that the argument of <code class=scheme><span class=variable>call/cc</span></code> is
+the procedure</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>lambda</span> (<span class=variable>k</span>)
+  (<span class=variable>+</span> <span class=selfeval>2</span> (<span class=variable>k</span> <span class=selfeval>3</span>)))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>This procedure's body applies the continuation (bound
+now to the parameter <code class=scheme><span class=variable>k</span></code>) to the argument <code class=scheme><span class=selfeval>3</span></code>.
+This is when the unusual aspect of the continuation
+springs to the fore.  The continuation call abruptly
+abandons its own computation and replaces it with the
+rest of the program saved in <code class=scheme><span class=variable>k</span></code>!  In other words,
+the part of the procedure involving the addition of
+<code class=scheme><span class=selfeval>2</span></code> is jettisoned, and <code class=scheme><span class=variable>k</span></code>'s argument <code class=scheme><span class=selfeval>3</span></code> is sent
+directly to the program-with-the-hole:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>+</span> <span class=selfeval>1</span> [])
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The program now running is simply</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>+</span> <span class=selfeval>1</span> <span class=selfeval>3</span>)
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>which returns <code class=scheme><span class=selfeval>4</span></code>.  In sum,</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>+</span> <span class=selfeval>1</span> (<span class=variable>call/cc</span>
+       (<span class=keyword>lambda</span> (<span class=variable>k</span>)
+         (<span class=variable>+</span> <span class=selfeval>2</span> (<span class=variable>k</span> <span class=selfeval>3</span>)))))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>4</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The above illustrates what is called an <em>escaping</em> continuation, one used to exit out of a
+computation (here: the <code class=scheme>(<span class=variable>+</span> <span class=selfeval>2</span> [])</code> computation).  This
+is a useful property, but Scheme's continuations can
+also be used to return to previously abandoned
+contexts, and indeed to invoke them many times.  The
+``rest of the program'' enshrined in a continuation is
+available whenever and how many ever times we choose to
+recall it, and this is what contributes to the great
+and sometimes confusing versatility of <code class=scheme><span class=variable>call/cc</span></code>.  As
+a quick example, type the following at the listener:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>r</span> <span class=selfeval>#f</span>)
+
+(<span class=variable>+</span> <span class=selfeval>1</span> (<span class=variable>call/cc</span>
+       (<span class=keyword>lambda</span> (<span class=variable>k</span>)
+         (<span class=keyword>set!</span> <span class=variable>r</span> <span class=variable>k</span>)
+         (<span class=variable>+</span> <span class=selfeval>2</span> (<span class=variable>k</span> <span class=selfeval>3</span>)))))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>4</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The latter expression returns <code class=scheme><span class=selfeval>4</span></code> as before.  The
+difference between this use of <code class=scheme><span class=variable>call/cc</span></code> and the
+previous example is that here we also store the
+continuation <code class=scheme><span class=variable>k</span></code> in a global variable <code class=scheme><span class=variable>r</span></code>.</p>
+<p>
+Now we have a permanent record of the continuation in
+<code class=scheme><span class=variable>r</span></code>.  If we call it on a number, it will return that
+number incremented by <code class=scheme><span class=selfeval>1</span></code>:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>r</span> <span class=selfeval>5</span>)
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>6</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Note that <code class=scheme><span class=variable>r</span></code> will abandon its own continuation,
+which is better illustrated by embedding the call to
+<code class=scheme><span class=variable>r</span></code> inside some context:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>+</span> <span class=selfeval>3</span> (<span class=variable>r</span> <span class=selfeval>5</span>))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>6</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The continuations provided by <code class=scheme><span class=variable>call/cc</span></code> are thus
+<em>abortive</em> continuations.</p>
+<p>
+</p>
+<a name="node_sec_13.2"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_13.2">13.2&nbsp;&nbsp;Escaping continuations</a></h2>
+<p>Escaping continuations are the simplest use of
+<code class=scheme><span class=variable>call/cc</span></code> and are very useful for programming
+procedure or loop exits.  Consider a procedure
+<code class=scheme><span class=variable>list&#x2011;product</span></code> that takes a list of numbers and
+multiplies them.  A straightforward recursive
+definition for <code class=scheme><span class=variable>list&#x2011;product</span></code> is:</p>
+<p>
+</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>list-product</span>
+  (<span class=keyword>lambda</span> (<span class=variable>s</span>)
+    (<span class=keyword>let</span> <span class=variable>recur</span> ((<span class=variable>s</span> <span class=variable>s</span>))
+      (<span class=keyword>if</span> (<span class=variable>null?</span> <span class=variable>s</span>) <span class=selfeval>1</span>
+          (<span class=variable>*</span> (<span class=variable>car</span> <span class=variable>s</span>) (<span class=variable>recur</span> (<span class=variable>cdr</span> <span class=variable>s</span>)))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>There is a problem with this solution.  If one of the
+elements in the list is <code class=scheme><span class=selfeval>0</span></code>, and if there are many
+elements after <code class=scheme><span class=selfeval>0</span></code> in the list, then the answer is a
+foregone conclusion.  Yet, the code will have us go
+through many fruitless recursive calls to <code class=scheme><span class=variable>recur</span></code>
+before producing the answer.  This is where an escape
+continuation comes in handy.  Using <code class=scheme><span class=variable>call/cc</span></code>, we can
+rewrite the procedure as:</p>
+<p>
+</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>list-product</span>
+  (<span class=keyword>lambda</span> (<span class=variable>s</span>)
+    (<span class=variable>call/cc</span>
+      (<span class=keyword>lambda</span> (<span class=variable>exit</span>)
+        (<span class=keyword>let</span> <span class=variable>recur</span> ((<span class=variable>s</span> <span class=variable>s</span>))
+          (<span class=keyword>if</span> (<span class=variable>null?</span> <span class=variable>s</span>) <span class=selfeval>1</span>
+              (<span class=keyword>if</span> (<span class=variable>=</span> (<span class=variable>car</span> <span class=variable>s</span>) <span class=selfeval>0</span>) (<span class=variable>exit</span> <span class=selfeval>0</span>)
+                  (<span class=variable>*</span> (<span class=variable>car</span> <span class=variable>s</span>) (<span class=variable>recur</span> (<span class=variable>cdr</span> <span class=variable>s</span>))))))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>If a <code class=scheme><span class=selfeval>0</span></code> element is encountered, the continuation
+<code class=scheme><span class=variable>exit</span></code> is called with <code class=scheme><span class=selfeval>0</span></code>, thereby avoiding
+further calls to <code class=scheme><span class=variable>recur</span></code>.</p>
+<p>
+</p>
+<a name="node_sec_13.3"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_13.3">13.3&nbsp;&nbsp;Tree matching</a></h2>
+<p>A more involved example of continuation usage is the
+problem of determining if two trees (arbitrarily nested
+dotted pairs) have the same <em>fringe</em>, ie, the
+same elements (or <em>leaves</em>) in the same sequence.
+Eg,</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>same-fringe?</span> <span class=keyword>'</span>(<span class=selfeval>1</span> (<span class=selfeval>2</span> <span class=selfeval>3</span>)) <span class=keyword>'</span>((<span class=selfeval>1</span> <span class=selfeval>2</span>) <span class=selfeval>3</span>))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>#t</span>
+
+(<span class=variable>same-fringe?</span> <span class=keyword>'</span>(<span class=selfeval>1</span> <span class=selfeval>2</span> <span class=selfeval>3</span>) <span class=keyword>'</span>(<span class=selfeval>1</span> (<span class=selfeval>3</span> <span class=selfeval>2</span>)))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>#f</span>
+</pre>
+<p class=noindent></p>
+<p>
+The purely functional approach is to flatten both trees
+and check if the results match.</p>
+<p>
+</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>same-fringe?</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tree1</span> <span class=variable>tree2</span>)
+    (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>ftree1</span> (<span class=variable>flatten</span> <span class=variable>tree1</span>))
+               (<span class=variable>ftree2</span> (<span class=variable>flatten</span> <span class=variable>tree2</span>)))
+      (<span class=keyword>cond</span> ((<span class=keyword>and</span> (<span class=variable>null?</span> <span class=variable>ftree1</span>) (<span class=variable>null?</span> <span class=variable>ftree2</span>)) <span class=selfeval>#t</span>)
+            ((<span class=keyword>or</span> (<span class=variable>null?</span> <span class=variable>ftree1</span>) (<span class=variable>null?</span> <span class=variable>ftree2</span>)) <span class=selfeval>#f</span>)
+            ((<span class=variable>eqv?</span> (<span class=variable>car</span> <span class=variable>ftree1</span>) (<span class=variable>car</span> <span class=variable>ftree2</span>))
+             (<span class=variable>loop</span> (<span class=variable>cdr</span> <span class=variable>ftree1</span>) (<span class=variable>cdr</span> <span class=variable>ftree2</span>)))
+            (<span class=keyword>else</span> <span class=selfeval>#f</span>)))))
+
+(<span class=keyword>define</span> <span class=variable>flatten</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tree</span>)
+    (<span class=keyword>cond</span> ((<span class=variable>null?</span> <span class=variable>tree</span>) <span class=keyword>'</span>())
+          ((<span class=variable>pair?</span> (<span class=variable>car</span> <span class=variable>tree</span>))
+           (<span class=variable>append</span> (<span class=variable>flatten</span> (<span class=variable>car</span> <span class=variable>tree</span>))
+                   (<span class=variable>flatten</span> (<span class=variable>cdr</span> <span class=variable>tree</span>))))
+          (<span class=keyword>else</span>
+           (<span class=variable>cons</span> (<span class=variable>car</span> <span class=variable>tree</span>)
+                 (<span class=variable>flatten</span> (<span class=variable>cdr</span> <span class=variable>tree</span>)))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>However, this traverses the trees completely to flatten
+them, and then again till it finds non-matching
+elements.  Furthermore, even the best flattening
+algorithms will require <code class=scheme><span class=variable>cons</span></code>es equal to the total
+number of leaves.  (Destructively modifying the input
+trees is not an option.)</p>
+<p>
+We can use <code class=scheme><span class=variable>call/cc</span></code> to solve the problem without
+needless traversal and without any <code class=scheme><span class=variable>cons</span></code>ing.  Each
+tree is mapped to a <em>generator</em>, a procedure with
+internal state that successively produces the leaves of
+the tree in the left-to-right order that they occur in
+the tree.</p>
+<p>
+</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>tree-&gt;generator</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tree</span>)
+    (<span class=keyword>let</span> ((<span class=variable>caller</span> <span class=keyword>'</span><span class=variable>*</span>))
+      (<span class=keyword>letrec</span>
+          ((<span class=variable>generate-leaves</span>
+            (<span class=keyword>lambda</span> ()
+              (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>tree</span> <span class=variable>tree</span>))
+                (<span class=keyword>cond</span> ((<span class=variable>null?</span> <span class=variable>tree</span>) <span class=keyword>'</span><span class=variable>skip</span>)
+                      ((<span class=variable>pair?</span> <span class=variable>tree</span>)
+                       (<span class=variable>loop</span> (<span class=variable>car</span> <span class=variable>tree</span>))
+                       (<span class=variable>loop</span> (<span class=variable>cdr</span> <span class=variable>tree</span>)))
+                      (<span class=keyword>else</span>
+                       (<span class=variable>call/cc</span>
+                        (<span class=keyword>lambda</span> (<span class=variable>rest-of-tree</span>)
+                          (<span class=keyword>set!</span> <span class=variable>generate-leaves</span>
+                            (<span class=keyword>lambda</span> ()
+                              (<span class=variable>rest-of-tree</span> <span class=keyword>'</span><span class=variable>resume</span>)))
+                          (<span class=variable>caller</span> <span class=variable>tree</span>))))))
+              (<span class=variable>caller</span> <span class=keyword>'</span>()))))
+        (<span class=keyword>lambda</span> ()
+          (<span class=variable>call/cc</span>
+           (<span class=keyword>lambda</span> (<span class=variable>k</span>)
+             (<span class=keyword>set!</span> <span class=variable>caller</span> <span class=variable>k</span>)
+             (<span class=variable>generate-leaves</span>))))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>When a generator created by <code class=scheme><span class=variable>tree&#x2011;&gt;generator</span></code> is
+called, it will store the continuation of its call in
+<code class=scheme><span class=variable>caller</span></code>, so that it can know who to send the leaf to
+when it finds it.  It then calls an internal procedure
+called <code class=scheme><span class=variable>generate&#x2011;leaves</span></code> which runs a loop traversing
+the tree from left to right.  When the loop encounters
+a leaf, it will use <code class=scheme><span class=variable>caller</span></code> to return the leaf as
+the generator's result, but it will remember to store
+the rest of the loop (captured as a <code class=scheme><span class=variable>call/cc</span></code>
+continuation) in the <code class=scheme><span class=variable>generate&#x2011;leaves</span></code> variable.  The
+next time the generator is called, the loop is resumed
+where it left off so it can hunt for the next leaf.</p>
+<p>
+Note that the last thing <code class=scheme><span class=variable>generate&#x2011;leaves</span></code> does,
+after the loop is done, is to return the empty list to
+the
+<code class=scheme><span class=variable>caller</span></code>.  Since the empty list is not a valid leaf
+value, we can use it to tell that the generator has
+no more leaves to generate.</p>
+<p>
+The procedure <code class=scheme><span class=variable>same&#x2011;fringe?</span></code> maps each of its tree
+arguments to a generator, and then calls these two
+generators alternately.  It announces failure as soon
+as two non-matching leaves are found:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>same-fringe?</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tree1</span> <span class=variable>tree2</span>)
+    (<span class=keyword>let</span> ((<span class=variable>gen1</span> (<span class=variable>tree-&gt;generator</span> <span class=variable>tree1</span>))
+          (<span class=variable>gen2</span> (<span class=variable>tree-&gt;generator</span> <span class=variable>tree2</span>)))
+      (<span class=keyword>let</span> <span class=variable>loop</span> ()
+        (<span class=keyword>let</span> ((<span class=variable>leaf1</span> (<span class=variable>gen1</span>))
+              (<span class=variable>leaf2</span> (<span class=variable>gen2</span>)))
+          (<span class=keyword>if</span> (<span class=variable>eqv?</span> <span class=variable>leaf1</span> <span class=variable>leaf2</span>)
+              (<span class=keyword>if</span> (<span class=variable>null?</span> <span class=variable>leaf1</span>) <span class=selfeval>#t</span> (<span class=variable>loop</span>))
+              <span class=selfeval>#f</span>))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>It is easy to see that the trees are traversed at most
+once, and in case of mismatch, the traversals extend
+only upto the leftmost mismatch.  <code class=scheme><span class=variable>cons</span></code> is not used.</p>
+<p>
+<a name="node_idx_462"></a><a name="node_idx_464"></a></p>
+<p>
+</p>
+<a name="node_sec_13.4"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_13.4">13.4&nbsp;&nbsp;Coroutines</a></h2>
+<p>The generators used above are interesting
+generalizations of the procedure concept.  Each time
+the generator is called, it resumes its computation,
+and when it has a result for its caller returns it, but
+only after storing its continuation in an internal
+variable so the generator can be resumed again.  We can
+generalize generators further, so that they can
+mutually resume each other, sending results back and
+forth amongst themselves.  Such procedures are called
+<em>coroutines</em>&nbsp;[<a href="index-Z-H-24.html#node_bib_18">18</a>].</p>
+<p>
+We will view a coroutine as a unary procedure, whose
+body can contain <code class=scheme><span class=variable>resume</span></code> calls.  <code class=scheme><span class=variable>resume</span></code> is a
+two-argument procedure used by a coroutine to resume
+another coroutine with a transfer value.  The macro <code class=scheme><span class=keyword>coroutine</span></code>
+defines such a coroutine procedure, given a variable name for 
+the coroutine's initial argument, and the body of the coroutine.</p>
+<p>
+</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define-macro</span> <span class=keyword>coroutine</span>
+  (<span class=keyword>lambda</span> (<span class=variable>x</span> . <span class=variable>body</span>)
+    <span class=keyword>`</span>(<span class=keyword>letrec</span> ((<span class=variable>+local-control-state</span>
+               (<span class=keyword>lambda</span> (<span class=keyword>,</span><span class=variable>x</span>) <span class=keyword>,@</span><span class=variable>body</span>))
+              (<span class=variable>resume</span>
+               (<span class=keyword>lambda</span> (<span class=variable>c</span> <span class=variable>v</span>)
+                 (<span class=variable>call/cc</span>
+                  (<span class=keyword>lambda</span> (<span class=variable>k</span>)
+                    (<span class=keyword>set!</span> <span class=variable>+local-control-state</span> <span class=variable>k</span>)
+                    (<span class=variable>c</span> <span class=variable>v</span>))))))
+       (<span class=keyword>lambda</span> (<span class=variable>v</span>)
+         (<span class=variable>+local-control-state</span> <span class=variable>v</span>)))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>A call of this macro creates a coroutine procedure
+(let's call it <em>A</em>) that can be called with one
+argument.  <em>A</em> has an internal variable called
+<code class=scheme><span class=variable>+local&#x2011;control&#x2011;state</span></code> that stores, at any point, the
+remaining computation of the coroutine.   Initially
+this is the entire coroutine computation.  When
+<code class=scheme><span class=variable>resume</span></code> is called --- ie, invoking another coroutine
+<em>B</em> --- the current coroutine will update its
+<code class=scheme><span class=variable>+local&#x2011;control&#x2011;state</span></code> value to the rest of itself,
+stop itself, and then jump to the <code class=scheme><span class=variable>resume</span></code>d coroutine
+<em>B</em>.  When coroutine <em>A</em> is itself <code class=scheme><span class=variable>resume</span></code>d at
+some later point, its computation will proceed from the
+continuation stored in its <code class=scheme><span class=variable>+local&#x2011;control&#x2011;state</span></code>.</p>
+<p>
+</p>
+<p>
+</p>
+<a name="node_sec_13.4.1"></a>
+<h3 class=section><a href="index-Z-H-1.html#node_toc_node_sec_13.4.1">13.4.1&nbsp;&nbsp;Tree-matching with coroutines</a></h3>
+<p>Tree-matching is further simplified using coroutines.
+The matching process is coded as a coroutine that
+depends on two other coroutines to supply the leaves of
+the respective trees:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>make-matcher-coroutine</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tree-cor-1</span> <span class=variable>tree-cor-2</span>)
+    (<span class=keyword>coroutine</span> <span class=variable>dont-need-an-init-arg</span>
+      (<span class=keyword>let</span> <span class=variable>loop</span> ()
+        (<span class=keyword>let</span> ((<span class=variable>leaf1</span> (<span class=variable>resume</span> <span class=variable>tree-cor-1</span> <span class=keyword>'</span><span class=variable>get-a-leaf</span>))
+              (<span class=variable>leaf2</span> (<span class=variable>resume</span> <span class=variable>tree-cor-2</span> <span class=keyword>'</span><span class=variable>get-a-leaf</span>)))
+          (<span class=keyword>if</span> (<span class=variable>eqv?</span> <span class=variable>leaf1</span> <span class=variable>leaf2</span>)
+              (<span class=keyword>if</span> (<span class=variable>null?</span> <span class=variable>leaf1</span>) <span class=selfeval>#t</span> (<span class=variable>loop</span>))
+              <span class=selfeval>#f</span>))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The leaf-generator coroutines remember who to send
+their leaves to:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>make-leaf-gen-coroutine</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tree</span> <span class=variable>matcher-cor</span>)
+    (<span class=keyword>coroutine</span> <span class=variable>dont-need-an-init-arg</span>
+      (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>tree</span> <span class=variable>tree</span>))
+        (<span class=keyword>cond</span> ((<span class=variable>null?</span> <span class=variable>tree</span>) <span class=keyword>'</span><span class=variable>skip</span>)
+              ((<span class=variable>pair?</span> <span class=variable>tree</span>)
+               (<span class=variable>loop</span> (<span class=variable>car</span> <span class=variable>tree</span>))
+               (<span class=variable>loop</span> (<span class=variable>cdr</span> <span class=variable>tree</span>)))
+              (<span class=keyword>else</span>
+               (<span class=variable>resume</span> <span class=variable>matcher-cor</span> <span class=variable>tree</span>))))
+      (<span class=variable>resume</span> <span class=variable>matcher-cor</span> <span class=keyword>'</span>()))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The <code class=scheme><span class=variable>same&#x2011;fringe?</span></code> procedure can now <em>almost</em>
+be written as</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>same-fringe?</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tree1</span> <span class=variable>tree2</span>)
+    (<span class=keyword>letrec</span> ((<span class=variable>tree-cor-1</span>
+              (<span class=variable>make-leaf-gen-coroutine</span>
+               <span class=variable>tree1</span>
+               <span class=variable>matcher-cor</span>))
+             (<span class=variable>tree-cor-2</span>
+              (<span class=variable>make-leaf-gen-coroutine</span>
+               <span class=variable>tree2</span>
+               <span class=variable>matcher-cor</span>))
+             (<span class=variable>matcher-cor</span>
+              (<span class=variable>make-matcher-coroutine</span>
+               <span class=variable>tree-cor-1</span>
+               <span class=variable>tree-cor-2</span>)))
+      (<span class=variable>matcher-cor</span> <span class=keyword>'</span><span class=variable>start-ball-rolling</span>))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Unfortunately, Scheme's <code class=scheme><span class=keyword>letrec</span></code> can resolve
+mutually recursive references amongst the lexical
+variables it introduces <em>only</em> if such variable
+references are wrapped inside a <code class=scheme><span class=keyword>lambda</span></code>.  And so we
+write:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>same-fringe?</span>
+  (<span class=keyword>lambda</span> (<span class=variable>tree1</span> <span class=variable>tree2</span>)
+    (<span class=keyword>letrec</span> ((<span class=variable>tree-cor-1</span>
+              (<span class=variable>make-leaf-gen-coroutine</span>
+               <span class=variable>tree1</span>
+               (<span class=keyword>lambda</span> (<span class=variable>v</span>) (<span class=variable>matcher-cor</span> <span class=variable>v</span>))))
+             (<span class=variable>tree-cor-2</span>
+              (<span class=variable>make-leaf-gen-coroutine</span>
+               <span class=variable>tree2</span>
+               (<span class=keyword>lambda</span> (<span class=variable>v</span>) (<span class=variable>matcher-cor</span> <span class=variable>v</span>))))
+             (<span class=variable>matcher-cor</span>
+              (<span class=variable>make-matcher-coroutine</span>
+               (<span class=keyword>lambda</span> (<span class=variable>v</span>) (<span class=variable>tree-cor-1</span> <span class=variable>v</span>))
+               (<span class=keyword>lambda</span> (<span class=variable>v</span>) (<span class=variable>tree-cor-2</span> <span class=variable>v</span>)))))
+      (<span class=variable>matcher-cor</span> <span class=keyword>'</span><span class=variable>start-ball-rolling</span>))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Note that <code class=scheme><span class=variable>call/cc</span></code> is not called directly at all in
+this rewrite of <code class=scheme><span class=variable>same&#x2011;fringe?</span></code>.  All the continuation
+manipulation is handled for us by the
+<code class=scheme><span class=keyword>coroutine</span></code> macro.
+</p>
+<p>
+</p>
+<div class=footnoterule><hr></div><p></p>
+<div class=footnote><p><a name="node_footnote_Temp_8"></a><sup><small><a href="#node_call_footnote_Temp_8">1</a></small></sup> If your Scheme does not already have this
+abbreviation, include
+<code class=scheme>(<span class=keyword>define</span> <span class=variable>call/cc</span> <span class=variable>call&#x2011;with&#x2011;current&#x2011;continuation</span>)</code> in
+your initialization code and protect yourself from
+RSI.</p>
+</div>
+<div class=smallskip></div>
+<p style="margin-top: 0pt; margin-bottom: 0pt">
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-14.html">previous</a></span><span>, <a href="index-Z-H-16.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+</p>
+<p></p>
+</div>
+</body>
+</html>

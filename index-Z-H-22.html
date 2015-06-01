@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html>
+<!--
+Generated from index.tex by tex2page, v 20150301
+(running on Racket 6.2.0.3, :unix), 
+(c) Dorai Sitaram, 
+http://www.ccs.neu.edu/~dorai/tex2page/index.html
+-->
+<head>
+<meta charset="utf-8">
+<title>
+Teach Yourself Scheme in Fixnum Days
+</title>
+<link rel="stylesheet" href="index-Z-S.css" title=default />
+<meta name=robots content="index,follow">
+<meta name=description content="A practical introduction to the programming language Scheme">  <meta name=author content="Dorai Sitaram">  <link rev=made href="mailto:ds26gte @ yahoo.com"> </head>
+<body>
+<div id=slidecontent>
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-21.html">previous</a></span><span>, <a href="index-Z-H-23.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+<p></p>
+<a name="node_chap_C"></a>
+<h1 class=chapter>
+<div class=chapterheading><a href="index-Z-H-1.html#node_toc_node_chap_C">Appendix C</a></div><br>
+<a href="index-Z-H-1.html#node_toc_node_chap_C">Numerical techniques</a></h1>
+<p></p>
+<p>
+<a name="node_idx_526"></a><a name="node_idx_528"></a>Recursion (including iteration) combines well with
+Scheme's mathematical primitive procedures to implement
+various numerical techniques.  As an example,
+let's implement Simpson's rule, a procedure for finding
+an approximation for a definite integral.  </p>
+<p>
+</p>
+<a name="node_sec_C.1"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_C.1">C.1&nbsp;&nbsp;Simpson's rule</a></h2>
+<p>The definite integral of a function <em>f</em>(<em>x</em>) within an
+interval of integration [<em>a</em>,<em>b</em>] can be viewed as the
+<em>area under the curve</em> representing <em>f</em>(<em>x</em>) from the
+lower limit <em>x</em>  =  <em>a</em> to the upper limit <em>x</em>  =  <em>b</em>.
+In other words, we consider the graph of the curve for
+<em>f</em>(<em>x</em>) on the <em>x</em>,<em>y</em>-plane, and find the area enclosed
+between that curve, the <em>x</em>-axis, and the <em>ordinates</em> of <em>f</em>(<em>x</em>) at <em>x</em>  =  <em>a</em> and <em>x</em>  =  <em>b</em>.  </p>
+<p>
+
+</p>
+<div align=center>&nbsp;<img src="index-Z-G-1.gif" border="0" alt="[index-Z-G-1.gif]">&nbsp;</div>
+<p>
+According to Simpson's rule, we divide 
+the interval of integration [<em>a</em>,<em>b</em>] 
+into <em>n</em> evenly spaced
+intervals, where <em>n</em> is even. (The larger <em>n</em>
+is, the better the approximation.)
+The interval boundaries constitute
+<em>n</em> + 1 points on the <em>x</em>-axis, viz, <em>x</em><sub>0</sub>, <em>x</em><sub>1</sub>,
+&#x2026;, <em>x</em><sub><em>i</em></sub>, <em>x</em><sub><em>i</em>+1</sub>, &#x2026;, <em>x</em><sub><em>n</em></sub>, where
+<em>x</em><sub>0</sub>  =  <em>a</em> and <em>x</em><sub><em>n</em></sub>  =  <em>b</em>.
+The length of each
+interval is <em>h</em>  =  (<em>b</em> &minus; <em>a</em>)/<em>n</em>, so each <em>x</em><sub><em>i</em></sub>  =  <em>a</em> + <em>i</em><em>h</em>.   We then
+calculate the ordinates of <em>f</em>(<em>x</em>) at the interval
+boundaries.  There are <em>n</em> + 1 such ordinates, viz,
+<em>y</em><sub>0</sub>, &#x2026;, <em>y</em><sub><em>i</em></sub>, &#x2026;, <em>y</em><sub><em>n</em></sub>, where  <em>y</em><sub><em>i</em></sub>  =  <em>f</em>(<em>x</em><sub><em>i</em></sub>)
+ =  <em>f</em>(<em>a</em> + <em>i</em><em>h</em>).
+Simpson's rule
+approximates the definite integral of <em>f</em>(<em>x</em>) between
+<em>a</em> and <em>b</em> with the value<a name="node_call_footnote_Temp_14"></a><sup><small><a href="#node_footnote_Temp_14">1</a></small></sup>:</p>
+<p>
+</p>
+<div class=mathdisplay align=center><img src="index-Z-G-2.gif" border="0" alt="
+{h\over 3} \left[ (y_0 + y_n) 
++ 4(y_1 + y_3 + \cdots + y_{n-1}) 
++ 2(y_2 + y_4 + \cdots + y_{n-2}) \right]
+"></div>
+<p class=noindent>
+We define
+the procedure <code class=scheme><span class=variable>integrate&#x2011;simpson</span></code>
+to take four arguments: the integrand <code class=scheme><span class=variable>f</span></code>; the
+<em>x</em>-values at the limits <code class=scheme><span class=variable>a</span></code> and <code class=scheme><span class=variable>b</span></code>; and the
+number of intervals <code class=scheme><span class=variable>n</span></code>.  </p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>integrate-simpson</span>
+  (<span class=keyword>lambda</span> (<span class=variable>f</span> <span class=variable>a</span> <span class=variable>b</span> <span class=variable>n</span>)
+    <span class=comment>;...</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The first thing we do in
+<code class=scheme><span class=variable>integrate&#x2011;simpson</span></code>'s body is ensure that
+<code class=scheme><span class=variable>n</span></code> is even --- if it isn't, we simply bump its
+value by 1.  </p>
+<p>
+</p>
+<pre class=scheme>    <span class=comment>;...</span>
+    (<span class=keyword>unless</span> (<span class=variable>even?</span> <span class=variable>n</span>) (<span class=keyword>set!</span> <span class=variable>n</span> (<span class=variable>+</span> <span class=variable>n</span> <span class=selfeval>1</span>)))
+    <span class=comment>;...</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Next, we put in the local variable <code class=scheme><span class=variable>h</span></code>
+the length of the interval.  We introduce two more local variables
+<code class=scheme><span class=variable>h*2</span></code> and <code class=scheme><span class=variable>n/2</span></code> to store the values of twice <code class=scheme><span class=variable>h</span></code>
+and half <code class=scheme><span class=variable>n</span></code> respectively, as we expect to
+use these values often in the ensuing calculations.</p>
+<p>
+</p>
+<pre class=scheme>    <span class=comment>;...</span>
+    (<span class=keyword>let*</span> ((<span class=variable>h</span> (<span class=variable>/</span> (<span class=variable>-</span> <span class=variable>b</span> <span class=variable>a</span>) <span class=variable>n</span>))
+           (<span class=variable>h*2</span> (<span class=variable>*</span> <span class=variable>h</span> <span class=selfeval>2</span>))
+           (<span class=variable>n/2</span> (<span class=variable>/</span> <span class=variable>n</span> <span class=selfeval>2</span>))
+           <span class=comment>;...</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>We note that the sums <em>y</em><sub>1</sub>  +  <em>y</em><sub>3</sub>  +  &#x22ef;  +  <em>y</em><sub><em>n</em>&minus;1</sub>
+and <em>y</em><sub>2</sub>  +  <em>y</em><sub>4</sub>  +  &#x22ef;  +  <em>y</em><sub><em>n</em>&minus;2</sub> both involve adding
+every other ordinate. So let's define a local procedure
+<code class=scheme><span class=variable>sum&#x2011;every&#x2011;other&#x2011;ordinate&#x2011;starting&#x2011;from</span></code> that
+captures this common iteration.  By abstracting this
+iteration into a procedure, we avoid having to repeat
+the iteration textually.  This not only reduces
+clutter, but reduces the chance of error, since we have
+only one textual occurrence of the iteration to debug.</p>
+<p>
+<code class=scheme><span class=variable>sum&#x2011;every&#x2011;other&#x2011;ordinate&#x2011;starting&#x2011;from</span></code> takes two arguments:
+the starting ordinate and the number of ordinates to be summed.</p>
+<p>
+</p>
+<pre class=scheme>           <span class=comment>;...</span>
+           (<span class=variable>sum-every-other-ordinate-starting-from</span>
+             (<span class=keyword>lambda</span> (<span class=variable>x0</span> <span class=variable>num-ordinates</span>)
+               (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>x</span> <span class=variable>x0</span>) (<span class=variable>i</span> <span class=selfeval>0</span>) (<span class=variable>r</span> <span class=selfeval>0</span>))
+                 (<span class=keyword>if</span> (<span class=variable>&gt;=</span> <span class=variable>i</span> <span class=variable>num-ordinates</span>) <span class=variable>r</span>
+                     (<span class=variable>loop</span> (<span class=variable>+</span> <span class=variable>x</span> <span class=variable>h*2</span>)
+                           (<span class=variable>+</span> <span class=variable>i</span> <span class=selfeval>1</span>)
+                           (<span class=variable>+</span> <span class=variable>r</span> (<span class=variable>f</span> <span class=variable>x</span>)))))))
+           <span class=comment>;...</span>
+</pre>
+<p class=noindent>         </p>
+<p>
+</p>
+
+<p class=noindent>We can now calculate the three ordinate sums, and
+combine them to produce the final answer.  Note
+that there are <em>n</em>/2 terms in <em>y</em><sub>1</sub>  +  <em>y</em><sub>3</sub>  +  &#x22ef;  + 
+<em>y</em><sub><em>n</em>&minus;1</sub>, and (<em>n</em>/2) &minus; 1 terms in <em>y</em><sub>2</sub>  +  <em>y</em><sub>4</sub>  +  &#x22ef;
+ +  <em>y</em><sub><em>n</em>&minus;2</sub>.</p>
+<p>
+</p>
+<pre class=scheme>           <span class=comment>;...</span>
+           (<span class=variable>y0+yn</span> (<span class=variable>+</span> (<span class=variable>f</span> <span class=variable>a</span>) (<span class=variable>f</span> <span class=variable>b</span>)))
+           (<span class=variable>y1+y3+...+y.n-1</span>
+             (<span class=variable>sum-every-other-ordinate-starting-from</span> 
+               (<span class=variable>+</span> <span class=variable>a</span> <span class=variable>h</span>) <span class=variable>n/2</span>))
+           (<span class=variable>y2+y4+...+y.n-2</span>
+             (<span class=variable>sum-every-other-ordinate-starting-from</span> 
+               (<span class=variable>+</span> <span class=variable>a</span> <span class=variable>h*2</span>) (<span class=variable>-</span> <span class=variable>n/2</span> <span class=selfeval>1</span>))))
+      (<span class=variable>*</span> <span class=selfeval>1/3</span> <span class=variable>h</span>
+         (<span class=variable>+</span> <span class=variable>y0+yn</span>
+            (<span class=variable>*</span> <span class=selfeval>4.0</span> <span class=variable>y1+y3+...+y.n-1</span>)
+            (<span class=variable>*</span> <span class=selfeval>2.0</span> <span class=variable>y2+y4+...+y.n-2</span>))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Let's use <code class=scheme><span class=variable>integrate&#x2011;simpson</span></code> to find the definite
+integral of the function </p>
+<p>
+</p>
+<div class=mathdisplay align=center><img src="index-Z-G-3.gif" border="0" alt="
+\phi(x) = {1\over \sqrt{2\pi}} e^{-x^2/2}
+"></div>
+<p class=noindent>
+We first define <img src="index-Z-G-D-1.gif" border="0" alt="[index-Z-G-D-1.gif]"> in Scheme's prefix
+notation.<a name="node_call_footnote_Temp_15"></a><sup><small><a href="#node_footnote_Temp_15">2</a></small></sup></p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=global>*pi*</span> (<span class=variable>*</span> <span class=selfeval>4</span> (<span class=variable>atan</span> <span class=selfeval>1</span>)))
+
+(<span class=keyword>define</span> <span class=variable>phi</span>
+  (<span class=keyword>lambda</span> (<span class=variable>x</span>)
+    (<span class=variable>*</span> (<span class=variable>/</span> <span class=selfeval>1</span> (<span class=variable>sqrt</span> (<span class=variable>*</span> <span class=selfeval>2</span> <span class=global>*pi*</span>)))
+       (<span class=variable>exp</span> (<span class=variable>-</span> (<span class=variable>*</span> <span class=selfeval>1/2</span> (<span class=variable>*</span> <span class=variable>x</span> <span class=variable>x</span>)))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Note that we exploit the fact that <img src="index-Z-G-4.gif" border="0" alt="\tan^{-1} 1 =
+\pi/4"> in order to define <code class=scheme><span class=global>*pi*</span></code>.<a name="node_call_footnote_Temp_16"></a><sup><small><a href="#node_footnote_Temp_16">3</a></small></sup></p>
+<p>
+The following calls calculate the definite integrals of
+<code class=scheme><span class=variable>phi</span></code> from 0 to 1, 2, and 3 respectively.  They
+all use 10 intervals.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>integrate-simpson</span> <span class=variable>phi</span> <span class=selfeval>0</span> <span class=selfeval>1</span> <span class=selfeval>10</span>)
+(<span class=variable>integrate-simpson</span> <span class=variable>phi</span> <span class=selfeval>0</span> <span class=selfeval>2</span> <span class=selfeval>10</span>)
+(<span class=variable>integrate-simpson</span> <span class=variable>phi</span> <span class=selfeval>0</span> <span class=selfeval>3</span> <span class=selfeval>10</span>)
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>To four decimal places, these values should be
+0.3413, 0.4772, and 0.4987 respectively [<a href="index-Z-H-24.html#node_bib_2">2</a>,&nbsp;Table
+26.1].  Check to see that our implementation
+of Simpson's rule does indeed produce comparable
+values!<a name="node_call_footnote_Temp_17"></a><sup><small><a href="#node_footnote_Temp_17">4</a></small></sup> </p>
+<p>
+</p>
+<a name="node_sec_C.2"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_C.2">C.2&nbsp;&nbsp;Adaptive interval sizes</a></h2>
+<p>It is not always convenient to specify the number <code class=scheme><span class=variable>n</span></code>
+of intervals.  A number that is good enough for
+one integrand may be woefully inadequate for another.  In
+such cases, it is better to specify the amount of
+<i>tolerance</i> <code class=scheme><span class=variable>e</span></code> we are willing to grant the final answer, and let
+the program figure out how many intervals are needed.  A
+typical way to accomplish this is to have the program
+try increasingly better answers by steadily increasing
+<code class=scheme><span class=variable>n</span></code>, and stop when two successive sums differ within
+<code class=scheme><span class=variable>e</span></code>.  Thus:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>integrate-adaptive-simpson-first-try</span>
+  (<span class=keyword>lambda</span> (<span class=variable>f</span> <span class=variable>a</span> <span class=variable>b</span> <span class=variable>e</span>)
+    (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>n</span> <span class=selfeval>4</span>) 
+               (<span class=variable>iprev</span> (<span class=variable>integrate-simpson</span> <span class=variable>f</span> <span class=variable>a</span> <span class=variable>b</span> <span class=selfeval>2</span>))) 
+      (<span class=keyword>let</span> ((<span class=variable>icurr</span> (<span class=variable>integrate-simpson</span> <span class=variable>f</span> <span class=variable>a</span> <span class=variable>b</span> <span class=variable>n</span>)))
+        (<span class=keyword>if</span> (<span class=variable>&lt;=</span> (<span class=variable>abs</span> (<span class=variable>-</span> <span class=variable>icurr</span> <span class=variable>iprev</span>)) <span class=variable>e</span>)
+            <span class=variable>icurr</span>
+            (<span class=variable>loop</span> (<span class=variable>+</span> <span class=variable>n</span> <span class=selfeval>2</span>)))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Here we calculate successive Simpson integrals (using
+our original procedure <code class=scheme><span class=variable>integrate&#x2011;simpson</span></code>) for
+<code class=scheme><span class=variable>n</span></code> = 2, 4, &#x2026;.  (Remember that <code class=scheme><span class=variable>n</span></code> must be even.)
+When the integral <code class=scheme><span class=variable>icurr</span></code> for the current <code class=scheme><span class=variable>n</span></code>
+differs within <code class=scheme><span class=variable>e</span></code> from the integral <code class=scheme><span class=variable>iprev</span></code> for
+the immediately preceding <code class=scheme><span class=variable>n</span></code>, we return <code class=scheme><span class=variable>icurr</span></code>.</p>
+<p>
+One problem with this approach is that we don't take
+into account that only some <i>segments</i> of the
+function benefit from the addition of intervals.  For
+the other segments, the addition of intervals merely
+increases the computation without contributing to a
+better overall answer.  For an improved adaptation, we
+could split the integral into adjacent segments, and
+improve each segment separately.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>integrate-adaptive-simpson-second-try</span>
+  (<span class=keyword>lambda</span> (<span class=variable>f</span> <span class=variable>a</span> <span class=variable>b</span> <span class=variable>e</span>)
+    (<span class=keyword>let</span> <span class=variable>integrate-segment</span> ((<span class=variable>a</span> <span class=variable>a</span>) (<span class=variable>b</span> <span class=variable>b</span>) (<span class=variable>e</span> <span class=variable>e</span>))
+      (<span class=keyword>let</span> ((<span class=variable>i2</span> (<span class=variable>integrate-simpson</span> <span class=variable>f</span> <span class=variable>a</span> <span class=variable>b</span> <span class=selfeval>2</span>))
+            (<span class=variable>i4</span> (<span class=variable>integrate-simpson</span> <span class=variable>f</span> <span class=variable>a</span> <span class=variable>b</span> <span class=selfeval>4</span>)))
+        (<span class=keyword>if</span> (<span class=variable>&lt;=</span> (<span class=variable>abs</span> (<span class=variable>-</span> <span class=variable>i2</span> <span class=variable>i4</span>)) <span class=variable>e</span>)
+            <span class=variable>i4</span>
+            (<span class=keyword>let</span> ((<span class=variable>c</span> (<span class=variable>/</span> (<span class=variable>+</span> <span class=variable>a</span> <span class=variable>b</span>) <span class=selfeval>2</span>))
+                  (<span class=variable>e</span> (<span class=variable>/</span> <span class=variable>e</span> <span class=selfeval>2</span>)))
+              (<span class=variable>+</span> (<span class=variable>integrate-segment</span> <span class=variable>a</span> <span class=variable>c</span> <span class=variable>e</span>)
+                 (<span class=variable>integrate-segment</span> <span class=variable>c</span> <span class=variable>b</span> <span class=variable>e</span>))))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The initial segment is from <code class=scheme><span class=variable>a</span></code> to <code class=scheme><span class=variable>b</span></code>.  To find
+the integral for a segment, we calculate the Simpson
+integrals <code class=scheme><span class=variable>i2</span></code> and <code class=scheme><span class=variable>i4</span></code> with the two smallest
+interval numbers 2 and 4.  If these are within <code class=scheme><span class=variable>e</span></code> of
+each other, we return <code class=scheme><span class=variable>i4</span></code>.  If not we split the
+segment in half, recursively calculate the integral
+separately for each segment, and add.  In
+general, different segments at the same level converge
+at their own pace.  Note that when we integrate a half
+of a segment, we take care to also halve the tolerance,
+so that the precision of the eventual sum does not
+decay.</p>
+<p>
+There are still some inefficiencies in this
+procedure: The integral <code class=scheme><span class=variable>i4</span></code> recalculates three
+ordinates already determined by <code class=scheme><span class=variable>i2</span></code>, and the integral
+of each half-segment recalculates three ordinates 
+already determined by <code class=scheme><span class=variable>i2</span></code> and <code class=scheme><span class=variable>i4</span></code>.  We avoid
+these inefficiencies by making explicit the sums used
+for <code class=scheme><span class=variable>i2</span></code> and <code class=scheme><span class=variable>i4</span></code>, and by transmitting more parameters
+in the named-<code class=scheme><span class=keyword>let</span></code> <code class=scheme><span class=variable>integrate&#x2011;segment</span></code>.  This makes for
+more sharing, both within the body of <code class=scheme><span class=variable>integrate&#x2011;segment</span></code>
+and across successive calls to <code class=scheme><span class=variable>integrate&#x2011;segment</span></code>:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>integrate-adaptive-simpson</span>
+  (<span class=keyword>lambda</span> (<span class=variable>f</span> <span class=variable>a</span> <span class=variable>b</span> <span class=variable>e</span>)
+    (<span class=keyword>let*</span> ((<span class=variable>h</span> (<span class=variable>/</span> (<span class=variable>-</span> <span class=variable>b</span> <span class=variable>a</span>) <span class=selfeval>4</span>))
+           (<span class=variable>mid.a.b</span> (<span class=variable>+</span> <span class=variable>a</span> (<span class=variable>*</span> <span class=selfeval>2</span> <span class=variable>h</span>))))
+      (<span class=keyword>let</span> <span class=variable>integrate-segment</span> ((<span class=variable>x0</span> <span class=variable>a</span>)
+                              (<span class=variable>x2</span> <span class=variable>mid.a.b</span>)
+                              (<span class=variable>x4</span> <span class=variable>b</span>)
+                              (<span class=variable>y0</span> (<span class=variable>f</span> <span class=variable>a</span>))
+                              (<span class=variable>y2</span> (<span class=variable>f</span> <span class=variable>mid.a.b</span>))
+                              (<span class=variable>y4</span> (<span class=variable>f</span> <span class=variable>b</span>))
+                              (<span class=variable>h</span> <span class=variable>h</span>)
+                              (<span class=variable>e</span> <span class=variable>e</span>))
+        (<span class=keyword>let*</span> ((<span class=variable>x1</span> (<span class=variable>+</span> <span class=variable>x0</span> <span class=variable>h</span>))
+               (<span class=variable>x3</span> (<span class=variable>+</span> <span class=variable>x2</span> <span class=variable>h</span>))
+               (<span class=variable>y1</span> (<span class=variable>f</span> <span class=variable>x1</span>))
+               (<span class=variable>y3</span> (<span class=variable>f</span> <span class=variable>x3</span>))
+               (<span class=variable>i2</span> (<span class=variable>*</span> <span class=selfeval>2/3</span> <span class=variable>h</span> (<span class=variable>+</span> <span class=variable>y0</span> <span class=variable>y4</span> (<span class=variable>*</span> <span class=selfeval>4.0</span> <span class=variable>y2</span>))))
+               (<span class=variable>i4</span> (<span class=variable>*</span> <span class=selfeval>1/3</span> <span class=variable>h</span> (<span class=variable>+</span> <span class=variable>y0</span> <span class=variable>y4</span> (<span class=variable>*</span> <span class=selfeval>4.0</span> (<span class=variable>+</span> <span class=variable>y1</span> <span class=variable>y3</span>)) 
+                               (<span class=variable>*</span> <span class=selfeval>2.0</span> <span class=variable>y2</span>)))))
+          (<span class=keyword>if</span> (<span class=variable>&lt;=</span> (<span class=variable>abs</span> (<span class=variable>-</span> <span class=variable>i2</span> <span class=variable>i4</span>)) <span class=variable>e</span>)
+              <span class=variable>i4</span>
+              (<span class=keyword>let</span> ((<span class=variable>h</span> (<span class=variable>/</span> <span class=variable>h</span> <span class=selfeval>2</span>)) (<span class=variable>e</span> (<span class=variable>/</span> <span class=variable>e</span> <span class=selfeval>2</span>)))
+                (<span class=variable>+</span> (<span class=variable>integrate-segment</span>
+                     <span class=variable>x0</span> <span class=variable>x1</span> <span class=variable>x2</span> <span class=variable>y0</span> <span class=variable>y1</span> <span class=variable>y2</span> <span class=variable>h</span> <span class=variable>e</span>)
+                   (<span class=variable>integrate-segment</span>
+                     <span class=variable>x2</span> <span class=variable>x3</span> <span class=variable>x4</span> <span class=variable>y2</span> <span class=variable>y3</span> <span class=variable>y4</span> <span class=variable>h</span> <span class=variable>e</span>)))))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent><code class=scheme><span class=variable>integrate&#x2011;segment</span></code> now explicitly sets four
+intervals of size <code class=scheme><span class=variable>h</span></code>, giving five ordinates <code class=scheme><span class=variable>y0</span></code>,
+<code class=scheme><span class=variable>y1</span></code>, <code class=scheme><span class=variable>y2</span></code>, <code class=scheme><span class=variable>y3</span></code>, and <code class=scheme><span class=variable>y4</span></code>.  The integral
+<code class=scheme><span class=variable>i4</span></code> uses all of these ordinates, while the integral
+<code class=scheme><span class=variable>i2</span></code> uses just <code class=scheme><span class=variable>y0</span></code>, <code class=scheme><span class=variable>y2</span></code>, and <code class=scheme><span class=variable>y4</span></code>, with an
+interval size of twice <code class=scheme><span class=variable>h</span></code>.  It is easy to verify that
+the explicit sums used for <code class=scheme><span class=variable>i2</span></code> and <code class=scheme><span class=variable>i4</span></code> do correspond
+to Simpson sums.</p>
+<p>
+Compare the following approximations of
+<img src="index-Z-G-D-2.gif" border="0" alt="[index-Z-G-D-2.gif]"><sub>0</sub><sup>20</sup> <em>e</em><sup><em>x</em></sup> <em>d</em><em>x</em>:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>integrate-simpson</span>          <span class=variable>exp</span> <span class=selfeval>0</span> <span class=selfeval>20</span> <span class=selfeval>10</span>)
+(<span class=variable>integrate-simpson</span>          <span class=variable>exp</span> <span class=selfeval>0</span> <span class=selfeval>20</span> <span class=selfeval>20</span>)
+(<span class=variable>integrate-simpson</span>          <span class=variable>exp</span> <span class=selfeval>0</span> <span class=selfeval>20</span> <span class=selfeval>40</span>)
+(<span class=variable>integrate-adaptive-simpson</span> <span class=variable>exp</span> <span class=selfeval>0</span> <span class=selfeval>20</span> <span class=selfeval>.001</span>)
+(<span class=variable>-</span> (<span class=variable>exp</span> <span class=selfeval>20</span>) <span class=selfeval>1</span>)
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The last one is the analytically correct answer.  See
+if you can figure out the smallest <code class=scheme><span class=variable>n</span></code> (overshooting is
+expensive!)
+such that <code class=scheme>(<span class=variable>integrate&#x2011;simpson</span> <span class=variable>exp</span> <span class=selfeval>0</span> <span class=selfeval>20</span> <span class=variable>n</span>)</code> yields a result
+comparable to that returned by the <code class=scheme><span class=variable>integrate&#x2011;adaptive&#x2011;simpson</span></code>
+call.</p>
+<p>
+</p>
+<a name="node_sec_C.3"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_C.3">C.3&nbsp;&nbsp;Improper integrals</a></h2>
+<p>Simpson's rule cannot be directly applied to <em>improper integrals</em> (integrals such that either
+the value of the integrand is unbounded somewhere
+within the interval of integration, or the interval of
+integration is itself unbounded).  However, the rule can still be 
+applied for a <em>part</em> of the integral, with the
+remaining being approximated by other means.  For
+example, consider the <img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]"> function.
+For <em>n</em> &gt; 0, <img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]">(<em>n</em>) is defined as the
+following integral with unbounded upper limit:</p>
+<p>
+</p>
+<div class=mathdisplay align=center><img src="index-Z-G-5.gif" border="0" alt=" \Gamma(n) = \int_0^{\infty} x^{n-1}e^{-x} dx "></div>
+<p class=noindent>
+From this, it follows that (a) <img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]">(1)  =  1, and (b)
+for <em>n</em> &gt; 0, <img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]">(<em>n</em> + 1)  =  <em>n</em><img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]">(<em>n</em>).  This implies
+that if we know the value of <img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]"> in the interval
+(1, 2), we can find <img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]">(<em>n</em>) for any <em>real</em> <em>n</em> &gt; 0.
+Indeed, if we relax the condition <em>n</em> &gt; 0, we can use
+result (b) to extend the domain of <img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]">(<em>n</em>) to
+include <em>n</em> &le; 0, with the understanding that the function
+will diverge for <em>integer</em> <em>n</em> &le; 0.<a name="node_call_footnote_Temp_18"></a><sup><small><a href="#node_footnote_Temp_18">5</a></small></sup></p>
+<p>
+We first implement a Scheme procedure <code class=scheme><span class=variable>gamma&#x2011;1&#x2011;to&#x2011;2</span></code>
+that requires its argument <code class=scheme><span class=variable>n</span></code> to be within the
+interval (1, 2).  <code class=scheme><span class=variable>gamma&#x2011;1&#x2011;to&#x2011;2</span></code> takes a
+second argument <code class=scheme><span class=variable>e</span></code> for the tolerance.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>gamma-1-to-2</span>
+  (<span class=keyword>lambda</span> (<span class=variable>n</span> <span class=variable>e</span>)
+    (<span class=keyword>unless</span> (<span class=variable>&lt;</span> <span class=selfeval>1</span> <span class=variable>n</span> <span class=selfeval>2</span>)
+      (<span class=variable>error</span> <span class=keyword>'</span><span class=variable>gamma-1-to-2</span> <span class=selfeval>&quot;argument outside (1, 2)&quot;</span>))
+    <span class=comment>;...</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>We introduce a local variable <code class=scheme><span class=variable>gamma&#x2011;integrand</span></code> to hold
+the <img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]">-integrand <em>g</em>(<em>x</em>)  =  <em>x</em><sup><em>n</em>&minus;1</sup><em>e</em><sup><em>x</em></sup>:</p>
+<p>
+</p>
+<pre class=scheme>    <span class=comment>;...</span>
+    (<span class=keyword>let</span> ((<span class=variable>gamma-integrand</span>
+            (<span class=keyword>let</span> ((<span class=variable>n-1</span> (<span class=variable>-</span> <span class=variable>n</span> <span class=selfeval>1</span>)))
+              (<span class=keyword>lambda</span> (<span class=variable>x</span>)
+                (<span class=variable>*</span> (<span class=variable>expt</span> <span class=variable>x</span> <span class=variable>n-1</span>)
+                   (<span class=variable>exp</span> (<span class=variable>-</span> <span class=variable>x</span>))))))
+          <span class=comment>;...</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>We now need to integrate <em>g</em>(<em>x</em>) from 0 to <img src="index-Z-G-D-5.gif" border="0" alt="[index-Z-G-D-5.gif]">.
+Clearly we cannot deal with an infinite number of
+intervals; we therefore use Simpson's rule for only a
+portion of the interval [0, <img src="index-Z-G-D-5.gif" border="0" alt="[index-Z-G-D-5.gif]">), say [0, <em>x</em><sub><em>c</em></sub>]
+(<em>c</em> for ``cut-off'').  For the remaining, ``tail'',
+interval [<em>x</em><sub><em>c</em></sub>, <img src="index-Z-G-D-5.gif" border="0" alt="[index-Z-G-D-5.gif]">), we use a tail-integrand
+<em>t</em>(<em>x</em>) that reasonably approximates <em>g</em>(<em>x</em>), but has the
+advantage of being more tractable to analytic solution.
+Indeed, it is easy to see that for sufficiently large
+<em>x</em><sub><em>c</em></sub>, we can replace <em>g</em>(<em>x</em>) by an exponential decay
+function <em>t</em>(<em>x</em>)  =  <em>y</em><sub><em>c</em></sub> <em>e</em><sup>&minus;(<em>x</em> &minus; <em>x</em><sub><em>c</em></sub> )</sup>, where <em>y</em><sub><em>c</em></sub>
+ =  <em>g</em>(<em>x</em><sub><em>c</em></sub>).  Thus:</p>
+<p>
+</p>
+<div class=mathdisplay align=center><img src="index-Z-G-6.gif" border="0" alt="
+\int_0^{\infty} g(x) dx \approx 
+\int_0^{x_c} g(x) dx +
+\int_{x_c}^{\infty} t(x) dx 
+"></div>
+<p class=noindent>
+The first integral can be solved using Simpson's rule,
+and the second integral is just <em>y</em><sub><em>c</em></sub>.  To find <em>x</em><sub><em>c</em></sub>,
+we start with a low-ball value (say 4), and then refine
+it by successively doubling it until the ordinate at
+2<em>x</em><sub><em>c</em></sub> (ie, <em>g</em>(2<em>x</em><sub><em>c</em></sub>)) is within a certain
+tolerance of the ordinate predicted by the tail-integrand 
+(ie, <em>t</em>(2<em>x</em><sub><em>c</em></sub>)).  For both the Simpson
+integral and the tail-integrand calculation, we will
+require a tolerance of <code class=scheme><span class=variable>e/100</span></code>, an order of 2 less than
+the given tolerance <code class=scheme><span class=variable>e</span></code>, so the overall
+tolerance is not affected:</p>
+<p>
+</p>
+<pre class=scheme>          <span class=comment>;...</span>
+          (<span class=variable>e/100</span> (<span class=variable>/</span> <span class=variable>e</span> <span class=selfeval>100</span>)))
+       (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>xc</span> <span class=selfeval>4</span>) (<span class=variable>yc</span> (<span class=variable>gamma-integrand</span> <span class=selfeval>4</span>)))
+         (<span class=keyword>let*</span> ((<span class=variable>tail-integrand</span>
+                  (<span class=keyword>lambda</span> (<span class=variable>x</span>)
+                    (<span class=variable>*</span> <span class=variable>yc</span> (<span class=variable>exp</span> (<span class=variable>-</span> (<span class=variable>-</span> <span class=variable>x</span> <span class=variable>xc</span>))))))
+                (<span class=variable>x1</span> (<span class=variable>*</span> <span class=selfeval>2</span> <span class=variable>xc</span>))
+                (<span class=variable>y1</span> (<span class=variable>gamma-integrand</span> <span class=variable>x1</span>))
+                (<span class=variable>y1-estimated</span> (<span class=variable>tail-integrand</span> <span class=variable>x1</span>)))
+           (<span class=keyword>if</span> (<span class=variable>&lt;=</span> (<span class=variable>abs</span> (<span class=variable>-</span> <span class=variable>y1</span> <span class=variable>y1-estimated</span>)) <span class=variable>e/100</span>)
+               (<span class=variable>+</span> (<span class=variable>integrate-adaptive-simpson</span> 
+                    <span class=variable>gamma-integrand</span>
+                    <span class=selfeval>0</span> <span class=variable>xc</span> <span class=variable>e/100</span>)
+                  <span class=variable>yc</span>)
+               (<span class=variable>loop</span> <span class=variable>x1</span> <span class=variable>y1</span>)))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>We can now write a more general procedure <code class=scheme><span class=variable>gamma</span></code>
+that returns <img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]">(<em>n</em>) for any real <em>n</em>:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>gamma</span>
+  (<span class=keyword>lambda</span> (<span class=variable>n</span> <span class=variable>e</span>)
+    (<span class=keyword>cond</span> ((<span class=variable>&lt;</span> <span class=variable>n</span> <span class=selfeval>1</span>) (<span class=variable>/</span> (<span class=variable>gamma</span> (<span class=variable>+</span> <span class=variable>n</span> <span class=selfeval>1</span>) <span class=variable>e</span>) <span class=variable>n</span>))
+          ((<span class=variable>=</span> <span class=variable>n</span> <span class=selfeval>1</span>) <span class=selfeval>1</span>)
+          ((<span class=variable>&lt;</span> <span class=selfeval>1</span> <span class=variable>n</span> <span class=selfeval>2</span>) (<span class=variable>gamma-1-to-2</span> <span class=variable>n</span> <span class=variable>e</span>))
+          (<span class=keyword>else</span> (<span class=keyword>let</span> ((<span class=variable>n-1</span> (<span class=variable>-</span> <span class=variable>n</span> <span class=selfeval>1</span>)))
+                  (<span class=variable>*</span> <span class=variable>n-1</span> (<span class=variable>gamma</span> <span class=variable>n-1</span> <span class=variable>e</span>)))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Let us now calculate <img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]">(3/2).</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>gamma</span> <span class=selfeval>3/2</span> <span class=selfeval>.001</span>)
+(<span class=variable>*</span> <span class=selfeval>1/2</span> (<span class=variable>sqrt</span> <span class=global>*pi*</span>))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The second value is the analytically correct answer.
+(This is because <img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]">(3/2)  = 
+(1/2)<img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]">(1/2), and <img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]">(1/2) is known to be
+<img src="index-Z-G-D-3.gif" border="0" alt="[index-Z-G-D-3.gif]"><sup>1/2</sup>.)
+You can modify <code class=scheme><span class=variable>gamma</span></code>'s  second
+argument (the tolerance) to get as close an
+approximation as you desire.</p>
+<p>
+</p>
+<p>
+</p>
+<div class=footnoterule><hr></div><p></p>
+<div class=footnote><p><a name="node_footnote_Temp_14"></a><sup><small><a href="#node_call_footnote_Temp_14">1</a></small></sup> Consult any elementary
+text on the calculus for an explanation of why this
+approximation is reasonable.</p>
+<p><a name="node_footnote_Temp_15"></a><sup><small><a href="#node_call_footnote_Temp_15">2</a></small></sup> <img src="index-Z-G-D-1.gif" border="0" alt="[index-Z-G-D-1.gif]">
+is the probability density of a
+random variable with a <em>normal</em> or <em>Gaussian</em>
+distribution, with mean = 0 and standard deviation = 1.
+The definite integral <img src="index-Z-G-D-2.gif" border="0" alt="[index-Z-G-D-2.gif]"><sub>0</sub><sup><em>z</em></sup> <img src="index-Z-G-D-1.gif" border="0" alt="[index-Z-G-D-1.gif]">(<em>x</em>) <em>d</em><em>x</em>
+is the probability that the random
+variable assumes a value between 0 and <em>z</em>.  
+However, you don't need to know all this in
+order to understand the example!</p>
+<p><a name="node_footnote_Temp_16"></a><sup><small><a href="#node_call_footnote_Temp_16">3</a></small></sup> If Scheme didn't
+have the <code class=scheme><span class=variable>atan</span></code> procedure, we could use our
+numerical-integration procedure to get an approximation
+for <img src="index-Z-G-D-2.gif" border="0" alt="[index-Z-G-D-2.gif]"><sub>0</sub><sup>1</sup> (1  +  <em>x</em><sup>2</sup>)<sup>&minus;1</sup> <em>d</em><em>x</em>, which is <img src="index-Z-G-D-3.gif" border="0" alt="[index-Z-G-D-3.gif]">/4.</p>
+<p><a name="node_footnote_Temp_17"></a><sup><small><a href="#node_call_footnote_Temp_17">4</a></small></sup> By pulling constant factors --- such as <code class=scheme>(<span class=variable>/</span>
+<span class=selfeval>1</span> (<span class=variable>sqrt</span> (<span class=variable>*</span> <span class=selfeval>2</span> <span class=global>*pi*</span>)))</code> in <code class=scheme><span class=variable>phi</span></code> --- out of the
+integrand, we could speed up the ordinate calculations
+within <code class=scheme><span class=variable>integrate&#x2011;simpson</span></code>.</p>
+<p><a name="node_footnote_Temp_18"></a><sup><small><a href="#node_call_footnote_Temp_18">5</a></small></sup> <img src="index-Z-G-D-4.gif" border="0" alt="[index-Z-G-D-4.gif]">(<em>n</em>) for real <em>n</em> &gt; 0 is
+itself an extension of the ``decrement-then-factorial'' function
+that maps <em>integer</em> <em>n</em> &gt; 0 to (<em>n</em>&minus;1)!.</p>
+</div>
+<div class=smallskip></div>
+<p style="margin-top: 0pt; margin-bottom: 0pt">
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-21.html">previous</a></span><span>, <a href="index-Z-H-23.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+</p>
+<p></p>
+</div>
+</body>
+</html>

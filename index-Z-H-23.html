@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<!--
+Generated from index.tex by tex2page, v 20150301
+(running on Racket 6.2.0.3, :unix), 
+(c) Dorai Sitaram, 
+http://www.ccs.neu.edu/~dorai/tex2page/index.html
+-->
+<head>
+<meta charset="utf-8">
+<title>
+Teach Yourself Scheme in Fixnum Days
+</title>
+<link rel="stylesheet" href="index-Z-S.css" title=default />
+<meta name=robots content="index,follow">
+<meta name=description content="A practical introduction to the programming language Scheme">  <meta name=author content="Dorai Sitaram">  <link rev=made href="mailto:ds26gte @ yahoo.com"> </head>
+<body>
+<div id=slidecontent>
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-22.html">previous</a></span><span>, <a href="index-Z-H-24.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+<p></p>
+<a name="node_chap_D"></a>
+<h1 class=chapter>
+<div class=chapterheading><a href="index-Z-H-1.html#node_toc_node_chap_D">Appendix D</a></div><br>
+<a href="index-Z-H-1.html#node_toc_node_chap_D">A clock for infinity</a></h1>
+<p></p>
+<p>
+<a name="node_idx_530"></a><a name="node_idx_532"></a>The Guile [<a href="index-Z-H-24.html#node_bib_13">13</a>] procedure <code class=scheme><span class=variable>alarm</span></code> provides an interruptable
+timer mechanism.  The user can set or reset the alarm
+for some time units, or stop it.  When the alarm's
+timer runs out of this time, it will set off an alarm,
+whose consequences are user-settable.  Guile's
+<code class=scheme><span class=variable>alarm</span></code> is not quite the clock of
+sec <a href="index-Z-H-17.html#node_sec_15.1">15.1</a>, but we can modify it easily
+enough.</p>
+<p>
+The alarm's timer is initially <em>stopped</em> or <em>quiescent</em>, ie, it will not set off an alarm even as
+time goes by.  To set the alarm's time-to-alarm to be
+<code class=scheme><span class=variable>n</span></code> seconds, where <code class=scheme><span class=variable>n</span></code> is not <code class=scheme><span class=selfeval>0</span></code>, run <code class=scheme>(<span class=variable>alarm</span>
+<span class=variable>n</span>)</code>.  If the timer was already set (but has not yet set
+off an alarm), the <code class=scheme>(<span class=variable>alarm</span> <span class=variable>n</span>)</code> procedure call will
+return the number of seconds remaining from the
+previous alarm setting.  If there is no previous alarm
+setting, <code class=scheme>(<span class=variable>alarm</span> <span class=variable>n</span>)</code> returns <code class=scheme><span class=selfeval>0</span></code>.</p>
+<p>
+The procedure call <code class=scheme>(<span class=variable>alarm</span> <span class=selfeval>0</span>)</code> <em>stops</em> the
+alarm's timer, ie, the countdown of time is stopped,
+the timer becomes quiescent and no alarm will go off.
+<code class=scheme>(<span class=variable>alarm</span> <span class=selfeval>0</span>)</code> also returns the seconds remaining from a
+previous alarm setting, if any.</p>
+<p>
+By default, when the alarm's countdown reaches 0,
+Guile will display a message on the console and exit.
+More useful behavior can be obtained by
+using the procedure
+<code class=scheme><span class=variable>sigaction</span></code>, as follows:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>sigaction</span> <span class=variable>SIGALRM</span>
+  (<span class=keyword>lambda</span> (<span class=variable>sig</span>)
+    (<span class=variable>display</span> <span class=selfeval>&quot;Signal &quot;</span>)
+    (<span class=variable>display</span> <span class=variable>sig</span>)
+    (<span class=variable>display</span> <span class=selfeval>&quot; raised.  Continuing...&quot;</span>)
+    (<span class=variable>newline</span>)))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The first argument <code class=scheme><span class=variable>SIGALRM</span></code> (which happens to be
+<code class=scheme><span class=selfeval>14</span></code>) identifies to <code class=scheme><span class=variable>sigaction</span></code> that it is the
+alarm handler that needs setting.<a name="node_call_footnote_Temp_19"></a><sup><small><a href="#node_footnote_Temp_19">1</a></small></sup>  The
+second argument is a unary alarm-handling procedure of
+the user's choice.  In this example, when the alarm
+goes off, the handler displays <code class=scheme><span class=selfeval>&quot;Signal 14 raised.
+Continuing...&quot;</span></code> on the console without exiting Scheme.
+(The <code class=scheme><span class=selfeval>14</span></code> is the <code class=scheme><span class=variable>SIGALRM</span></code> value that the alarm
+will pass to its handler.  Don't worry about it now.)</p>
+<p>
+From our point of view, this simple timer mechanism
+poses one problem.  A return value of <code class=scheme><span class=selfeval>0</span></code> from a call
+to the procedure <code class=scheme><span class=variable>alarm</span></code> is ambiguous: It could
+either mean that the alarm was quiescent, or that 
+it was just about to run out of time.  We could resolve
+this ambiguity if we could include ``<code class=scheme><span class=global>*infinity*</span></code>''
+in the alarm arithmetic.  In other words, we would like
+a <em>clock</em> that works almost like <code class=scheme><span class=variable>alarm</span></code>,
+except that a quiescent clock is one with
+<code class=scheme><span class=global>*infinity*</span></code> seconds.  This will make many things
+natural, viz,</p>
+<p>
+(1) <code class=scheme>(<span class=variable>clock</span> <span class=variable>n</span>)</code> on a quiescent clock returns
+<code class=scheme><span class=global>*infinity*</span></code>, not <code class=scheme><span class=selfeval>0</span></code>.</p>
+<p>
+(2) To stop the clock, call <code class=scheme>(<span class=variable>clock</span> <span class=global>*infinity*</span>)</code>,
+<em>not</em> <code class=scheme>(<span class=variable>clock</span> <span class=selfeval>0</span>)</code>.</p>
+<p>
+(3) <code class=scheme>(<span class=variable>clock</span> <span class=selfeval>0</span>)</code> is equivalent to setting the clock to
+an infinitesimally small amount of time, viz, to cause
+it to raise an alarm instantaneously.</p>
+<p>
+In Guile, we can define <code class=scheme><span class=global>*infinity*</span></code> as the following
+``number'':</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=global>*infinity*</span> (<span class=variable>/</span> <span class=selfeval>1</span> <span class=selfeval>0</span>))
+</pre>
+<p class=noindent></p>
+<p>
+We can define <code class=scheme><span class=variable>clock</span></code> in terms of <code class=scheme><span class=variable>alarm</span></code>.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>clock</span>
+  (<span class=keyword>let</span> ((<span class=variable>stopped?</span> <span class=selfeval>#t</span>)
+        (<span class=variable>clock-interrupt-handler</span>
+         (<span class=keyword>lambda</span> () (<span class=variable>error</span> <span class=selfeval>&quot;Clock interrupt!&quot;</span>))))
+    (<span class=keyword>let</span> ((<span class=variable>generate-clock-interrupt</span>
+           (<span class=keyword>lambda</span> ()
+             (<span class=keyword>set!</span> <span class=variable>stopped?</span> <span class=selfeval>#t</span>)
+             (<span class=variable>clock-interrupt-handler</span>))))
+      (<span class=variable>sigaction</span> <span class=variable>SIGALRM</span>
+                 (<span class=keyword>lambda</span> (<span class=variable>sig</span>) (<span class=variable>generate-clock-interrupt</span>)))
+      (<span class=keyword>lambda</span> (<span class=variable>msg</span> <span class=variable>val</span>)
+        (<span class=keyword>case</span> <span class=variable>msg</span>
+          ((<span class=variable>set-handler</span>)
+           (<span class=keyword>set!</span> <span class=variable>clock-interrupt-handler</span> <span class=variable>val</span>))
+          ((<span class=variable>set</span>)
+           (<span class=keyword>cond</span> ((<span class=variable>=</span> <span class=variable>val</span> <span class=global>*infinity*</span>)
+                  <span class=comment>;This is equivalent to stopping the clock.</span>
+                  <span class=comment>;This is almost equivalent to (alarm 0), except</span>
+                  <span class=comment>;that if the clock is already stopped,</span>
+                  <span class=comment>;return *infinity*.</span>
+
+                  (<span class=keyword>let</span> ((<span class=variable>time-remaining</span> (<span class=variable>alarm</span> <span class=selfeval>0</span>)))
+                    (<span class=keyword>if</span> <span class=variable>stopped?</span> <span class=global>*infinity*</span>
+                        (<span class=keyword>begin</span> (<span class=keyword>set!</span> <span class=variable>stopped?</span> <span class=selfeval>#t</span>)
+                          <span class=variable>time-remaining</span>))))
+
+                 ((<span class=variable>=</span> <span class=variable>val</span> <span class=selfeval>0</span>)
+                  <span class=comment>;This is equivalent to setting the alarm to</span>
+                  <span class=comment>;go off immediately.  This is almost equivalent</span>
+                  <span class=comment>;to (alarm 0), except you force the alarm</span>
+                  <span class=comment>;handler to run.</span>
+
+                  (<span class=keyword>let</span> ((<span class=variable>time-remaining</span> (<span class=variable>alarm</span> <span class=selfeval>0</span>)))
+                    (<span class=keyword>if</span> <span class=variable>stopped?</span>
+                        (<span class=keyword>begin</span> (<span class=variable>generate-clock-interrupt</span>)
+                          <span class=global>*infinity*</span>)
+                        (<span class=keyword>begin</span> (<span class=variable>generate-clock-interrupt</span>)
+                          <span class=variable>time-remaining</span>))))
+
+                 (<span class=keyword>else</span>
+                  <span class=comment>;This is equivalent to (alarm n) for n != 0.</span>
+                  <span class=comment>;Just remember to return *infinity* if the</span>
+                  <span class=comment>;clock was previously quiescent.</span>
+
+                  (<span class=keyword>let</span> ((<span class=variable>time-remaining</span> (<span class=variable>alarm</span> <span class=variable>val</span>)))
+                    (<span class=keyword>if</span> <span class=variable>stopped?</span>
+                        (<span class=keyword>begin</span> (<span class=keyword>set!</span> <span class=variable>stopped?</span> <span class=selfeval>#f</span>) <span class=global>*infinity*</span>)
+                        <span class=variable>time-remaining</span>))))))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The <code class=scheme><span class=variable>clock</span></code> procedure uses three internal state
+variables:</p>
+<p>
+(1) <code class=scheme><span class=variable>stopped?</span></code>, to describe if the clock is stopped;</p>
+<p>
+(2) <code class=scheme><span class=variable>clock&#x2011;interrupt&#x2011;handler</span></code>, which is a thunk
+describing the user-specified part of the
+alarm-handling action; and</p>
+<p>
+(3) <code class=scheme><span class=variable>generate&#x2011;clock&#x2011;interrupt</span></code>, another thunk which
+will set <code class=scheme><span class=variable>stopped?</span></code> to false before running the
+user-specified alarm handler.</p>
+<p>
+The <code class=scheme><span class=variable>clock</span></code> procedure takes two arguments.  If the
+first argument is <code class=scheme><span class=variable>set&#x2011;handler</span></code>, it uses the second
+argument as the alarm handler.</p>
+<p>
+If the first argument is <code class=scheme><span class=variable>set</span></code>, it sets the
+time-to-alarm to the second argument, returning the
+time remaining from a previous setting.  The code
+treats <code class=scheme><span class=selfeval>0</span></code>, <code class=scheme><span class=global>*infinity*</span></code> and other values for time
+differently so that the user gets a mathematically
+transparent interface to <code class=scheme><span class=variable>alarm</span></code>.</p>
+<p>
+
+</p>
+<p>
+</p>
+<p>
+</p>
+<div class=footnoterule><hr></div><p></p>
+<div class=footnote><p><a name="node_footnote_Temp_19"></a><sup><small><a href="#node_call_footnote_Temp_19">1</a></small></sup> There are other
+signals with their corresponding handlers, and
+<code class=scheme><span class=variable>sigaction</span></code> can be used to set these as well.</p>
+</div>
+<div class=smallskip></div>
+<p style="margin-top: 0pt; margin-bottom: 0pt">
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-22.html">previous</a></span><span>, <a href="index-Z-H-24.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+</p>
+<p></p>
+</div>
+</body>
+</html>

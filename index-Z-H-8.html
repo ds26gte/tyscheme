@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<!--
+Generated from index.tex by tex2page, v 20150301
+(running on Racket 6.2.0.3, :unix), 
+(c) Dorai Sitaram, 
+http://www.ccs.neu.edu/~dorai/tex2page/index.html
+-->
+<head>
+<meta charset="utf-8">
+<title>
+Teach Yourself Scheme in Fixnum Days
+</title>
+<link rel="stylesheet" href="index-Z-S.css" title=default />
+<meta name=robots content="index,follow">
+<meta name=description content="A practical introduction to the programming language Scheme">  <meta name=author content="Dorai Sitaram">  <link rev=made href="mailto:ds26gte @ yahoo.com"> </head>
+<body>
+<div id=slidecontent>
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-7.html">previous</a></span><span>, <a href="index-Z-H-9.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+<p></p>
+<a name="node_chap_6"></a>
+<h1 class=chapter>
+<div class=chapterheading><a href="index-Z-H-1.html#node_toc_node_chap_6">Chapter 6</a></div><br>
+<a href="index-Z-H-1.html#node_toc_node_chap_6">Recursion</a></h1>
+<p><a name="node_idx_280"></a><a name="node_idx_282"></a>A procedure body can contain calls to other procedures,
+not least itself:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>factorial</span>
+  (<span class=keyword>lambda</span> (<span class=variable>n</span>)
+    (<span class=keyword>if</span> (<span class=variable>=</span> <span class=variable>n</span> <span class=selfeval>0</span>) <span class=selfeval>1</span>
+        (<span class=variable>*</span> <span class=variable>n</span> (<span class=variable>factorial</span> (<span class=variable>-</span> <span class=variable>n</span> <span class=selfeval>1</span>))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>This <em>recursive</em> procedure calculates the <em>factorial</em> of a number.  If the number is <code class=scheme><span class=selfeval>0</span></code>, the
+answer is <code class=scheme><span class=selfeval>1</span></code>.  For any other number <code class=scheme><span class=variable>n</span></code>, the
+procedure uses itself to calculate the factorial of
+<code class=scheme><span class=variable>n</span> <span class=variable>&#x2011;</span> <span class=selfeval>1</span></code>, multiplies that subresult by <code class=scheme><span class=variable>n</span></code>, and
+returns the product.</p>
+<p>
+Mutually recursive procedures are also possible.  The
+following predicates for evenness and oddness use each
+other:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>is-even?</span>
+  (<span class=keyword>lambda</span> (<span class=variable>n</span>)
+    (<span class=keyword>if</span> (<span class=variable>=</span> <span class=variable>n</span> <span class=selfeval>0</span>) <span class=selfeval>#t</span>
+        (<span class=variable>is-odd?</span> (<span class=variable>-</span> <span class=variable>n</span> <span class=selfeval>1</span>)))))
+
+(<span class=keyword>define</span> <span class=variable>is-odd?</span>
+  (<span class=keyword>lambda</span> (<span class=variable>n</span>)
+    (<span class=keyword>if</span> (<span class=variable>=</span> <span class=variable>n</span> <span class=selfeval>0</span>) <span class=selfeval>#f</span>
+        (<span class=variable>is-even?</span> (<span class=variable>-</span> <span class=variable>n</span> <span class=selfeval>1</span>)))))
+</pre>
+<p class=noindent></p>
+<p>
+<a name="node_idx_284"></a><a name="node_idx_286"></a></p>
+<p>
+These definitions are offered here only as simple
+illustrations of mutual recursion.  Scheme already
+provides the primitive predicates <code class=scheme><span class=variable>even?</span></code> and
+<code class=scheme><span class=variable>odd?</span></code>.</p>
+<p>
+<a name="node_idx_288"></a><a name="node_idx_290"></a></p>
+<p>
+</p>
+<a name="node_sec_6.1"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_6.1">6.1&nbsp;&nbsp;<code class=scheme><span class=keyword>letrec</span></code></a></h2>
+<p>If we wanted the above procedures as local
+variables, we could try to use a <code class=scheme><span class=keyword>let</span></code> form:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>let</span> ((<span class=variable>local-even?</span> (<span class=keyword>lambda</span> (<span class=variable>n</span>)
+                     (<span class=keyword>if</span> (<span class=variable>=</span> <span class=variable>n</span> <span class=selfeval>0</span>) <span class=selfeval>#t</span>
+                         (<span class=variable>local-odd?</span> (<span class=variable>-</span> <span class=variable>n</span> <span class=selfeval>1</span>)))))
+      (<span class=variable>local-odd?</span> (<span class=keyword>lambda</span> (<span class=variable>n</span>)
+                    (<span class=keyword>if</span> (<span class=variable>=</span> <span class=variable>n</span> <span class=selfeval>0</span>) <span class=selfeval>#f</span>
+                        (<span class=variable>local-even?</span> (<span class=variable>-</span> <span class=variable>n</span> <span class=selfeval>1</span>))))))
+  (<span class=variable>list</span> (<span class=variable>local-even?</span> <span class=selfeval>23</span>) (<span class=variable>local-odd?</span> <span class=selfeval>23</span>)))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>This won't quite work, because the occurrences of
+<code class=scheme><span class=variable>local&#x2011;even?</span></code> and <code class=scheme><span class=variable>local&#x2011;odd?</span></code> in the initializations
+don't refer to the lexical variables themselves.
+Changing the <code class=scheme><span class=keyword>let</span></code> to a <code class=scheme><span class=keyword>let*</span></code> won't work either,
+for while the <code class=scheme><span class=variable>local&#x2011;even?</span></code> inside <code class=scheme><span class=variable>local&#x2011;odd?</span></code>'s body
+refers to the correct procedure value, the <code class=scheme><span class=variable>local&#x2011;odd?</span></code>
+in <code class=scheme><span class=variable>local&#x2011;even?</span></code>'s body still points elsewhere.</p>
+<p>
+To solve problems like this, Scheme provides the form
+<code class=scheme><span class=keyword>letrec</span></code>:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>letrec</span> ((<span class=variable>local-even?</span> (<span class=keyword>lambda</span> (<span class=variable>n</span>)
+                        (<span class=keyword>if</span> (<span class=variable>=</span> <span class=variable>n</span> <span class=selfeval>0</span>) <span class=selfeval>#t</span>
+                            (<span class=variable>local-odd?</span> (<span class=variable>-</span> <span class=variable>n</span> <span class=selfeval>1</span>)))))
+         (<span class=variable>local-odd?</span> (<span class=keyword>lambda</span> (<span class=variable>n</span>)
+                       (<span class=keyword>if</span> (<span class=variable>=</span> <span class=variable>n</span> <span class=selfeval>0</span>) <span class=selfeval>#f</span>
+                           (<span class=variable>local-even?</span> (<span class=variable>-</span> <span class=variable>n</span> <span class=selfeval>1</span>))))))
+  (<span class=variable>list</span> (<span class=variable>local-even?</span> <span class=selfeval>23</span>) (<span class=variable>local-odd?</span> <span class=selfeval>23</span>)))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The lexical variables introduced by a <code class=scheme><span class=keyword>letrec</span></code> are
+visible not only in the <code class=scheme><span class=keyword>letrec</span></code>-body but also within
+all the initializations.  <code class=scheme><span class=keyword>letrec</span></code> is thus
+tailor-made for defining recursive and mutually
+recursive local procedures.</p>
+<p>
+<a name="node_idx_292"></a><a name="node_idx_294"></a></p>
+<p>
+</p>
+<a name="node_sec_6.2"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_6.2">6.2&nbsp;&nbsp;Named <code class=scheme><span class=keyword>let</span></code></a></h2>
+<p>A recursive procedure defined using <code class=scheme><span class=keyword>letrec</span></code> can
+describe loops.  Let's say we want to display a
+countdown from <code class=scheme><span class=selfeval>10</span></code>:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>letrec</span> ((<span class=variable>countdown</span> (<span class=keyword>lambda</span> (<span class=variable>i</span>)
+                      (<span class=keyword>if</span> (<span class=variable>=</span> <span class=variable>i</span> <span class=selfeval>0</span>) <span class=keyword>'</span><span class=variable>liftoff</span>
+                          (<span class=keyword>begin</span>
+                            (<span class=variable>display</span> <span class=variable>i</span>)
+                            (<span class=variable>newline</span>)
+                            (<span class=variable>countdown</span> (<span class=variable>-</span> <span class=variable>i</span> <span class=selfeval>1</span>)))))))
+  (<span class=variable>countdown</span> <span class=selfeval>10</span>))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>This outputs on the console the numbers <code class=scheme><span class=selfeval>10</span></code> down to
+<code class=scheme><span class=selfeval>1</span></code>, and returns the result <code class=scheme><span class=variable>liftoff</span></code>.</p>
+<p>
+Scheme allows a variant of <code class=scheme><span class=keyword>let</span></code> called <em>named</em>
+<code class=scheme><span class=keyword>let</span></code> to write this kind of loop more compactly:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>let</span> <span class=variable>countdown</span> ((<span class=variable>i</span> <span class=selfeval>10</span>))
+  (<span class=keyword>if</span> (<span class=variable>=</span> <span class=variable>i</span> <span class=selfeval>0</span>) <span class=keyword>'</span><span class=variable>liftoff</span>
+      (<span class=keyword>begin</span>
+        (<span class=variable>display</span> <span class=variable>i</span>)
+        (<span class=variable>newline</span>)
+        (<span class=variable>countdown</span> (<span class=variable>-</span> <span class=variable>i</span> <span class=selfeval>1</span>)))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Note the presence of a variable identifying the loop
+immediately after the <code class=scheme><span class=keyword>let</span></code>.  This program is
+equivalent to the one written with <code class=scheme><span class=keyword>letrec</span></code>.  You may
+consider the named <code class=scheme><span class=keyword>let</span></code> to be a macro
+(chap <a href="index-Z-H-10.html#node_chap_8">8</a>) expanding to the <code class=scheme><span class=keyword>letrec</span></code> form.</p>
+<p>
+<a name="node_idx_296"></a><a name="node_idx_298"></a><a name="node_idx_300"></a><a name="node_idx_302"></a><a name="node_idx_304"></a><a name="node_idx_306"></a><a name="node_idx_308"></a><a name="node_idx_310"></a></p>
+<p>
+</p>
+<a name="node_sec_6.3"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_6.3">6.3&nbsp;&nbsp;Iteration</a></h2>
+<p><code class=scheme><span class=variable>countdown</span></code> defined above is really a recursive
+procedure.  Scheme can define loops only through
+recursion.  There are no special looping or iteration
+constructs.</p>
+<p>
+Nevertheless, the loop as defined above is a <em>genuine</em> loop, in exactly the same way that other
+languages bill their loops.  Ie, Scheme takes special
+care to ensure that recursion of the type used above
+will not generate the procedure call/return overhead.</p>
+<p>
+Scheme does this by a process called <em>tail-call
+elimination</em>.  If you look closely at the <code class=scheme><span class=variable>countdown</span></code>
+procedure, you will note that when the recursive call
+occurs in <code class=scheme><span class=variable>countdown</span></code>'s body, it is the <em>tail call</em>,
+or the very last thing done --- each invocation of
+<code class=scheme><span class=variable>countdown</span></code> either does not call itself, or when it
+does, it does so as its very last act.  To a Scheme
+implementation, this makes the recursion
+indistinguishable from iteration.  So go ahead, use
+recursion to write loops.  It's safe.</p>
+<p>
+Here's another example of a useful tail-recursive
+procedure:</p>
+<p>
+<a name="node_idx_312"></a></p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>list-position</span>
+  (<span class=keyword>lambda</span> (<span class=variable>o</span> <span class=variable>l</span>)
+    (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>i</span> <span class=selfeval>0</span>) (<span class=variable>l</span> <span class=variable>l</span>))
+      (<span class=keyword>if</span> (<span class=variable>null?</span> <span class=variable>l</span>) <span class=selfeval>#f</span>
+          (<span class=keyword>if</span> (<span class=variable>eqv?</span> (<span class=variable>car</span> <span class=variable>l</span>) <span class=variable>o</span>) <span class=variable>i</span>
+              (<span class=variable>loop</span> (<span class=variable>+</span> <span class=variable>i</span> <span class=selfeval>1</span>) (<span class=variable>cdr</span> <span class=variable>l</span>)))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent><code class=scheme><span class=variable>list&#x2011;position</span></code> finds the index of the first
+occurrence of the object <code class=scheme><span class=variable>o</span></code> in the list <code class=scheme><span class=variable>l</span></code>.  If
+the object is not found in the list, the procedure
+returns <code class=scheme><span class=selfeval>#f</span></code>.</p>
+<p>
+Here's yet another tail-recursive procedure, one that
+reverses its argument list ``in place'', ie, by mutating
+the contents of the existing list, and without
+allocating a new one: </p>
+<p>
+<a name="node_idx_314"></a></p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>reverse!</span>
+  (<span class=keyword>lambda</span> (<span class=variable>s</span>)
+    (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>s</span> <span class=variable>s</span>) (<span class=variable>r</span> <span class=keyword>'</span>()))
+      (<span class=keyword>if</span> (<span class=variable>null?</span> <span class=variable>s</span>) <span class=variable>r</span>
+	  (<span class=keyword>let</span> ((<span class=variable>d</span> (<span class=variable>cdr</span> <span class=variable>s</span>)))
+            (<span class=variable>set-cdr!</span> <span class=variable>s</span> <span class=variable>r</span>)
+	    (<span class=variable>loop</span> <span class=variable>d</span> <span class=variable>s</span>))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>(<code class=scheme><span class=variable>reverse!</span></code> is a useful enough procedure that it is
+provided primitively in many Scheme dialects, eg,
+MzScheme and Guile.) </p>
+<p>
+For some numerical examples of recursion (including iteration),
+see Appendix&nbsp;<a href="index-Z-H-22.html#node_chap_C">C</a>.</p>
+<p>
+<a name="node_idx_316"></a><a name="node_idx_318"></a></p>
+<p>
+</p>
+<a name="node_sec_6.4"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_6.4">6.4&nbsp;&nbsp;Mapping a procedure across a list</a></h2>
+<p>A special kind of iteration involves repeating the same
+action for each element of a list.  Scheme offers two
+procedures for this situation: <code class=scheme><span class=variable>map</span></code> and <code class=scheme><span class=variable>for&#x2011;each</span></code>.</p>
+<p>
+The <code class=scheme><span class=variable>map</span></code> procedure applies a given procedure to every
+element of a given list, and returns the list of the
+results.  Eg,</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>map</span> <span class=variable>add2</span> <span class=keyword>'</span>(<span class=selfeval>1</span> <span class=selfeval>2</span> <span class=selfeval>3</span>))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  (<span class=selfeval>3</span> <span class=selfeval>4</span> <span class=selfeval>5</span>)
+</pre>
+<p class=noindent></p>
+<p>
+The <code class=scheme><span class=variable>for&#x2011;each</span></code> procedure also applies a procedure to each
+element in a list, but returns void.  The procedure
+application is done purely for any side-effects it may
+cause.  Eg,</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>for-each</span> <span class=variable>display</span>
+  (<span class=variable>list</span> <span class=selfeval>&quot;one &quot;</span> <span class=selfeval>&quot;two &quot;</span> <span class=selfeval>&quot;buckle my shoe&quot;</span>))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>has the side-effect of displaying the strings (in
+the order they appear) on the console.</p>
+<p>
+The procedures applied by <code class=scheme><span class=variable>map</span></code> and <code class=scheme><span class=variable>for&#x2011;each</span></code>
+need not be one-argument procedures.  For example,
+given an <code class=scheme><span class=variable>n</span></code>-argument procedure, <code class=scheme><span class=variable>map</span></code>
+takes <code class=scheme><span class=variable>n</span></code> lists and applies the procedure to
+every set of <code class=scheme><span class=variable>n</span></code> of arguments selected from across
+the lists.  Eg,</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>map</span> <span class=variable>cons</span> <span class=keyword>'</span>(<span class=selfeval>1</span> <span class=selfeval>2</span> <span class=selfeval>3</span>) <span class=keyword>'</span>(<span class=selfeval>10</span> <span class=selfeval>20</span> <span class=selfeval>30</span>))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  ((<span class=selfeval>1</span> . <span class=selfeval>10</span>) (<span class=selfeval>2</span> . <span class=selfeval>20</span>) (<span class=selfeval>3</span> . <span class=selfeval>30</span>))
+
+(<span class=variable>map</span> <span class=variable>+</span> <span class=keyword>'</span>(<span class=selfeval>1</span> <span class=selfeval>2</span> <span class=selfeval>3</span>) <span class=keyword>'</span>(<span class=selfeval>10</span> <span class=selfeval>20</span> <span class=selfeval>30</span>))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  (<span class=selfeval>11</span> <span class=selfeval>22</span> <span class=selfeval>33</span>)
+</pre>
+<p class=noindent>
+</p>
+<p>
+</p>
+<div class=smallskip></div>
+<p style="margin-top: 0pt; margin-bottom: 0pt">
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-7.html">previous</a></span><span>, <a href="index-Z-H-9.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+</p>
+<p></p>
+</div>
+</body>
+</html>

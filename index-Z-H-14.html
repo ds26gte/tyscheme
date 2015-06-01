@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html>
+<!--
+Generated from index.tex by tex2page, v 20150301
+(running on Racket 6.2.0.3, :unix), 
+(c) Dorai Sitaram, 
+http://www.ccs.neu.edu/~dorai/tex2page/index.html
+-->
+<head>
+<meta charset="utf-8">
+<title>
+Teach Yourself Scheme in Fixnum Days
+</title>
+<link rel="stylesheet" href="index-Z-S.css" title=default />
+<meta name=robots content="index,follow">
+<meta name=description content="A practical introduction to the programming language Scheme">  <meta name=author content="Dorai Sitaram">  <link rev=made href="mailto:ds26gte @ yahoo.com"> </head>
+<body>
+<div id=slidecontent>
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-13.html">previous</a></span><span>, <a href="index-Z-H-15.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+<p></p>
+<a name="node_chap_12"></a>
+<h1 class=chapter>
+<div class=chapterheading><a href="index-Z-H-1.html#node_toc_node_chap_12">Chapter 12</a></div><br>
+<a href="index-Z-H-1.html#node_toc_node_chap_12">Objects and classes</a></h1>
+<p><a name="node_idx_430"></a><a name="node_idx_432"></a><a name="node_idx_434"></a><a name="node_idx_436"></a><a name="node_idx_438"></a><a name="node_idx_440"></a>A <em>class</em> describes a collection of <em>objects</em>
+that share behavior.  The objects described by a class
+are called the <em>instances</em> of the class.  The class
+specifies the names of the <em>slots</em> that the
+instance has, although it is up to the instance to
+populate these slots with particular values.
+The class also specifies the <em>methods</em> that can be
+applied to its instances.  Slot values can be anything,
+but method values must be procedures.  </p>
+<p>
+<a name="node_idx_442"></a><a name="node_idx_444"></a></p>
+<p>
+Classes are hierarchical.  Thus, a class can be a <em>subclass</em> of another class, which is called its <em>superclass</em>.  A subclass not only has its own <em>direct</em> slots and methods, but also inherits all the
+slots and methods of its superclass.  If a class has a
+slot or method that has the same name as its
+superclass's, then the subclass's slot or method is the
+one that is retained.</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<a name="node_sec_12.1"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_12.1">12.1&nbsp;&nbsp;A simple object system</a></h2>
+<p><a name="node_idx_446"></a>Let us now implement a basic object system in Scheme.
+We will allow only one superclass per class (<em>single inheritance</em>).  If we don't want to specify a
+superclass, we will use <code class=scheme><span class=selfeval>#t</span></code> as a ``zero''
+superclass, one that has neither slots nor methods.
+The superclass of <code class=scheme><span class=selfeval>#t</span></code> is deemed to be itself.</p>
+<p>
+As a first approximation, it is useful to define
+classes using a struct called <code class=scheme><span class=variable>standard&#x2011;class</span></code>, with
+fields for the slot names, the superclass, and the
+methods.  The first two fields we will call <code class=scheme><span class=variable>slots</span></code>
+and <code class=scheme><span class=variable>superclass</span></code> respectively.  We will use <em>two</em>
+fields for methods, a
+<code class=scheme><span class=variable>method&#x2011;names</span></code> field that will hold the list of names
+of the class's methods, and a
+<code class=scheme><span class=variable>method&#x2011;vector</span></code> field that will hold the vector of
+the values of the class's methods.<a name="node_call_footnote_Temp_7"></a><sup><small><a href="#node_footnote_Temp_7">1</a></small></sup>
+Here is the definition of the <code class=scheme><span class=variable>standard&#x2011;class</span></code>:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>defstruct</span> <span class=variable>standard-class</span>
+  <span class=variable>slots</span> <span class=variable>superclass</span> <span class=variable>method-names</span> <span class=variable>method-vector</span>)
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>We can use <code class=scheme><span class=variable>make&#x2011;standard&#x2011;class</span></code>, the maker procedure of
+<code class=scheme><span class=variable>standard&#x2011;class</span></code>, to create a new class.  Eg,</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>trivial-bike-class</span>
+  (<span class=variable>make-standard-class</span>
+   <span class=keyword>'</span><span class=variable>superclass</span> <span class=selfeval>#t</span>
+   <span class=keyword>'</span><span class=variable>slots</span> <span class=keyword>'</span>(<span class=variable>frame</span> <span class=variable>parts</span> <span class=variable>size</span>)
+   <span class=keyword>'</span><span class=variable>method-names</span> <span class=keyword>'</span>()
+   <span class=keyword>'</span><span class=variable>method-vector</span> <span class=selfeval>#</span>()))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>This is a very simple class.   More complex classes
+will have non-trivial superclasses and methods, which
+will require a lot of standard initialization that we
+would like to hide within the class creation process.
+We will therefore define a macro called
+<code class=scheme><span class=variable>create&#x2011;class</span></code> that will make the appropriate call to
+<code class=scheme><span class=variable>make&#x2011;standard&#x2011;class</span></code>.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define-macro</span> <span class=variable>create-class</span>
+  (<span class=keyword>lambda</span> (<span class=variable>superclass</span> <span class=variable>slots</span> . <span class=variable>methods</span>)
+    <span class=keyword>`</span>(<span class=variable>create-class-proc</span>
+      <span class=keyword>,</span><span class=variable>superclass</span>
+      (<span class=variable>list</span> <span class=keyword>,@</span>(<span class=variable>map</span> (<span class=keyword>lambda</span> (<span class=variable>slot</span>) <span class=keyword>`</span><span class=keyword>'</span><span class=keyword>,</span><span class=variable>slot</span>) <span class=variable>slots</span>))
+      (<span class=variable>list</span> <span class=keyword>,@</span>(<span class=variable>map</span> (<span class=keyword>lambda</span> (<span class=variable>method</span>) <span class=keyword>`</span><span class=keyword>'</span><span class=keyword>,</span>(<span class=variable>car</span> <span class=variable>method</span>)) <span class=variable>methods</span>))
+      (<span class=variable>vector</span> <span class=keyword>,@</span>(<span class=variable>map</span> (<span class=keyword>lambda</span> (<span class=variable>method</span>) <span class=keyword>`</span><span class=keyword>,</span>(<span class=variable>cadr</span> <span class=variable>method</span>)) <span class=variable>methods</span>)))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>We will defer the definition of the
+<code class=scheme><span class=variable>create&#x2011;class&#x2011;proc</span></code> procedure to later. </p>
+<p>
+The procedure <code class=scheme><span class=variable>make&#x2011;instance</span></code> creates an <em>instance</em> of a class by generating a fresh vector based
+on information enshrined in the class.  The format of
+the instance vector is very simple: Its first element
+will refer to the class, and its remaining elements
+will be slot values.  <code class=scheme><span class=variable>make&#x2011;instance</span></code>'s arguments are
+the class followed by a sequence of twosomes, where
+each twosome is a slot name and the value it assumes in
+the instance.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>make-instance</span>
+  (<span class=keyword>lambda</span> (<span class=variable>class</span> . <span class=variable>slot-value-twosomes</span>)
+
+    <span class=comment>;Find `n', the number of slots in `class'.</span>
+    <span class=comment>;Create an instance vector of length `n + 1',</span>
+    <span class=comment>;because we need one extra element in the instance</span>
+    <span class=comment>;to contain the class.</span>
+
+    (<span class=keyword>let*</span> ((<span class=variable>slotlist</span> (<span class=variable>standard-class.slots</span> <span class=variable>class</span>))
+           (<span class=variable>n</span> (<span class=variable>length</span> <span class=variable>slotlist</span>))
+           (<span class=variable>instance</span> (<span class=variable>make-vector</span> (<span class=variable>+</span> <span class=variable>n</span> <span class=selfeval>1</span>))))
+      (<span class=variable>vector-set!</span> <span class=variable>instance</span> <span class=selfeval>0</span> <span class=variable>class</span>)
+
+      <span class=comment>;Fill each of the slots in the instance</span>
+      <span class=comment>;with the value as specified in the call to</span>
+      <span class=comment>;`make-instance'.</span>
+
+      (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>slot-value-twosomes</span> <span class=variable>slot-value-twosomes</span>))
+        (<span class=keyword>if</span> (<span class=variable>null?</span> <span class=variable>slot-value-twosomes</span>) <span class=variable>instance</span>
+            (<span class=keyword>let</span> ((<span class=variable>k</span> (<span class=variable>list-position</span> (<span class=variable>car</span> <span class=variable>slot-value-twosomes</span>) 
+                                    <span class=variable>slotlist</span>)))
+              (<span class=variable>vector-set!</span> <span class=variable>instance</span> (<span class=variable>+</span> <span class=variable>k</span> <span class=selfeval>1</span>) 
+                (<span class=variable>cadr</span> <span class=variable>slot-value-twosomes</span>))
+              (<span class=variable>loop</span> (<span class=variable>cddr</span> <span class=variable>slot-value-twosomes</span>))))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Here is an example of instantiating a class:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>my-bike</span>
+  (<span class=variable>make-instance</span> <span class=variable>trivial-bike-class</span>
+                 <span class=keyword>'</span><span class=variable>frame</span> <span class=keyword>'</span><span class=variable>cromoly</span>
+                 <span class=keyword>'</span><span class=variable>size</span> <span class=keyword>'</span><span class=selfeval>18.5</span>
+                 <span class=keyword>'</span><span class=variable>parts</span> <span class=keyword>'</span><span class=variable>alivio</span>))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>This  binds <code class=scheme><span class=variable>my&#x2011;bike</span></code> to the instance</p>
+<p>
+</p>
+<pre class=scheme><span class=selfeval>#</span>(<span class=variable>&lt;trivial-bike-class&gt;</span> <span class=variable>cromoly</span> <span class=selfeval>18.5</span> <span class=variable>alivio</span>)
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>where <code class=scheme><span class=variable>&lt;trivial&#x2011;bike&#x2011;class&gt;</span></code> is a Scheme datum (another
+vector) that is the value of <code class=scheme><span class=variable>trivial&#x2011;bike&#x2011;class</span></code>, as defined
+above.</p>
+<p>
+The procedure <code class=scheme><span class=variable>class&#x2011;of</span></code> returns the class of an instance:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>class-of</span>
+  (<span class=keyword>lambda</span> (<span class=variable>instance</span>)
+    (<span class=variable>vector-ref</span> <span class=variable>instance</span> <span class=selfeval>0</span>)))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>This assumes that <code class=scheme><span class=variable>class&#x2011;of</span></code>'s argument will be a class
+instance, ie, a vector whose first element points to some
+instantiation of the <code class=scheme><span class=variable>standard&#x2011;class</span></code>.
+We probably want to make <code class=scheme><span class=variable>class&#x2011;of</span></code> return an appropriate value
+for any kind of Scheme object we feed to it.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>class-of</span>
+  (<span class=keyword>lambda</span> (<span class=variable>x</span>)
+    (<span class=keyword>if</span> (<span class=variable>vector?</span> <span class=variable>x</span>)
+        (<span class=keyword>let</span> ((<span class=variable>n</span> (<span class=variable>vector-length</span> <span class=variable>x</span>)))
+          (<span class=keyword>if</span> (<span class=variable>&gt;=</span> <span class=variable>n</span> <span class=selfeval>1</span>)
+              (<span class=keyword>let</span> ((<span class=variable>c</span> (<span class=variable>vector-ref</span> <span class=variable>x</span> <span class=selfeval>0</span>)))
+                (<span class=keyword>if</span> (<span class=variable>standard-class?</span> <span class=variable>c</span>) <span class=variable>c</span> <span class=selfeval>#t</span>))
+              <span class=selfeval>#t</span>))
+        <span class=selfeval>#t</span>)))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The class of a Scheme object that isn't created
+using <code class=scheme><span class=variable>standard&#x2011;class</span></code> is deemed to be <code class=scheme><span class=selfeval>#t</span></code>, the
+zero class.</p>
+<p>
+The procedures <code class=scheme><span class=variable>slot&#x2011;value</span></code> and <code class=scheme><span class=variable>set!slot&#x2011;value</span></code>
+access and mutate the values of a class instance:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>slot-value</span>
+  (<span class=keyword>lambda</span> (<span class=variable>instance</span> <span class=variable>slot</span>)
+    (<span class=keyword>let*</span> ((<span class=variable>class</span> (<span class=variable>class-of</span> <span class=variable>instance</span>))
+           (<span class=variable>slot-index</span>
+            (<span class=variable>list-position</span> <span class=variable>slot</span> (<span class=variable>standard-class.slots</span> <span class=variable>class</span>))))
+      (<span class=variable>vector-ref</span> <span class=variable>instance</span> (<span class=variable>+</span> <span class=variable>slot-index</span> <span class=selfeval>1</span>)))))
+
+(<span class=keyword>define</span> <span class=variable>set!slot-value</span>
+  (<span class=keyword>lambda</span> (<span class=variable>instance</span> <span class=variable>slot</span> <span class=variable>new-val</span>)
+    (<span class=keyword>let*</span> ((<span class=variable>class</span> (<span class=variable>class-of</span> <span class=variable>instance</span>))
+           (<span class=variable>slot-index</span>
+            (<span class=variable>list-position</span> <span class=variable>slot</span> (<span class=variable>standard-class.slots</span> <span class=variable>class</span>))))
+      (<span class=variable>vector-set!</span> <span class=variable>instance</span> (<span class=variable>+</span> <span class=variable>slot-index</span> <span class=selfeval>1</span>) <span class=variable>new-val</span>))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>We are now ready to tackle the definition of
+<code class=scheme><span class=variable>create&#x2011;class&#x2011;proc</span></code>.  This procedure takes a
+superclass, a list of slots, a list of method names,
+and a vector of methods and makes the appropriate call
+to <code class=scheme><span class=variable>make&#x2011;standard&#x2011;class</span></code>.  The only tricky part is
+the value to be given to the <code class=scheme><span class=variable>slots</span></code> field.  It can't
+be just the slots argument supplied via
+<code class=scheme><span class=variable>create&#x2011;class</span></code>, for a class must include the slots of
+its superclass as well.  We must append the supplied
+slots to the superclass's slots, making sure that we
+don't have duplicate slots.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>create-class-proc</span>
+  (<span class=keyword>lambda</span> (<span class=variable>superclass</span> <span class=variable>slots</span> <span class=variable>method-names</span> <span class=variable>method-vector</span>)
+    (<span class=variable>make-standard-class</span>
+     <span class=keyword>'</span><span class=variable>superclass</span> <span class=variable>superclass</span>
+     <span class=keyword>'</span><span class=variable>slots</span>
+     (<span class=keyword>let</span> ((<span class=variable>superclass-slots</span> 
+            (<span class=keyword>if</span> (<span class=variable>not</span> (<span class=variable>eqv?</span> <span class=variable>superclass</span> <span class=selfeval>#t</span>))
+                (<span class=variable>standard-class.slots</span> <span class=variable>superclass</span>)
+                <span class=keyword>'</span>())))
+       (<span class=keyword>if</span> (<span class=variable>null?</span> <span class=variable>superclass-slots</span>) <span class=variable>slots</span>
+           (<span class=variable>delete-duplicates</span>
+            (<span class=variable>append</span> <span class=variable>slots</span> <span class=variable>superclass-slots</span>))))
+     <span class=keyword>'</span><span class=variable>method-names</span> <span class=variable>method-names</span>
+     <span class=keyword>'</span><span class=variable>method-vector</span> <span class=variable>method-vector</span>)))
+</pre>
+<p class=noindent></p>
+<p>
+<a name="node_idx_448"></a></p>
+
+<p class=noindent>The procedure <code class=scheme><span class=variable>delete&#x2011;duplicates</span></code> called on a list
+<code class=scheme><span class=variable>s</span></code>, returns a new list that only includes the <em>last</em>
+occurrence of each element of <code class=scheme><span class=variable>s</span></code>.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>delete-duplicates</span>
+  (<span class=keyword>lambda</span> (<span class=variable>s</span>)
+    (<span class=keyword>if</span> (<span class=variable>null?</span> <span class=variable>s</span>) <span class=variable>s</span>
+        (<span class=keyword>let</span> ((<span class=variable>a</span> (<span class=variable>car</span> <span class=variable>s</span>)) (<span class=variable>d</span> (<span class=variable>cdr</span> <span class=variable>s</span>)))
+          (<span class=keyword>if</span> (<span class=variable>memv</span> <span class=variable>a</span> <span class=variable>d</span>) (<span class=variable>delete-duplicates</span> <span class=variable>d</span>)
+              (<span class=variable>cons</span> <span class=variable>a</span> (<span class=variable>delete-duplicates</span> <span class=variable>d</span>)))))))
+</pre>
+<p class=noindent></p>
+<p>
+Now to the application of methods.  We invoke the
+method on an instance by using the procedure <code class=scheme><span class=variable>send</span></code>.
+<code class=scheme><span class=variable>send</span></code>'s arguments are the method name, followed by
+the instance, followed by any arguments the method has
+in addition to the instance itself.  Since methods are
+stored in the instance's class instead of the instance
+itself, <code class=scheme><span class=variable>send</span></code> will search the instance's class for
+the method.  If the method is not found there, it is
+looked for in the class's superclass, and so on further
+up the superclass chain:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>send</span>
+  (<span class=keyword>lambda</span> (<span class=variable>method</span> <span class=variable>instance</span> . <span class=variable>args</span>)
+    (<span class=keyword>let</span> ((<span class=keyword>proc</span>
+           (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>class</span> (<span class=variable>class-of</span> <span class=variable>instance</span>)))
+             (<span class=keyword>if</span> (<span class=variable>eqv?</span> <span class=variable>class</span> <span class=selfeval>#t</span>) (<span class=variable>error</span> <span class=keyword>'</span><span class=variable>send</span>)
+                 (<span class=keyword>let</span> ((<span class=variable>k</span> (<span class=variable>list-position</span> 
+                           <span class=variable>method</span>
+                           (<span class=variable>standard-class.method-names</span> <span class=variable>class</span>))))
+                   (<span class=keyword>if</span> <span class=variable>k</span>
+                       (<span class=variable>vector-ref</span> (<span class=variable>standard-class.method-vector</span> <span class=variable>class</span>) <span class=variable>k</span>)
+                       (<span class=variable>loop</span> (<span class=variable>standard-class.superclass</span> <span class=variable>class</span>))))))))
+      (<span class=variable>apply</span> <span class=keyword>proc</span> <span class=variable>instance</span> <span class=variable>args</span>))))
+</pre>
+<p class=noindent></p>
+<p>
+We can now define some more interesting classes:</p>
+<p>
+</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>bike-class</span>
+  (<span class=variable>create-class</span>
+   <span class=selfeval>#t</span>
+   (<span class=variable>frame</span> <span class=variable>size</span> <span class=variable>parts</span> <span class=variable>chain</span> <span class=variable>tires</span>)
+   (<span class=variable>check-fit</span> (<span class=keyword>lambda</span> (<span class=variable>me</span> <span class=variable>inseam</span>)
+                (<span class=keyword>let</span> ((<span class=variable>bike-size</span> (<span class=variable>slot-value</span> <span class=variable>me</span> <span class=keyword>'</span><span class=variable>size</span>))
+                      (<span class=variable>ideal-size</span> (<span class=variable>*</span> <span class=variable>inseam</span> <span class=selfeval>3/5</span>)))
+                  (<span class=keyword>let</span> ((<span class=variable>diff</span> (<span class=variable>-</span> <span class=variable>bike-size</span> <span class=variable>ideal-size</span>)))
+                    (<span class=keyword>cond</span> ((<span class=variable>&lt;=</span> <span class=selfeval>-1</span> <span class=variable>diff</span> <span class=selfeval>1</span>) <span class=keyword>'</span><span class=variable>perfect-fit</span>)
+                          ((<span class=variable>&lt;=</span> <span class=selfeval>-2</span> <span class=variable>diff</span> <span class=selfeval>2</span>) <span class=keyword>'</span><span class=variable>fits-well</span>)
+                          ((<span class=variable>&lt;</span> <span class=variable>diff</span> <span class=selfeval>-2</span>) <span class=keyword>'</span><span class=variable>too-small</span>)
+                          ((<span class=variable>&gt;</span> <span class=variable>diff</span> <span class=selfeval>2</span>) <span class=keyword>'</span><span class=variable>too-big</span>))))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Here, <code class=scheme><span class=variable>bike&#x2011;class</span></code> includes a method <code class=scheme><span class=variable>check&#x2011;fit</span></code>, that
+takes a bike and an inseam measurement and reports on
+the fit of the bike for a person of that inseam.</p>
+<p>
+Let's redefine <code class=scheme><span class=variable>my&#x2011;bike</span></code>:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>my-bike</span>
+  (<span class=variable>make-instance</span> <span class=variable>bike-class</span>
+                 <span class=keyword>'</span><span class=variable>frame</span> <span class=keyword>'</span><span class=variable>titanium</span> <span class=comment>; I wish</span>
+                 <span class=keyword>'</span><span class=variable>size</span> <span class=selfeval>21</span>
+                 <span class=keyword>'</span><span class=variable>parts</span> <span class=keyword>'</span><span class=variable>ultegra</span>
+                 <span class=keyword>'</span><span class=variable>chain</span> <span class=keyword>'</span><span class=variable>sachs</span>
+                 <span class=keyword>'</span><span class=variable>tires</span> <span class=keyword>'</span><span class=variable>continental</span>))
+</pre>
+<p class=noindent></p>
+<p>
+To check if this will fit someone with inseam 32:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>send</span> <span class=keyword>'</span><span class=variable>check-fit</span> <span class=variable>my-bike</span> <span class=selfeval>32</span>)
+</pre>
+<p class=noindent></p>
+<p>
+We can subclass <code class=scheme><span class=variable>bike&#x2011;class</span></code>.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>mtn-bike-class</span>
+  (<span class=variable>create-class</span>
+    <span class=variable>bike-class</span>
+    (<span class=variable>suspension</span>)
+    (<span class=variable>check-fit</span> (<span class=keyword>lambda</span> (<span class=variable>me</span> <span class=variable>inseam</span>)
+                (<span class=keyword>let</span> ((<span class=variable>bike-size</span> (<span class=variable>slot-value</span> <span class=variable>me</span> <span class=keyword>'</span><span class=variable>size</span>))
+                      (<span class=variable>ideal-size</span> (<span class=variable>-</span> (<span class=variable>*</span> <span class=variable>inseam</span> <span class=selfeval>3/5</span>) <span class=selfeval>2</span>)))
+                  (<span class=keyword>let</span> ((<span class=variable>diff</span> (<span class=variable>-</span> <span class=variable>bike-size</span> <span class=variable>ideal-size</span>)))
+                    (<span class=keyword>cond</span> ((<span class=variable>&lt;=</span> <span class=selfeval>-2</span> <span class=variable>diff</span> <span class=selfeval>2</span>) <span class=keyword>'</span><span class=variable>perfect-fit</span>)
+                          ((<span class=variable>&lt;=</span> <span class=selfeval>-4</span> <span class=variable>diff</span> <span class=selfeval>4</span>) <span class=keyword>'</span><span class=variable>fits-well</span>)
+                          ((<span class=variable>&lt;</span> <span class=variable>diff</span> <span class=selfeval>-4</span>) <span class=keyword>'</span><span class=variable>too-small</span>)
+                          ((<span class=variable>&gt;</span> <span class=variable>diff</span> <span class=selfeval>4</span>) <span class=keyword>'</span><span class=variable>too-big</span>))))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent><code class=scheme><span class=variable>mtn&#x2011;bike&#x2011;class</span></code> adds a slot called <code class=scheme><span class=variable>suspension</span></code>
+and uses a slightly different definition for the method
+<code class=scheme><span class=variable>check&#x2011;fit</span></code>.</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<a name="node_sec_12.2"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_12.2">12.2&nbsp;&nbsp;Classes are instances too</a></h2>
+<p><a name="node_idx_450"></a>It cannot have escaped the astute reader that classes
+themselves look like they could be the instances of
+some class (a <em>metaclass</em>, if you will).  Note that
+all classes have some common behavior: each of them has
+slots, a superclass, a list of method names, and a
+method vector.  <code class=scheme><span class=variable>make&#x2011;instance</span></code> looks like it could
+be their shared method.  This suggests that we could
+specify this common behavior by another class (which
+itself should, of course, be a class instance too).</p>
+<p>
+In concrete terms, we could rewrite our class
+implementation to itself make use of the
+object-oriented approach, provided we make sure we
+don't run into chicken-and-egg problems.  In effect, we
+will be getting rid of the <code class=scheme><span class=variable>class</span></code> struct and its
+attendant procedures and rely on the rest of the
+machinery to define classes as objects.</p>
+<p>
+Let us identify <code class=scheme><span class=variable>standard&#x2011;class</span></code> as the class of
+which other classes are instances of.  In particular,
+<code class=scheme><span class=variable>standard&#x2011;class</span></code> must be an instance of itself.  What
+should <code class=scheme><span class=variable>standard&#x2011;class</span></code> look like?</p>
+<p>
+We know <code class=scheme><span class=variable>standard&#x2011;class</span></code> is an instance, and we are
+representing instances by vectors.  So it is a
+vector whose first element holds its class, ie,
+itself, and whose remaining elements are slot values.
+We have identified four slots that all classes must
+have, so <code class=scheme><span class=variable>standard&#x2011;class</span></code> is a 5-element vector.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>standard-class</span>
+  (<span class=variable>vector</span> <span class=keyword>'</span><span class=variable>value-of-standard-class-goes-here</span>
+          (<span class=variable>list</span> <span class=keyword>'</span><span class=variable>slots</span>
+                <span class=keyword>'</span><span class=variable>superclass</span>
+                <span class=keyword>'</span><span class=variable>method-names</span>
+                <span class=keyword>'</span><span class=variable>method-vector</span>)
+          <span class=selfeval>#t</span>
+          <span class=keyword>'</span>(<span class=variable>make-instance</span>)
+          (<span class=variable>vector</span> <span class=variable>make-instance</span>)))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Note that the <code class=scheme><span class=variable>standard&#x2011;class</span></code> vector is
+incompletely filled in: the symbol
+<code class=scheme><span class=variable>value&#x2011;of&#x2011;standard&#x2011;class&#x2011;goes&#x2011;here</span></code> functions as a
+placeholder.  Now that we have defined a
+<code class=scheme><span class=variable>standard&#x2011;class</span></code> value, we can use it to identify its
+own class, which is itself:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>vector-set!</span> <span class=variable>standard-class</span> <span class=selfeval>0</span> <span class=variable>standard-class</span>)
+</pre>
+<p class=noindent></p>
+<p>
+Note that we cannot rely on procedures based on the
+<code class=scheme><span class=variable>class</span></code> struct anymore.  We should replace all calls
+of the form</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>standard-class?</span> <span class=variable>x</span>)
+(<span class=variable>standard-class.slots</span> <span class=variable>c</span>)
+(<span class=variable>standard-class.superclass</span> <span class=variable>c</span>)
+(<span class=variable>standard-class.method-names</span> <span class=variable>c</span>)
+(<span class=variable>standard-class.method-vector</span> <span class=variable>c</span>)
+(<span class=variable>make-standard-class</span> ...)
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>by</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>and</span> (<span class=variable>vector?</span> <span class=variable>x</span>) (<span class=variable>eqv?</span> (<span class=variable>vector-ref</span> <span class=variable>x</span> <span class=selfeval>0</span>) <span class=variable>standard-class</span>))
+(<span class=variable>vector-ref</span> <span class=variable>c</span> <span class=selfeval>1</span>)
+(<span class=variable>vector-ref</span> <span class=variable>c</span> <span class=selfeval>2</span>)
+(<span class=variable>vector-ref</span> <span class=variable>c</span> <span class=selfeval>3</span>)
+(<span class=variable>vector-ref</span> <span class=variable>c</span> <span class=selfeval>4</span>)
+(<span class=variable>send</span> <span class=keyword>'</span><span class=variable>make-instance</span> <span class=variable>standard-class</span> ...)
+</pre>
+<p class=noindent></p>
+<p>
+
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+<a name="node_idx_452"></a><a name="node_idx_454"></a></p>
+<p>
+</p>
+<a name="node_sec_12.3"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_12.3">12.3&nbsp;&nbsp;Multiple inheritance</a></h2>
+<p>It is easy to modify the object system to allow classes
+to have more than one superclass.  We redefine the
+<code class=scheme><span class=variable>standard&#x2011;class</span></code>  to have a slot called
+<code class=scheme><span class=variable>class&#x2011;precedence&#x2011;list</span></code> instead of <code class=scheme><span class=variable>superclass</span></code>.
+The <code class=scheme><span class=variable>class&#x2011;precedence&#x2011;list</span></code> of a class is the list of
+<em>all</em> its superclasses, not just the <em>direct</em>
+superclasses specified during the creation of the class
+with <code class=scheme><span class=variable>create&#x2011;class</span></code>.  The name implies that the
+superclasses are listed in a particular order, where
+superclasses occurring toward the front of the list
+have precedence over the ones in the back of the list.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>standard-class</span>
+  (<span class=variable>vector</span> <span class=keyword>'</span><span class=variable>value-of-standard-class-goes-here</span>
+          (<span class=variable>list</span> <span class=keyword>'</span><span class=variable>slots</span> <span class=keyword>'</span><span class=variable>class-precedence-list</span> <span class=keyword>'</span><span class=variable>method-names</span> <span class=keyword>'</span><span class=variable>method-vector</span>)
+          <span class=keyword>'</span>()
+          <span class=keyword>'</span>(<span class=variable>make-instance</span>)
+          (<span class=variable>vector</span> <span class=variable>make-instance</span>)))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+<p>
+</p>
+
+<p class=noindent>Not only has the list of slots changed to include
+the new slot, but the erstwhile <code class=scheme><span class=variable>superclass</span></code> slot is
+now <code class=scheme>()</code> instead of <code class=scheme><span class=selfeval>#t</span></code>.  This is because the
+<code class=scheme><span class=variable>class&#x2011;precedence&#x2011;list</span></code> of <code class=scheme><span class=variable>standard&#x2011;class</span></code> must be
+a list.  We could have had its value be <code class=scheme>(<span class=selfeval>#t</span>)</code>, but
+we will not mention the zero class since it is in every
+class's <code class=scheme><span class=variable>class&#x2011;precedence&#x2011;list</span></code>.</p>
+<p>
+The <code class=scheme><span class=variable>create&#x2011;class</span></code> macro has to modified to accept
+a list of direct superclasses instead of a solitary superclass:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define-macro</span> <span class=variable>create-class</span>
+  (<span class=keyword>lambda</span> (<span class=variable>direct-superclasses</span> <span class=variable>slots</span> . <span class=variable>methods</span>)
+    <span class=keyword>`</span>(<span class=variable>create-class-proc</span>
+      (<span class=variable>list</span> <span class=keyword>,@</span>(<span class=variable>map</span> (<span class=keyword>lambda</span> (<span class=variable>su</span>) <span class=keyword>`</span><span class=keyword>,</span><span class=variable>su</span>) <span class=variable>direct-superclasses</span>))
+      (<span class=variable>list</span> <span class=keyword>,@</span>(<span class=variable>map</span> (<span class=keyword>lambda</span> (<span class=variable>slot</span>) <span class=keyword>`</span><span class=keyword>'</span><span class=keyword>,</span><span class=variable>slot</span>) <span class=variable>slots</span>))
+      (<span class=variable>list</span> <span class=keyword>,@</span>(<span class=variable>map</span> (<span class=keyword>lambda</span> (<span class=variable>method</span>) <span class=keyword>`</span><span class=keyword>'</span><span class=keyword>,</span>(<span class=variable>car</span> <span class=variable>method</span>)) <span class=variable>methods</span>))
+      (<span class=variable>vector</span> <span class=keyword>,@</span>(<span class=variable>map</span> (<span class=keyword>lambda</span> (<span class=variable>method</span>) <span class=keyword>`</span><span class=keyword>,</span>(<span class=variable>cadr</span> <span class=variable>method</span>)) <span class=variable>methods</span>))
+      )))
+</pre>
+<p class=noindent></p>
+<p>
+The <code class=scheme><span class=variable>create&#x2011;class&#x2011;proc</span></code> must calculate the class precedence list from
+the supplied direct superclasses, and the slot list from the
+class precedence list:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>create-class-proc</span>
+  (<span class=keyword>lambda</span> (<span class=variable>direct-superclasses</span> <span class=variable>slots</span> <span class=variable>method-names</span> <span class=variable>method-vector</span>)
+    (<span class=keyword>let</span> ((<span class=variable>class-precedence-list</span>
+           (<span class=variable>delete-duplicates</span>
+            (<span class=variable>append-map</span>
+             (<span class=keyword>lambda</span> (<span class=variable>c</span>) (<span class=variable>vector-ref</span> <span class=variable>c</span> <span class=selfeval>2</span>))
+             <span class=variable>direct-superclasses</span>))))
+      (<span class=variable>send</span> <span class=keyword>'</span><span class=variable>make-instance</span> <span class=variable>standard-class</span>
+            <span class=keyword>'</span><span class=variable>class-precedence-list</span> <span class=variable>class-precedence-list</span>
+            <span class=keyword>'</span><span class=variable>slots</span>
+            (<span class=variable>delete-duplicates</span>
+             (<span class=variable>append</span> <span class=variable>slots</span> (<span class=variable>append-map</span>
+                            (<span class=keyword>lambda</span> (<span class=variable>c</span>) (<span class=variable>vector-ref</span> <span class=variable>c</span> <span class=selfeval>1</span>))
+                            <span class=variable>class-precedence-list</span>)))
+            <span class=keyword>'</span><span class=variable>method-names</span> <span class=variable>method-names</span>
+            <span class=keyword>'</span><span class=variable>method-vector</span> <span class=variable>method-vector</span>))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The procedure <code class=scheme><span class=variable>append&#x2011;map</span></code> is a composition of
+<code class=scheme><span class=variable>append</span></code> and <code class=scheme><span class=variable>map</span></code>:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>append-map</span>
+  (<span class=keyword>lambda</span> (<span class=variable>f</span> <span class=variable>s</span>)
+    (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>s</span> <span class=variable>s</span>))
+      (<span class=keyword>if</span> (<span class=variable>null?</span> <span class=variable>s</span>) <span class=keyword>'</span>()
+          (<span class=variable>append</span> (<span class=variable>f</span> (<span class=variable>car</span> <span class=variable>s</span>))
+                  (<span class=variable>loop</span> (<span class=variable>cdr</span> <span class=variable>s</span>)))))))
+</pre>
+<p class=noindent></p>
+<p>
+The procedure <code class=scheme><span class=variable>send</span></code> has to search through the class precedence list
+left to right when it hunts for a method.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>send</span>
+  (<span class=keyword>lambda</span> (<span class=variable>method-name</span> <span class=variable>instance</span> . <span class=variable>args</span>)
+    (<span class=keyword>let</span> ((<span class=keyword>proc</span>
+           (<span class=keyword>let</span> ((<span class=variable>class</span> (<span class=variable>class-of</span> <span class=variable>instance</span>)))
+             (<span class=keyword>if</span> (<span class=variable>eqv?</span> <span class=variable>class</span> <span class=selfeval>#t</span>) (<span class=variable>error</span> <span class=keyword>'</span><span class=variable>send</span>)
+                 (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>class</span> <span class=variable>class</span>)
+                            (<span class=variable>superclasses</span> (<span class=variable>vector-ref</span> <span class=variable>class</span> <span class=selfeval>2</span>)))
+                   (<span class=keyword>let</span> ((<span class=variable>k</span> (<span class=variable>list-position</span> 
+                             <span class=variable>method-name</span>
+                             (<span class=variable>vector-ref</span> <span class=variable>class</span> <span class=selfeval>3</span>))))
+                     (<span class=keyword>cond</span> (<span class=variable>k</span> (<span class=variable>vector-ref</span> 
+                               (<span class=variable>vector-ref</span> <span class=variable>class</span> <span class=selfeval>4</span>) <span class=variable>k</span>))
+                           ((<span class=variable>null?</span> <span class=variable>superclasses</span>) (<span class=variable>error</span> <span class=keyword>'</span><span class=variable>send</span>))
+                           (<span class=keyword>else</span> (<span class=variable>loop</span> (<span class=variable>car</span> <span class=variable>superclasses</span>)
+                                       (<span class=variable>cdr</span> <span class=variable>superclasses</span>))))
+                     ))))))
+      (<span class=variable>apply</span> <span class=keyword>proc</span> <span class=variable>instance</span> <span class=variable>args</span>))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+
+</p>
+<p>
+</p>
+<div class=footnoterule><hr></div><p></p>
+<div class=footnote><p><a name="node_footnote_Temp_7"></a><sup><small><a href="#node_call_footnote_Temp_7">1</a></small></sup> We could in theory
+define methods also as slots (whose values happen to be
+procedures), but there is a good reason not to.  The
+instances of a class share methods but in general
+differ in their slot values.  In other words, methods
+can be included in the class definition and don't have
+to be allocated per instance as slots have to be.</p>
+</div>
+<div class=smallskip></div>
+<p style="margin-top: 0pt; margin-bottom: 0pt">
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-13.html">previous</a></span><span>, <a href="index-Z-H-15.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+</p>
+<p></p>
+</div>
+</body>
+</html>

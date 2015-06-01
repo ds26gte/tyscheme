@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<!--
+Generated from index.tex by tex2page, v 20150301
+(running on Racket 6.2.0.3, :unix), 
+(c) Dorai Sitaram, 
+http://www.ccs.neu.edu/~dorai/tex2page/index.html
+-->
+<head>
+<meta charset="utf-8">
+<title>
+Teach Yourself Scheme in Fixnum Days
+</title>
+<link rel="stylesheet" href="index-Z-S.css" title=default />
+<meta name=robots content="index,follow">
+<meta name=description content="A practical introduction to the programming language Scheme">  <meta name=author content="Dorai Sitaram">  <link rev=made href="mailto:ds26gte @ yahoo.com"> </head>
+<body>
+<div id=slidecontent>
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-10.html">previous</a></span><span>, <a href="index-Z-H-12.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+<p></p>
+<a name="node_chap_9"></a>
+<h1 class=chapter>
+<div class=chapterheading><a href="index-Z-H-1.html#node_toc_node_chap_9">Chapter 9</a></div><br>
+<a href="index-Z-H-1.html#node_toc_node_chap_9">Structures</a></h1>
+<p><a name="node_idx_400"></a>Data that are naturally grouped are called <em>structures</em>.  One can use Scheme's compound data types,
+eg, vectors or lists, to represent structures.  Eg,
+let's say we are dealing with grouped data relevant to
+a (botanical) <em>tree</em>.  The individual elements of
+the data, or <em>fields</em>, could be: <em>height</em>, <em>girth</em>, <em>age</em>, <em>leaf-shape</em>, and <em>leaf-color</em>, making a total of 5 fields.  Such data
+could be represented as a 5-element vector.  The fields
+could be accessed using
+<code class=scheme><span class=variable>vector&#x2011;ref</span></code> and modified using <code class=scheme><span class=variable>vector&#x2011;set!</span></code>.
+Nevertheless, we wouldn't want to be saddled with the
+burden of remembering which vector index corresponds to
+which field.  That would be a thankless and error-prone
+activity, especially if fields get excluded or included
+over the course of time.</p>
+<p>
+<a name="node_idx_402"></a><a name="node_idx_404"></a></p>
+<p>
+We will therefore use a Scheme macro <code class=scheme><span class=keyword>defstruct</span></code> to
+define a structure data type, which is basically a
+vector, but which comes with an appropriate suite of
+procedures for creating instances of the structure, and
+for accessing and modifying its fields.  Thus, our <code class=scheme><span class=variable>tree</span></code>
+structure could be defined as:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>defstruct</span> <span class=variable>tree</span> <span class=variable>height</span> <span class=variable>girth</span> <span class=variable>age</span> <span class=variable>leaf-shape</span> <span class=variable>leaf-color</span>)
+</pre>
+<p class=noindent></p>
+<p>
+This gives us a constructor procedure named
+<code class=scheme><span class=variable>make&#x2011;tree</span></code>; accessor procedures for each field,
+named
+<code class=scheme><span class=variable>tree.height</span></code>, <code class=scheme><span class=variable>tree.girth</span></code>, etc; and modifier
+procedures for each field, named <code class=scheme><span class=variable>set!tree.height</span></code>,
+<code class=scheme><span class=variable>set!tree.girth</span></code>, etc.  The constructor is used as
+follows:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>coconut</span> 
+  (<span class=variable>make-tree</span> <span class=keyword>'</span><span class=variable>height</span> <span class=selfeval>30</span>
+             <span class=keyword>'</span><span class=variable>leaf-shape</span> <span class=keyword>'</span><span class=variable>frond</span>
+             <span class=keyword>'</span><span class=variable>age</span> <span class=selfeval>5</span>))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The constructor's arguments are in the form of
+twosomes, a field name followed by its initialization.
+The fields can occur in any order, and may even be
+missing, in which case their value is undefined.</p>
+<p>
+The accessor procedures are invoked as follows:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>tree.height</span> <span class=variable>coconut</span>) <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>30</span>
+(<span class=variable>tree.leaf-shape</span> <span class=variable>coconut</span>) <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=variable>frond</span>
+(<span class=variable>tree.girth</span> <span class=variable>coconut</span>) <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=variable>&lt;undefined&gt;</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The <code class=scheme><span class=variable>tree.girth</span></code> accessor returns an undefined value,
+because we did not specify <code class=scheme><span class=variable>girth</span></code> for the
+<code class=scheme><span class=variable>coconut</span></code> <code class=scheme><span class=variable>tree</span></code>.</p>
+<p>
+The modifier procedures are invoked as follows:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>set!tree.height</span> <span class=variable>coconut</span> <span class=selfeval>40</span>)
+(<span class=variable>set!tree.girth</span> <span class=variable>coconut</span> <span class=selfeval>10</span>)
+</pre>
+<p class=noindent></p>
+<p>
+If we now access these fields using the corresponding
+accessors, we will get the new values:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>tree.height</span> <span class=variable>coconut</span>) <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>40</span>
+(<span class=variable>tree.girth</span> <span class=variable>coconut</span>) <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>10</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+<a name="node_sec_9.1"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_9.1">9.1&nbsp;&nbsp;Default initializations</a></h2>
+<p>We can have some initializations done during the
+definition of the structure itself, instead of per
+instance.  Thus, we could postulate that <code class=scheme><span class=variable>leaf&#x2011;shape</span></code>
+and <code class=scheme><span class=variable>leaf&#x2011;color</span></code> are by default <code class=scheme><span class=variable>frond</span></code> and
+<code class=scheme><span class=variable>green</span></code> respectively.  We can always override these
+defaults by providing explicit initialization in the
+<code class=scheme><span class=variable>make&#x2011;tree</span></code> call, or by
+using a field modifier after the structure instance has
+been created:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>defstruct</span> <span class=variable>tree</span> <span class=variable>height</span> <span class=variable>girth</span> <span class=variable>age</span>
+                (<span class=variable>leaf-shape</span> <span class=keyword>'</span><span class=variable>frond</span>)
+                (<span class=variable>leaf-color</span> <span class=keyword>'</span><span class=variable>green</span>))
+
+(<span class=keyword>define</span> <span class=variable>palm</span> (<span class=variable>make-tree</span> <span class=keyword>'</span><span class=variable>height</span> <span class=selfeval>60</span>))
+
+(<span class=variable>tree.height</span> <span class=variable>palm</span>) 
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>60</span>
+
+(<span class=variable>tree.leaf-shape</span> <span class=variable>palm</span>) 
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=variable>frond</span>
+
+(<span class=keyword>define</span> <span class=variable>plantain</span> 
+  (<span class=variable>make-tree</span> <span class=keyword>'</span><span class=variable>height</span> <span class=selfeval>7</span>
+             <span class=keyword>'</span><span class=variable>leaf-shape</span> <span class=keyword>'</span><span class=variable>sheet</span>))
+
+(<span class=variable>tree.height</span> <span class=variable>plantain</span>) 
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>7</span>
+
+(<span class=variable>tree.leaf-shape</span> <span class=variable>plantain</span>) 
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=variable>sheet</span>
+
+(<span class=variable>tree.leaf-color</span> <span class=variable>plantain</span>) 
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=variable>green</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+<a name="node_sec_9.2"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_9.2">9.2&nbsp;&nbsp;<code class=scheme><span class=keyword>defstruct</span></code> defined</a></h2>
+<p>The <code class=scheme><span class=keyword>defstruct</span></code> macro definition follows:</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define-macro</span> <span class=keyword>defstruct</span>
+  (<span class=keyword>lambda</span> (<span class=variable>s</span> . <span class=variable>ff</span>)
+    (<span class=keyword>let</span> ((<span class=variable>s-s</span> (<span class=variable>symbol-&gt;string</span> <span class=variable>s</span>)) (<span class=variable>n</span> (<span class=variable>length</span> <span class=variable>ff</span>)))
+      (<span class=keyword>let*</span> ((<span class=variable>n+1</span> (<span class=variable>+</span> <span class=variable>n</span> <span class=selfeval>1</span>))
+             (<span class=variable>vv</span> (<span class=variable>make-vector</span> <span class=variable>n+1</span>)))
+        (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>i</span> <span class=selfeval>1</span>) (<span class=variable>ff</span> <span class=variable>ff</span>))
+          (<span class=keyword>if</span> (<span class=variable>&lt;=</span> <span class=variable>i</span> <span class=variable>n</span>)
+            (<span class=keyword>let</span> ((<span class=variable>f</span> (<span class=variable>car</span> <span class=variable>ff</span>)))
+              (<span class=variable>vector-set!</span> <span class=variable>vv</span> <span class=variable>i</span> 
+                (<span class=keyword>if</span> (<span class=variable>pair?</span> <span class=variable>f</span>) (<span class=variable>cadr</span> <span class=variable>f</span>) <span class=keyword>'</span>(<span class=keyword>if</span> <span class=selfeval>#f</span> <span class=selfeval>#f</span>)))
+              (<span class=variable>loop</span> (<span class=variable>+</span> <span class=variable>i</span> <span class=selfeval>1</span>) (<span class=variable>cdr</span> <span class=variable>ff</span>)))))
+        (<span class=keyword>let</span> ((<span class=variable>ff</span> (<span class=variable>map</span> (<span class=keyword>lambda</span> (<span class=variable>f</span>) (<span class=keyword>if</span> (<span class=variable>pair?</span> <span class=variable>f</span>) (<span class=variable>car</span> <span class=variable>f</span>) <span class=variable>f</span>))
+                       <span class=variable>ff</span>)))
+          <span class=keyword>`</span>(<span class=keyword>begin</span>
+             (<span class=keyword>define</span> <span class=keyword>,</span>(<span class=variable>string-&gt;symbol</span> 
+                       (<span class=variable>string-append</span> <span class=selfeval>&quot;make-&quot;</span> <span class=variable>s-s</span>))
+               (<span class=keyword>lambda</span> <span class=variable>fvfv</span>
+                 (<span class=keyword>let</span> ((<span class=variable>st</span> (<span class=variable>make-vector</span> <span class=keyword>,</span><span class=variable>n+1</span>)) (<span class=variable>ff</span> <span class=keyword>'</span><span class=keyword>,</span><span class=variable>ff</span>))
+                   (<span class=variable>vector-set!</span> <span class=variable>st</span> <span class=selfeval>0</span> <span class=keyword>'</span><span class=keyword>,</span><span class=variable>s</span>)
+                   <span class=keyword>,@</span>(<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>i</span> <span class=selfeval>1</span>) (<span class=variable>r</span> <span class=keyword>'</span>()))
+                       (<span class=keyword>if</span> (<span class=variable>&gt;=</span> <span class=variable>i</span> <span class=variable>n+1</span>) <span class=variable>r</span>
+                           (<span class=variable>loop</span> (<span class=variable>+</span> <span class=variable>i</span> <span class=selfeval>1</span>)
+                                 (<span class=variable>cons</span> <span class=keyword>`</span>(<span class=variable>vector-set!</span> <span class=variable>st</span> <span class=keyword>,</span><span class=variable>i</span> 
+                                          <span class=keyword>,</span>(<span class=variable>vector-ref</span> <span class=variable>vv</span> <span class=variable>i</span>))
+                                       <span class=variable>r</span>))))
+                   (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>fvfv</span> <span class=variable>fvfv</span>))
+                     (<span class=keyword>if</span> (<span class=variable>not</span> (<span class=variable>null?</span> <span class=variable>fvfv</span>))
+                         (<span class=keyword>begin</span>
+                           (<span class=variable>vector-set!</span> <span class=variable>st</span> 
+                               (<span class=variable>+</span> (<span class=variable>list-position</span> (<span class=variable>car</span> <span class=variable>fvfv</span>) <span class=variable>ff</span>)
+                                  <span class=selfeval>1</span>)
+                             (<span class=variable>cadr</span> <span class=variable>fvfv</span>))
+                           (<span class=variable>loop</span> (<span class=variable>cddr</span> <span class=variable>fvfv</span>)))))
+                   <span class=variable>st</span>)))
+             <span class=keyword>,@</span>(<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>i</span> <span class=selfeval>1</span>) (<span class=variable>procs</span> <span class=keyword>'</span>()))
+                 (<span class=keyword>if</span> (<span class=variable>&gt;=</span> <span class=variable>i</span> <span class=variable>n+1</span>) <span class=variable>procs</span>
+                     (<span class=variable>loop</span> (<span class=variable>+</span> <span class=variable>i</span> <span class=selfeval>1</span>)
+                           (<span class=keyword>let</span> ((<span class=variable>f</span> (<span class=variable>symbol-&gt;string</span>
+                                     (<span class=variable>list-ref</span> <span class=variable>ff</span> (<span class=variable>-</span> <span class=variable>i</span> <span class=selfeval>1</span>)))))
+                             (<span class=variable>cons</span>
+                              <span class=keyword>`</span>(<span class=keyword>define</span> <span class=keyword>,</span>(<span class=variable>string-&gt;symbol</span> 
+                                         (<span class=variable>string-append</span>
+                                          <span class=variable>s-s</span> <span class=selfeval>&quot;.&quot;</span> <span class=variable>f</span>))
+                                 (<span class=keyword>lambda</span> (<span class=variable>x</span>) (<span class=variable>vector-ref</span> <span class=variable>x</span> <span class=keyword>,</span><span class=variable>i</span>)))
+                              (<span class=variable>cons</span>
+                               <span class=keyword>`</span>(<span class=keyword>define</span> <span class=keyword>,</span>(<span class=variable>string-&gt;symbol</span>
+                                          (<span class=variable>string-append</span> 
+                                           <span class=selfeval>&quot;set!&quot;</span> <span class=variable>s-s</span> <span class=selfeval>&quot;.&quot;</span> <span class=variable>f</span>))
+                                  (<span class=keyword>lambda</span> (<span class=variable>x</span> <span class=variable>v</span>) 
+                                    (<span class=variable>vector-set!</span> <span class=variable>x</span> <span class=keyword>,</span><span class=variable>i</span> <span class=variable>v</span>)))
+                               <span class=variable>procs</span>))))))
+             (<span class=keyword>define</span> <span class=keyword>,</span>(<span class=variable>string-&gt;symbol</span> (<span class=variable>string-append</span> <span class=variable>s-s</span> <span class=selfeval>&quot;?&quot;</span>))
+               (<span class=keyword>lambda</span> (<span class=variable>x</span>)
+                 (<span class=keyword>and</span> (<span class=variable>vector?</span> <span class=variable>x</span>)
+                      (<span class=variable>eqv?</span> (<span class=variable>vector-ref</span> <span class=variable>x</span> <span class=selfeval>0</span>) <span class=keyword>'</span><span class=keyword>,</span><span class=variable>s</span>))))))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+<p>
+</p>
+<div class=smallskip></div>
+<p style="margin-top: 0pt; margin-bottom: 0pt">
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-10.html">previous</a></span><span>, <a href="index-Z-H-12.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+</p>
+<p></p>
+</div>
+</body>
+</html>

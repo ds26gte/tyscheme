@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<!--
+Generated from index.tex by tex2page, v 20150301
+(running on Racket 6.2.0.3, :unix), 
+(c) Dorai Sitaram, 
+http://www.ccs.neu.edu/~dorai/tex2page/index.html
+-->
+<head>
+<meta charset="utf-8">
+<title>
+Teach Yourself Scheme in Fixnum Days
+</title>
+<link rel="stylesheet" href="index-Z-S.css" title=default />
+<meta name=robots content="index,follow">
+<meta name=description content="A practical introduction to the programming language Scheme">  <meta name=author content="Dorai Sitaram">  <link rev=made href="mailto:ds26gte @ yahoo.com"> </head>
+<body>
+<div id=slidecontent>
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-17.html">previous</a></span><span>, <a href="index-Z-H-19.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+<p></p>
+<a name="node_chap_16"></a>
+<h1 class=chapter>
+<div class=chapterheading><a href="index-Z-H-1.html#node_toc_node_chap_16">Chapter 16</a></div><br>
+<a href="index-Z-H-1.html#node_toc_node_chap_16">Shell scripts</a></h1>
+<p></p>
+<p>
+<a name="node_idx_484"></a>It is often convenient to simply write what one wants
+done into a file or <em>script</em>, and execute the
+script as though it were any other operating-system
+shell command.  The interface to more weighty programs
+is often provided in the form of a script, and users
+frequently build their own scripts or customize
+existing ones to suit particular needs.  Scripting is
+arguably the most frequent programming task performed.
+For many users, it is the only programming they will
+ever do.</p>
+<p>
+Operating systems such as Unix and DOS (the
+command-line interface provided in Windows)
+provide such a scripting mechanism, but the scripting
+language in both cases is very rudimentary.  Often a
+script is just a sequence or <em>batch</em> of commands
+that one would type to the shell prompt.  It saves the
+user from having to type every one of the shell
+commands individually each time they require the same
+or similar sequence to be performed.  Some scripting
+languages throw in a small amount of programmability in
+the form of a conditional and a loop, but that is about
+all.  This is enough for smallish tasks, but as one's
+scripts become bigger and more demanding, as scripts
+invariably seem to do, one often feels the need for a
+fuller fledged programming language.  A Scheme with an
+adequate operating-system interface makes scripting
+easy and maintainable.</p>
+<p>
+This section will describe how to write scripts in
+Scheme.  Since there is wide variation in the various
+Scheme dialects on how to accomplish this, we will
+concentrate on the MzScheme dialect, and document in
+appendix <a href="index-Z-H-20.html#node_chap_A">A</a> the modifications needed for
+other dialects.  We will also concentrate on the Unix
+operating system for the moment; appendix <a href="index-Z-H-21.html#node_chap_B">B</a>
+will deal with the DOS counterpart.</p>
+<p>
+</p>
+<a name="node_sec_16.1"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_16.1">16.1&nbsp;&nbsp;Hello, World!, again</a></h2>
+<p>We will now create a Scheme script that says hello to
+the world.  Saying hello is of course not a demanding
+scripting problem for traditional scripting languages.
+However, understanding how to transcribe it into Scheme
+will launch us on the path to more ambitious scripts.
+First, a conventional Unix hello script is a file, with
+contents that look like:</p>
+<p>
+</p>
+<pre class=verbatim>echo Hello, World!&nbsp;
+</pre>
+<p class=noindent></p>
+<p>
+It uses the shell command <code class=verbatim>echo</code>.  The script can be
+named <code class=verbatim>hello</code>, made into an executable by doing</p>
+<p>
+</p>
+<pre class=verbatim>chmod +x hello&nbsp;
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>and placed in one of
+the directories named in the <code class=verbatim>PATH</code> environment
+variable.  Thereafter, anytime one types</p>
+<p>
+</p>
+<pre class=verbatim>hello&nbsp;
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>at the shell  prompt, one promptly gets the
+insufferable greeting.</p>
+<p>
+A Scheme hello script will perform the same output
+using Scheme (using the program in sec <a href="index-Z-H-3.html#node_chap_1">1</a>),
+but we need something in the file to inform the
+operating system that it needs to construe the commands
+in the file as Scheme, and not as its default script
+language.  The Scheme script file, also called
+<code class=verbatim>hello</code>, looks like:</p>
+<p>
+</p>
+<pre class=verbatim>&quot;:&quot;; exec mzscheme -r $0 &quot;$@&quot;&nbsp;
+&nbsp;
+(display &quot;Hello, World!&quot;)&nbsp;
+(newline))&nbsp;
+</pre>
+<p class=noindent></p>
+<p>
+Everything following the first line is straight
+Scheme.  However, the first line is the magic that
+makes this into a script.  When the user types
+<code class=verbatim>hello</code> at the Unix prompt, Unix will read the file
+as a regular script.  The first thing it sees is the
+<code class=verbatim>&quot;:&quot;</code>, which is a shell no-op.  The <code class=verbatim>;</code> is the shell
+command separator.  The next shell command is the
+<code class=verbatim>exec</code>.  <code class=verbatim>exec</code> tells Unix to abandon  the
+current script and run <code class=verbatim>mzscheme &#x2011;r $0 &quot;$@&quot;</code> instead,
+where the parameter <code class=verbatim>$0</code> will be replaced by the name
+of the script, and the parameter <code class=verbatim>&quot;$@&quot;</code> will be
+replaced by the list of arguments given by the user to
+the script.  (In this case, there are no such
+arguments.)</p>
+<p>
+We have now, in effect, transformed the <code class=verbatim>hello</code> shell
+command into a different shell command, viz,</p>
+<p>
+</p>
+<pre class=verbatim>mzscheme -r /whereveritis/hello&nbsp;
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>where <code class=verbatim>/whereveritis/hello</code> is the pathname of <code class=verbatim>hello</code>.</p>
+<p>
+<code class=verbatim>mzscheme</code> calls the MzScheme executable.  The <code class=verbatim>&#x2011;r</code>
+option tells it to load the immediately following
+argument as a Scheme file after collecting any
+succeeding arguments into a vector called <code class=scheme><span class=variable>argv</span></code>.
+(In this example, <code class=scheme><span class=variable>argv</span></code> will be the null vector.)</p>
+<p>
+Thus, the Scheme script will be run as a Scheme file,
+and the Scheme forms in the file will have access to
+the script's original arguments via the vector
+<code class=scheme><span class=variable>argv</span></code>.</p>
+<p>
+Now, Scheme has to tackle the first line in the script,
+which as we've already seen, was really a well-formed,
+<em>traditional</em> shell script.  The <code class=scheme><span class=selfeval>&quot;:&quot;</span></code> is a
+self-evaluating string in Scheme and thus harmless.
+The
+`<code class=verbatim>;</code>' marks a Scheme comment, and so the <code class=verbatim>exec ...</code> is
+safely ignored.  The rest of the file is of course
+straight Scheme, and the expressions therein are
+evaluated in sequence.  After all of them have been
+evaluated, Scheme will exit.</p>
+<p>
+In sum, typing <code class=verbatim>hello</code> at the shell prompt will produce</p>
+<p>
+</p>
+<pre class=verbatim>Hello, World!&nbsp;
+</pre>
+<p class=noindent></p>
+<p>
+and return you to the shell prompt.</p>
+<p>
+</p>
+<a name="node_sec_16.2"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_16.2">16.2&nbsp;&nbsp;Scripts with arguments</a></h2>
+<p>A Scheme script uses the variable <code class=scheme><span class=variable>argv</span></code> to refer to
+its arguments.  For example, the following script
+echoes all its arguments, each on a line:</p>
+<p>
+</p>
+<pre class=scheme><span class=selfeval>&quot;:&quot;</span><span class=comment>; exec mzscheme -r $0 &quot;$@&quot;</span>
+
+<span class=comment>;Put in argv-count the number of arguments supplied</span>
+
+(<span class=keyword>define</span> <span class=variable>argv-count</span> (<span class=variable>vector-length</span> <span class=variable>argv</span>))
+
+(<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>i</span> <span class=selfeval>0</span>))
+  (<span class=keyword>unless</span> (<span class=variable>&gt;=</span> <span class=variable>i</span> <span class=variable>argv-count</span>)
+    (<span class=variable>display</span> (<span class=variable>vector-ref</span> <span class=variable>argv</span> <span class=variable>i</span>))
+    (<span class=variable>newline</span>)
+    (<span class=variable>loop</span> (<span class=variable>+</span> <span class=variable>i</span> <span class=selfeval>1</span>))))
+</pre>
+<p class=noindent></p>
+<p>
+Let's call this script <code class=verbatim>echoall</code>.  Calling <code class=verbatim>echoall
+1 2 3</code> will display</p>
+<p>
+</p>
+<pre class=verbatim>1&nbsp;
+2&nbsp;
+3&nbsp;
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Note that the script name (<code class=scheme><span class=selfeval>&quot;echoall&quot;</span></code>) is <em>not</em> included in
+the argument vector.</p>
+<p>
+</p>
+<a name="node_sec_16.3"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_16.3">16.3&nbsp;&nbsp;Example</a></h2>
+<p>Let's now tackle a more substantial problem.  We need
+to transfer files from one computer to another and the
+only method we have is to use a 3.5'' floppy as a
+ferry.  We need a script <code class=verbatim>split4floppy</code> that will
+split files larger than 1.44 million bytes into
+floppy-sized chunks.  The script file <code class=verbatim>split4floppy</code>
+is as follows:</p>
+<p>
+</p>
+<pre class=scheme><span class=selfeval>&quot;:&quot;</span><span class=comment>;exec mzscheme -r $0 &quot;$@&quot;</span>
+
+<span class=comment>;floppy-size = number of bytes that will comfortably fit on a</span>
+<span class=comment>;              3.5&quot; floppy</span>
+
+(<span class=keyword>define</span> <span class=variable>floppy-size</span> <span class=selfeval>1440000</span>)
+
+<span class=comment>;split splits the bigfile f into the smaller, floppy-sized</span>
+<span class=comment>;subfiles, viz, subfile-prefix.1, subfile-prefix.2, etc.</span>
+
+(<span class=keyword>define</span> <span class=variable>split</span>
+  (<span class=keyword>lambda</span> (<span class=variable>f</span> <span class=variable>subfile-prefix</span>)
+    (<span class=variable>call-with-input-file</span> <span class=variable>f</span>
+      (<span class=keyword>lambda</span> (<span class=variable>i</span>)
+        (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>n</span> <span class=selfeval>1</span>))
+          (<span class=keyword>if</span> (<span class=variable>copy-to-floppy-sized-subfile</span> <span class=variable>i</span> <span class=variable>subfile-prefix</span> <span class=variable>n</span>)
+              (<span class=variable>loop</span> (<span class=variable>+</span> <span class=variable>n</span> <span class=selfeval>1</span>))))))))
+
+<span class=comment>;copy-to-floppy-sized-subfile copies the next 1.44 million</span>
+<span class=comment>;bytes (if there are less than that many bytes left, it</span>
+<span class=comment>;copies all of them) from the big file to the nth</span>
+<span class=comment>;subfile.  Returns true if there are bytes left over,</span>
+<span class=comment>;otherwise returns false.</span>
+
+(<span class=keyword>define</span> <span class=variable>copy-to-floppy-sized-subfile</span>
+  (<span class=keyword>lambda</span> (<span class=variable>i</span> <span class=variable>subfile-prefix</span> <span class=variable>n</span>)
+    (<span class=keyword>let</span> ((<span class=variable>nth-subfile</span> (<span class=variable>string-append</span> <span class=variable>subfile-prefix</span> <span class=selfeval>&quot;.&quot;</span>
+                                      (<span class=variable>number-&gt;string</span> <span class=variable>n</span>))))
+      (<span class=keyword>if</span> (<span class=variable>file-exists?</span> <span class=variable>nth-subfile</span>) (<span class=variable>delete-file</span> <span class=variable>nth-subfile</span>))
+      (<span class=variable>call-with-output-file</span> <span class=variable>nth-subfile</span>
+        (<span class=keyword>lambda</span> (<span class=variable>o</span>)
+          (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>k</span> <span class=selfeval>1</span>))
+            (<span class=keyword>let</span> ((<span class=variable>c</span> (<span class=variable>read-char</span> <span class=variable>i</span>)))
+              (<span class=keyword>cond</span> ((<span class=variable>eof-object?</span> <span class=variable>c</span>) <span class=selfeval>#f</span>)
+                    (<span class=keyword>else</span>
+                     (<span class=variable>write-char</span> <span class=variable>c</span> <span class=variable>o</span>)
+                     (<span class=keyword>if</span> (<span class=variable>&lt;</span> <span class=variable>k</span> <span class=variable>floppy-size</span>)
+                         (<span class=variable>loop</span> (<span class=variable>+</span> <span class=variable>k</span> <span class=selfeval>1</span>))
+                         <span class=selfeval>#t</span>))))))))))
+
+<span class=comment>;bigfile = script's first arg</span>
+<span class=comment>;        = the file that needs splitting</span>
+
+(<span class=keyword>define</span> <span class=variable>bigfile</span> (<span class=variable>vector-ref</span> <span class=variable>argv</span> <span class=selfeval>0</span>))
+
+<span class=comment>;subfile-prefix = script's second arg</span>
+<span class=comment>;               = the basename of the subfiles</span>
+
+(<span class=keyword>define</span> <span class=variable>subfile-prefix</span> (<span class=variable>vector-ref</span> <span class=variable>argv</span> <span class=selfeval>1</span>))
+
+<span class=comment>;Call split, making subfile-prefix.{1,2,3,...} from</span>
+<span class=comment>;bigfile</span>
+
+(<span class=variable>split</span> <span class=variable>bigfile</span> <span class=variable>subfile-prefix</span>)
+</pre>
+<p class=noindent></p>
+<p>
+Script <code class=verbatim>split4floppy</code> is called as follows:</p>
+<p>
+</p>
+<pre class=verbatim>split4floppy largefile chunk&nbsp;
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>This splits <code class=verbatim>largefile</code> into subfiles <code class=verbatim>chunk.1</code>,
+<code class=verbatim>chunk.2</code>, ..., such that each subfile fits on a
+floppy.</p>
+<p>
+After the <code class=verbatim>chunk.i</code> have been ferried over to the
+target computer, the file <code class=verbatim>largefile</code> can be
+retrieved by stringing the <code class=verbatim>chunk.i</code> together.  This
+can be  done on Unix with:</p>
+<p>
+</p>
+<pre class=verbatim>cat chunk.1 chunk.2 ... &gt; largefile&nbsp;
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>and on DOS with:</p>
+<p>
+</p>
+<pre class=verbatim>copy /b chunk.1+chunk.2+... largefile&nbsp;
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+<p>
+</p>
+<div class=smallskip></div>
+<p style="margin-top: 0pt; margin-bottom: 0pt">
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-17.html">previous</a></span><span>, <a href="index-Z-H-19.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+</p>
+<p></p>
+</div>
+</body>
+</html>

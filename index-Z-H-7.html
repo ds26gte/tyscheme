@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<!--
+Generated from index.tex by tex2page, v 20150301
+(running on Racket 6.2.0.3, :unix), 
+(c) Dorai Sitaram, 
+http://www.ccs.neu.edu/~dorai/tex2page/index.html
+-->
+<head>
+<meta charset="utf-8">
+<title>
+Teach Yourself Scheme in Fixnum Days
+</title>
+<link rel="stylesheet" href="index-Z-S.css" title=default />
+<meta name=robots content="index,follow">
+<meta name=description content="A practical introduction to the programming language Scheme">  <meta name=author content="Dorai Sitaram">  <link rev=made href="mailto:ds26gte @ yahoo.com"> </head>
+<body>
+<div id=slidecontent>
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-6.html">previous</a></span><span>, <a href="index-Z-H-8.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+<p></p>
+<a name="node_chap_5"></a>
+<h1 class=chapter>
+<div class=chapterheading><a href="index-Z-H-1.html#node_toc_node_chap_5">Chapter 5</a></div><br>
+<a href="index-Z-H-1.html#node_toc_node_chap_5">Lexical variables</a></h1>
+<p><a name="node_idx_268"></a><a name="node_idx_270"></a><a name="node_idx_272"></a>Scheme's variables have lexical scope, ie, they are
+visible only to forms within a certain contiguous
+stretch of program text.  The <em>global</em> variables we
+have seen thus far are no exception: Their scope is all
+program text, which is certainly contiguous.</p>
+<p>
+We have also seen some examples of <em>local</em>
+variables.  These were the <code class=scheme><span class=keyword>lambda</span></code> parameters, which
+get <em>bound</em> each time the procedure is called, and
+whose scope is that procedure's body.  Eg,</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>x</span> <span class=selfeval>9</span>)
+(<span class=keyword>define</span> <span class=variable>add2</span> (<span class=keyword>lambda</span> (<span class=variable>x</span>) (<span class=variable>+</span> <span class=variable>x</span> <span class=selfeval>2</span>)))
+
+<span class=variable>x</span>        <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>9</span>
+
+(<span class=variable>add2</span> <span class=selfeval>3</span>) <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>5</span>
+(<span class=variable>add2</span> <span class=variable>x</span>) <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>11</span>
+
+<span class=variable>x</span>        <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>9</span>
+</pre>
+<p class=noindent></p>
+<p>
+Here, there is a global <code class=scheme><span class=variable>x</span></code>, and there is also a
+local <code class=scheme><span class=variable>x</span></code>, the latter introduced by procedure
+<code class=scheme><span class=variable>add2</span></code>.  The global <code class=scheme><span class=variable>x</span></code> is always
+<code class=scheme><span class=selfeval>9</span></code>.  The local <code class=scheme><span class=variable>x</span></code> gets bound to <code class=scheme><span class=selfeval>3</span></code> in the
+first call to <code class=scheme><span class=variable>add2</span></code> and to the value of the global
+<code class=scheme><span class=variable>x</span></code>, ie, <code class=scheme><span class=selfeval>9</span></code>, in the second call to <code class=scheme><span class=variable>add2</span></code>.
+When the procedure calls return, the global <code class=scheme><span class=variable>x</span></code>
+continues to be <code class=scheme><span class=selfeval>9</span></code>.</p>
+<p>
+The form <code class=scheme><span class=keyword>set!</span></code> modifies the lexical binding of a
+variable.</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>set!</span> <span class=variable>x</span> <span class=selfeval>20</span>)
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>modifies the global binding of <code class=scheme><span class=variable>x</span></code> from <code class=scheme><span class=selfeval>9</span></code> to
+<code class=scheme><span class=selfeval>20</span></code>, because that is the binding of <code class=scheme><span class=variable>x</span></code> that is
+visible to <code class=scheme><span class=keyword>set!</span></code>.  If the <code class=scheme><span class=keyword>set!</span></code> was inside
+<code class=scheme><span class=variable>add2</span></code>'s body, it would have modified the local
+<code class=scheme><span class=variable>x</span></code>:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>add2</span>
+  (<span class=keyword>lambda</span> (<span class=variable>x</span>)
+    (<span class=keyword>set!</span> <span class=variable>x</span> (<span class=variable>+</span> <span class=variable>x</span> <span class=selfeval>2</span>))
+    <span class=variable>x</span>))
+</pre>
+<p class=noindent></p>
+<p>
+The <code class=scheme><span class=keyword>set!</span></code> here adds <code class=scheme><span class=selfeval>2</span></code> to the local variable
+<code class=scheme><span class=variable>x</span></code>, and the procedure returns this new value of the local <code class=scheme><span class=variable>x</span></code>.  (In terms of effect,
+this procedure is indistinguishable from the previous
+<code class=scheme><span class=variable>add2</span></code>.)  We can call <code class=scheme><span class=variable>add2</span></code> on the
+global <code class=scheme><span class=variable>x</span></code>, as before:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>add2</span> <span class=variable>x</span>) <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>22</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>(Remember global <code class=scheme><span class=variable>x</span></code> is now <code class=scheme><span class=selfeval>20</span></code>, not <code class=scheme><span class=selfeval>9</span></code>!)</p>
+<p>
+The <code class=scheme><span class=keyword>set!</span></code> inside <code class=scheme><span class=variable>add2</span></code> affects only the local
+variable used by <code class=scheme><span class=variable>add2</span></code>.  Although the local variable
+<code class=scheme><span class=variable>x</span></code> got its  binding from the global <code class=scheme><span class=variable>x</span></code>,
+the latter is unaffected by the <code class=scheme><span class=keyword>set!</span></code> to the local
+<code class=scheme><span class=variable>x</span></code>.</p>
+<p>
+</p>
+<pre class=scheme><span class=variable>x</span> <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>20</span>
+</pre>
+<p class=noindent></p>
+<p>
+Note that we had all this discussion because we used
+the same identifier for a local variable and a global
+variable.  In any text, an identifier named <code class=scheme><span class=variable>x</span></code> refers
+to the lexically closest variable named <code class=scheme><span class=variable>x</span></code>.  This
+will <em>shadow</em> any outer or global <code class=scheme><span class=variable>x</span></code>'s.  Eg,
+in <code class=scheme><span class=variable>add2</span></code>, the parameter <code class=scheme><span class=variable>x</span></code> shadows the global
+<code class=scheme><span class=variable>x</span></code>.</p>
+<p>
+A procedure's body can access and modify variables in
+its surrounding scope provided the procedure's
+parameters don't shadow them.  This can give some
+interesting programs.  Eg,</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>counter</span> <span class=selfeval>0</span>)
+
+(<span class=keyword>define</span> <span class=variable>bump-counter</span>
+  (<span class=keyword>lambda</span> ()
+    (<span class=keyword>set!</span> <span class=variable>counter</span> (<span class=variable>+</span> <span class=variable>counter</span> <span class=selfeval>1</span>))
+    <span class=variable>counter</span>))
+</pre>
+<p class=noindent></p>
+<p>
+The procedure <code class=scheme><span class=variable>bump&#x2011;counter</span></code> is a zero-argument
+procedure (also called a <em>thunk</em>).  It introduces
+no local variables, and thus cannot shadow anything.
+Each time it is called, it modifies the <em>global</em>
+variable
+<code class=scheme><span class=variable>counter</span></code> --- it increments it by 1 --- and returns
+its current value.  Here are some successive calls to
+<code class=scheme><span class=variable>bump&#x2011;counter</span></code>:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>bump-counter</span>) <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>1</span>
+(<span class=variable>bump-counter</span>) <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>2</span>
+(<span class=variable>bump-counter</span>) <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>3</span>
+</pre>
+<p class=noindent></p>
+<p>
+<a name="node_idx_274"></a><a name="node_idx_276"></a></p>
+<a name="node_sec_5.1"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_5.1">5.1&nbsp;&nbsp;<code class=scheme><span class=keyword>let</span></code> and <code class=scheme><span class=keyword>let*</span></code></a></h2>
+<p>Local variables can be introduced without explicitly
+creating a procedure.  The special form <code class=scheme><span class=keyword>let</span></code>
+introduces a list of local variables for use within its
+body:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>let</span> ((<span class=variable>x</span> <span class=selfeval>1</span>)
+      (<span class=variable>y</span> <span class=selfeval>2</span>)
+      (<span class=variable>z</span> <span class=selfeval>3</span>))
+  (<span class=variable>list</span> <span class=variable>x</span> <span class=variable>y</span> <span class=variable>z</span>))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  (<span class=selfeval>1</span> <span class=selfeval>2</span> <span class=selfeval>3</span>)
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>As with <code class=scheme><span class=keyword>lambda</span></code>, within the <code class=scheme><span class=keyword>let</span></code>-body, the local
+<code class=scheme><span class=variable>x</span></code> (bound to <code class=scheme><span class=selfeval>1</span></code>) shadows the global <code class=scheme><span class=variable>x</span></code> (which
+is bound to <code class=scheme><span class=selfeval>20</span></code>).</p>
+<p>
+The local variable initializations --- <code class=scheme><span class=variable>x</span></code> to <code class=scheme><span class=selfeval>1</span></code>;
+<code class=scheme><span class=variable>y</span></code> to <code class=scheme><span class=selfeval>2</span></code>; <code class=scheme><span class=variable>z</span></code> to <code class=scheme><span class=selfeval>3</span></code> --- are not considered
+part of the <code class=scheme><span class=keyword>let</span></code> body.  Therefore, a reference to
+<code class=scheme><span class=variable>x</span></code> in the initialization will refer to the global,
+not the local <code class=scheme><span class=variable>x</span></code>:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>let</span> ((<span class=variable>x</span> <span class=selfeval>1</span>)
+      (<span class=variable>y</span> <span class=variable>x</span>))
+  (<span class=variable>+</span> <span class=variable>x</span> <span class=variable>y</span>))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>21</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>This is because <code class=scheme><span class=variable>x</span></code> is bound to <code class=scheme><span class=selfeval>1</span></code>, and <code class=scheme><span class=variable>y</span></code> is
+bound to the <em>global</em> <code class=scheme><span class=variable>x</span></code>, which is <code class=scheme><span class=selfeval>20</span></code>.</p>
+<p>
+Sometimes, it is convenient to have <code class=scheme><span class=keyword>let</span></code>'s list of
+lexical variables be introduced in sequence, so that
+the initialization of a later variable occurs in the
+<em>lexical scope</em> of earlier variables.   The form
+<code class=scheme><span class=keyword>let*</span></code> does this:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>let*</span> ((<span class=variable>x</span> <span class=selfeval>1</span>)
+       (<span class=variable>y</span> <span class=variable>x</span>))
+  (<span class=variable>+</span> <span class=variable>x</span> <span class=variable>y</span>))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>2</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>The <code class=scheme><span class=variable>x</span></code> in <code class=scheme><span class=variable>y</span></code>'s initialization refers to the <code class=scheme><span class=variable>x</span></code>
+just above.  The example is entirely equivalent to ---
+and is in fact intended to be a convenient abbreviation
+for --- the following program with nested <code class=scheme><span class=keyword>let</span></code>s:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>let</span> ((<span class=variable>x</span> <span class=selfeval>1</span>))
+  (<span class=keyword>let</span> ((<span class=variable>y</span> <span class=variable>x</span>))
+    (<span class=variable>+</span> <span class=variable>x</span> <span class=variable>y</span>)))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>2</span>
+</pre>
+<p class=noindent></p>
+<p>
+The values bound to lexical variables can be
+procedures:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>let</span> ((<span class=variable>cons</span> (<span class=keyword>lambda</span> (<span class=variable>x</span> <span class=variable>y</span>) (<span class=variable>+</span> <span class=variable>x</span> <span class=variable>y</span>))))
+  (<span class=variable>cons</span> <span class=selfeval>1</span> <span class=selfeval>2</span>))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>3</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Inside this <code class=scheme><span class=keyword>let</span></code> body, the lexical variable <code class=scheme><span class=variable>cons</span></code>
+adds its arguments.   Outside, <code class=scheme><span class=variable>cons</span></code> continues to
+create dotted pairs.</p>
+<p>
+<a name="node_idx_278"></a></p>
+<p>
+</p>
+<a name="node_sec_5.2"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_5.2">5.2&nbsp;&nbsp;<code class=scheme><span class=keyword>fluid&#x2011;let</span></code></a></h2>
+<p></p>
+<p>
+A lexical variable is visible throughout its scope,
+provided it isn't shadowed.  Sometimes, it is helpful
+to <em>temporarily</em> set a lexical variable to a
+certain value.  For this, we use the form
+<code class=scheme><span class=keyword>fluid&#x2011;let</span></code>.<a name="node_call_footnote_Temp_4"></a><sup><small><a href="#node_footnote_Temp_4">1</a></small></sup></p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>fluid-let</span> ((<span class=variable>counter</span> <span class=selfeval>99</span>))
+  (<span class=variable>display</span> (<span class=variable>bump-counter</span>)) (<span class=variable>newline</span>)
+  (<span class=variable>display</span> (<span class=variable>bump-counter</span>)) (<span class=variable>newline</span>)
+  (<span class=variable>display</span> (<span class=variable>bump-counter</span>)) (<span class=variable>newline</span>))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>This looks similar to a <code class=scheme><span class=keyword>let</span></code>, but instead of
+shadowing the global variable <code class=scheme><span class=variable>counter</span></code>, it
+temporarily sets it to <code class=scheme><span class=selfeval>99</span></code> before continuing with
+the
+<code class=scheme><span class=keyword>fluid&#x2011;let</span></code> body.  Thus the <code class=scheme><span class=variable>display</span></code>s in the body
+produce</p>
+<p>
+</p>
+<pre class=verbatim>100&nbsp;
+101&nbsp;
+102&nbsp;
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>After the <code class=scheme><span class=keyword>fluid&#x2011;let</span></code> expression has evaluated,
+the global <code class=scheme><span class=variable>counter</span></code> reverts to the value it had
+before the <code class=scheme><span class=keyword>fluid&#x2011;let</span></code>.</p>
+<p>
+</p>
+<pre class=scheme><span class=variable>counter</span> <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>3</span>
+</pre>
+<p class=noindent></p>
+<p>
+Note that <code class=scheme><span class=keyword>fluid&#x2011;let</span></code> has an entirely different
+effect from <code class=scheme><span class=keyword>let</span></code>.  <code class=scheme><span class=keyword>fluid&#x2011;let</span></code> does not introduce
+new lexical variables like <code class=scheme><span class=keyword>let</span></code> does.  It modifies
+the bindings of <em>existing</em> lexical variables, and
+the modification ceases as soon as the <code class=scheme><span class=keyword>fluid&#x2011;let</span></code> does.</p>
+<p>
+To drive home this point, consider the program</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>let</span> ((<span class=variable>counter</span> <span class=selfeval>99</span>))
+  (<span class=variable>display</span> (<span class=variable>bump-counter</span>)) (<span class=variable>newline</span>)
+  (<span class=variable>display</span> (<span class=variable>bump-counter</span>)) (<span class=variable>newline</span>)
+  (<span class=variable>display</span> (<span class=variable>bump-counter</span>)) (<span class=variable>newline</span>))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>which substitutes <code class=scheme><span class=keyword>let</span></code> for <code class=scheme><span class=keyword>fluid&#x2011;let</span></code> in
+the previous example.  The output is now</p>
+<p>
+</p>
+<pre class=scheme><span class=selfeval>4</span>
+<span class=selfeval>5</span>
+<span class=selfeval>6</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Ie, the global <code class=scheme><span class=variable>counter</span></code>, which is initially
+<code class=scheme><span class=selfeval>3</span></code>, is updated by each call to <code class=scheme><span class=variable>bump&#x2011;counter</span></code>.
+The new lexical variable <code class=scheme><span class=variable>counter</span></code>, with its
+initialization of <code class=scheme><span class=selfeval>99</span></code>, has no impact on the calls to
+<code class=scheme><span class=variable>bump&#x2011;counter</span></code>, because although the calls to
+<code class=scheme><span class=variable>bump&#x2011;counter</span></code> are within the scope of this local
+<code class=scheme><span class=variable>counter</span></code>, the body of <code class=scheme><span class=variable>bump&#x2011;counter</span></code> isn't.  The
+latter continues to refer to the <em>global</em>
+<code class=scheme><span class=variable>counter</span></code>, whose final value is <code class=scheme><span class=selfeval>6</span></code>.</p>
+<p>
+</p>
+<pre class=scheme><span class=variable>counter</span> <span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>6</span>
+</pre>
+<p class=noindent>
+</p>
+<p>
+</p>
+<div class=footnoterule><hr></div><p></p>
+<div class=footnote><p><a name="node_footnote_Temp_4"></a><sup><small><a href="#node_call_footnote_Temp_4">1</a></small></sup> <code class=scheme><span class=keyword>fluid&#x2011;let</span></code> is a nonstandard special
+form.  See sec <a href="index-Z-H-10.html#node_sec_8.3">8.3</a> for a definition
+of <code class=scheme><span class=keyword>fluid&#x2011;let</span></code> in Scheme.</p>
+</div>
+<div class=smallskip></div>
+<p style="margin-top: 0pt; margin-bottom: 0pt">
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-6.html">previous</a></span><span>, <a href="index-Z-H-8.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+</p>
+<p></p>
+</div>
+</body>
+</html>

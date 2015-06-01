@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+<!--
+Generated from index.tex by tex2page, v 20150301
+(running on Racket 6.2.0.3, :unix), 
+(c) Dorai Sitaram, 
+http://www.ccs.neu.edu/~dorai/tex2page/index.html
+-->
+<head>
+<meta charset="utf-8">
+<title>
+Teach Yourself Scheme in Fixnum Days
+</title>
+<link rel="stylesheet" href="index-Z-S.css" title=default />
+<meta name=robots content="index,follow">
+<meta name=description content="A practical introduction to the programming language Scheme">  <meta name=author content="Dorai Sitaram">  <link rev=made href="mailto:ds26gte @ yahoo.com"> </head>
+<body>
+<div id=slidecontent>
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-16.html">previous</a></span><span>, <a href="index-Z-H-18.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+<p></p>
+<a name="node_chap_15"></a>
+<h1 class=chapter>
+<div class=chapterheading><a href="index-Z-H-1.html#node_toc_node_chap_15">Chapter 15</a></div><br>
+<a href="index-Z-H-1.html#node_toc_node_chap_15">Engines</a></h1>
+<p><a name="node_idx_474"></a>An engine [<a href="index-Z-H-24.html#node_bib_17">17</a>] represents computation that is
+subject to timed preemption.  In other words, an
+engine's underlying computation is an ordinary thunk
+that runs as a timer-preemptable process.</p>
+<p>
+An engine is called with three arguments: (1) a number
+of time units or <em>ticks</em>, (2) a <em>success</em>
+procedure, and (3) a <em>failure</em> procedure.  If the
+engine computation finishes within the allotted <em>ticks</em>, the <em>success</em> procedure is applied to the
+computation result and the remaining ticks.  If the
+engine computation could not finish within the allotted
+<em>ticks</em>, the <em>failure</em> procedure is applied
+to a new engine representing the unfinished portion of
+the engine computation.</p>
+<p>
+For example, consider an engine whose underlying
+computation is a loop that printed the nonnegative
+integers in sequence.  It is created as follows, with
+the soon-to-be-defined <code class=scheme><span class=variable>make&#x2011;engine</span></code> procedure.
+<code class=scheme><span class=variable>make&#x2011;engine</span></code> is called on an argument thunk
+representing the underlying computation, and it
+returns the corresponding engine:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>printn-engine</span>
+  (<span class=variable>make-engine</span>
+    (<span class=keyword>lambda</span> ()
+      (<span class=keyword>let</span> <span class=variable>loop</span> ((<span class=variable>i</span> <span class=selfeval>0</span>))
+        (<span class=variable>display</span> <span class=variable>i</span>)
+        (<span class=variable>display</span> <span class=selfeval>&quot; &quot;</span>)
+        (<span class=variable>loop</span> (<span class=variable>+</span> <span class=variable>i</span> <span class=selfeval>1</span>))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Here is a call to <code class=scheme><span class=variable>printn&#x2011;engine</span></code>:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=global>*more*</span> <span class=selfeval>#f</span>)
+(<span class=variable>printn-engine</span> <span class=selfeval>50</span> <span class=variable>list</span> (<span class=keyword>lambda</span> (<span class=variable>ne</span>) (<span class=keyword>set!</span> <span class=global>*more*</span> <span class=variable>ne</span>)))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>0</span> <span class=selfeval>1</span> <span class=selfeval>2</span> <span class=selfeval>3</span> <span class=selfeval>4</span> <span class=selfeval>5</span> <span class=selfeval>6</span> <span class=selfeval>7</span> <span class=selfeval>8</span> <span class=selfeval>9</span>
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>Ie, the loop gets to print upto a certain number
+(here <code class=scheme><span class=selfeval>9</span></code>) and then fails because of the clock
+interrupt.  However, our <em>failure</em> procedure sets
+a global variable called <code class=scheme><span class=global>*more*</span></code> to the failed
+engine, which we can use to resume the loop where the
+previous engine left off:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=global>*more*</span> <span class=selfeval>50</span> <span class=variable>list</span> (<span class=keyword>lambda</span> (<span class=variable>ne</span>) (<span class=keyword>set!</span> <span class=global>*more*</span> <span class=variable>ne</span>)))
+<span style="color: teal"><tt><strong>=&gt;</strong></tt></span>  <span class=selfeval>10</span> <span class=selfeval>11</span> <span class=selfeval>12</span> <span class=selfeval>13</span> <span class=selfeval>14</span> <span class=selfeval>15</span> <span class=selfeval>16</span> <span class=selfeval>17</span> <span class=selfeval>18</span> <span class=selfeval>19</span>
+</pre>
+<p class=noindent></p>
+<p>
+<a name="node_idx_476"></a></p>
+<p>
+We will now construct engines using <code class=scheme><span class=variable>call/cc</span></code> to
+capture the unfinished computation of a failing engine.
+First we will construct <em>flat</em> engines, or
+engines whose computation cannot include the running of
+other engines.  We will later generalize the code to
+the more general <em>nestable</em> engines or <em>nesters</em>, which can call other engines.  But in both
+cases, we need a timer mechanism, or a <em>clock</em>.</p>
+<p>
+<a name="node_idx_478"></a></p>
+<p>
+</p>
+<a name="node_sec_15.1"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_15.1">15.1&nbsp;&nbsp;The clock</a></h2>
+<p></p>
+<p>
+Our engines assume the presence of a global clock or
+interruptable timer that marks the passage of ticks as
+a program executes.  We will assume the following clock
+interface --- if your Scheme provides any kind of alarm
+mechanism, it should be an easy matter to rig up a
+clock of the following type. (Appendix <a href="index-Z-H-23.html#node_chap_D">D</a>
+defines a clock for the Guile [<a href="index-Z-H-24.html#node_bib_13">13</a>] dialect of
+Scheme.)</p>
+<p>
+The internal state of our <code class=scheme><span class=variable>clock</span></code> procedure consists
+of two items:</p>
+<p>
+(1) the number of remaining ticks; and</p>
+<p>
+(2) an interrupt handler to be invoked when the
+clock runs out of ticks.</p>
+<p>
+<code class=scheme><span class=variable>clock</span></code> allows the following operations:</p>
+<p>
+(1) <code class=scheme>(<span class=variable>clock</span> <span class=keyword>'</span><span class=variable>set&#x2011;handler</span> <span class=variable>h</span>)</code> sets the
+interrupt handler to <code class=scheme><span class=variable>h</span></code>.</p>
+<p>
+(2) <code class=scheme>(<span class=variable>clock</span> <span class=keyword>'</span><span class=variable>set</span> <span class=variable>n</span>)</code> resets the clock's
+remaining ticks to <code class=scheme><span class=variable>n</span></code>, returning the
+previous value.</p>
+<p>
+The number of ticks ranges over the non-negative
+integers and an atom called <code class=scheme><span class=global>*infinity*</span></code>.  A clock with
+<code class=scheme><span class=global>*infinity*</span></code> ticks cannot run out of time and so will
+not set off the interrupt handler.  Such a clock is
+<em>quiescent</em> or ``already stopped''.  To stop a
+clock, set its ticks to <code class=scheme><span class=global>*infinity*</span></code>.</p>
+<p>
+The clock handler is set to a thunk.  For example,</p>
+<p>
+</p>
+<pre class=scheme>(<span class=variable>clock</span> <span class=keyword>'</span><span class=variable>set-handler</span>
+  (<span class=keyword>lambda</span> ()
+    (<span class=variable>error</span> <span class=selfeval>&quot;Say goodnight, cat!&quot;</span>)))
+
+(<span class=variable>clock</span> <span class=keyword>'</span><span class=variable>set</span> <span class=selfeval>9</span>)
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>This will cause an error to be signaled after 9
+ticks have passed, and the message displayed by the
+signal will be ``Say goodnight, cat!''</p>
+<p>
+<a name="node_idx_480"></a></p>
+<a name="node_sec_15.2"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_15.2">15.2&nbsp;&nbsp;Flat engines</a></h2>
+<p>We will first set the clock interrupt handler.  Note
+that the handler is invoked only if a non-quiescent
+clock runs out of ticks.  This happens only during
+engine computations that are on the brink of failure,
+for only engines set the clock.</p>
+<p>
+The handler captures the current continuation, which is
+the rest of the computation of the currently failing
+engine.  This continuation is sent to another
+continuation stored in the global <code class=scheme><span class=global>*engine&#x2011;escape*</span></code>.
+The <code class=scheme><span class=global>*engine&#x2011;escape*</span></code> variable stores the exit
+continuation of the current engine.  Thus the clock
+handler captures the rest of the failing engine and
+sends it to an exit point in the engine code, so the
+requisite failure action can be taken.</p>
+<p>
+</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=global>*engine-escape*</span> <span class=selfeval>#f</span>)
+(<span class=keyword>define</span> <span class=global>*engine-entrance*</span> <span class=selfeval>#f</span>)
+
+(<span class=variable>clock</span> <span class=keyword>'</span><span class=variable>set-handler</span>
+  (<span class=keyword>lambda</span> ()
+    (<span class=variable>call/cc</span> <span class=global>*engine-escape*</span>)))
+</pre>
+<p class=noindent>        </p>
+<p>
+Let us now look into the innards of the engine code
+itself.  As said, <code class=scheme><span class=variable>make&#x2011;engine</span></code> takes a thunk and
+fashions an engine out of it:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>make-engine</span>
+  (<span class=keyword>lambda</span> (<span class=variable>th</span>)
+    (<span class=keyword>lambda</span> (<span class=variable>ticks</span> <span class=variable>success</span> <span class=variable>failure</span>)
+      (<span class=keyword>let*</span> ((<span class=variable>ticks-left</span> <span class=selfeval>0</span>)
+             (<span class=variable>engine-succeeded?</span> <span class=selfeval>#f</span>)
+             (<span class=variable>result</span>
+              (<span class=variable>call/cc</span>
+               (<span class=keyword>lambda</span> (<span class=variable>k</span>)
+                 (<span class=keyword>set!</span> <span class=global>*engine-escape*</span> <span class=variable>k</span>)
+                 (<span class=keyword>let</span> ((<span class=variable>result</span>
+                        (<span class=variable>call/cc</span>
+                         (<span class=keyword>lambda</span> (<span class=variable>k</span>)
+                           (<span class=keyword>set!</span> <span class=global>*engine-entrance*</span> <span class=variable>k</span>)
+                           (<span class=variable>clock</span> <span class=keyword>'</span><span class=variable>set</span> <span class=variable>ticks</span>)
+                           (<span class=keyword>let</span> ((<span class=variable>v</span> (<span class=variable>th</span>)))
+                             (<span class=global>*engine-entrance*</span> <span class=variable>v</span>))))))
+                   (<span class=keyword>set!</span> <span class=variable>ticks-left</span> (<span class=variable>clock</span> <span class=keyword>'</span><span class=variable>set</span> <span class=global>*infinity*</span>))
+                   (<span class=keyword>set!</span> <span class=variable>engine-succeeded?</span> <span class=selfeval>#t</span>)
+                   <span class=variable>result</span>)))))
+        (<span class=keyword>if</span> <span class=variable>engine-succeeded?</span>
+            (<span class=variable>success</span> <span class=variable>result</span> <span class=variable>ticks-left</span>)
+            (<span class=variable>failure</span> 
+             (<span class=variable>make-engine</span> 
+              (<span class=keyword>lambda</span> () 
+                (<span class=variable>result</span> <span class=keyword>'</span><span class=variable>resume</span>)))))))))
+</pre>
+<p class=noindent></p>
+<p>
+</p>
+
+<p class=noindent>First we introduce the variables <code class=scheme><span class=variable>ticks&#x2011;left</span></code>
+and <code class=scheme><span class=variable>engine&#x2011;succeeded?</span></code>.  The first will hold
+the ticks left over should the engine thunk finish
+in time.  The second is a flag that will be used in
+the engine code to signal if the engine suceeded.</p>
+<p>
+We then run the engine thunk within two nested calls to
+<code class=scheme><span class=variable>call/cc</span></code>.  The first <code class=scheme><span class=variable>call/cc</span></code> captures the
+continuation to be used by a failing engine to abort
+out of its engine computation.  This continuation is
+stored in the global <code class=scheme><span class=global>*engine&#x2011;escape*</span></code>.  The second
+<code class=scheme><span class=variable>call/cc</span></code> captures an inner continuation that 
+will be used by the return value of the thunk <code class=scheme><span class=variable>th</span></code> if
+it runs to completion.  This continuation is stored
+in the global
+<code class=scheme><span class=global>*engine&#x2011;entrance*</span></code>.</p>
+<p>
+Running through the code, we find that after capturing
+the continuations <code class=scheme><span class=global>*engine&#x2011;escape*</span></code> and
+<code class=scheme><span class=global>*engine&#x2011;entrance*</span></code>, we set the clock's ticks to the
+time allotted this engine and run the thunk <code class=scheme><span class=variable>th</span></code>.  If
+<code class=scheme><span class=variable>th</span></code> succeeds, its value <code class=scheme><span class=variable>v</span></code> is sent to the
+continuation <code class=scheme><span class=global>*engine&#x2011;entrance*</span></code>, after which the
+clock is stopped, the remaining ticks ascertained, and
+the flag <code class=scheme><span class=variable>engine&#x2011;succeeded?</span></code> is set to true.  We now
+go past the <code class=scheme><span class=global>*engine&#x2011;escape*</span></code> continuation, and run
+the final dispatcher in the code: Since we know the
+engine succeeded, we apply the <code class=scheme><span class=variable>success</span></code> procedure to
+the result and the ticks left.</p>
+<p>
+If the thunk <code class=scheme><span class=variable>th</span></code> <em>didn't</em> finish in time
+though, it will suffer an interrupt.  This invokes the
+clock interrupt handler, which captures the current
+continuation of the running and now failing thunk and
+sends it to the continuation <code class=scheme><span class=global>*engine&#x2011;escape*</span></code>.  This
+puts the failed-thunk continuation in the outer
+<code class=scheme><span class=variable>result</span></code> variable, and we are now in the final
+dispatcher in the code: Since <code class=scheme><span class=variable>engine&#x2011;succeeded?</span></code> is
+still false, we apply the <code class=scheme><span class=variable>failure</span></code> procedure to new
+engine fashioned out of <code class=scheme><span class=variable>result</span></code>.</p>
+<p>
+Notice that when a failed engine is removed, it will
+traverse the control path charted by the first run of
+the original engine.  Nevertheless, because we have
+explicitly use the continuations stored in the global
+variables <code class=scheme><span class=global>*engine&#x2011;entrance*</span></code> and
+<code class=scheme><span class=global>*engine&#x2011;escape*</span></code>, and we always set them anew before
+executing an engine computation, we are assured that
+the jumps will always come back to the currently
+executing engine code.</p>
+<p>
+<a name="node_idx_482"></a></p>
+<a name="node_sec_15.3"></a>
+<h2 class=section><a href="index-Z-H-1.html#node_toc_node_sec_15.3">15.3&nbsp;&nbsp;Nestable engines</a></h2>
+<p>In order to generalize the code above to accommodate
+the nestable type of engine, we need to incorporate
+into it some <em>tick management</em> that will take
+care of the apportioning of the right amounts of ticks
+to all the engines in a nested run.</p>
+<p>
+To run a new engine (the <em>child</em>), we need to
+stop the currently engine (the <em>parent</em>).  We
+then need to assign an appropriate number of ticks to
+the child.  This may not be the same as the ticks
+assigned by the program text, because it would be <em>unfair</em> for a child to consume more ticks than its
+parent has left.  After the child completes, we need to
+update the parent's ticks.  If the child finished in
+time, any leftover ticks it has revert to the parent.
+If ticks were denied from the child because the parent
+couldn't afford it, then if the child fails, the parent
+will fail too, but must remember to restart the child
+with its promised ticks when it (the parent) restarts.</p>
+<p>
+We also need to <code class=scheme><span class=keyword>fluid&#x2011;let</span></code> the globals
+<code class=scheme><span class=global>*engine&#x2011;escape*</span></code> and <code class=scheme><span class=global>*engine&#x2011;entrance*</span></code>, because
+each nested engine must have its own pair of these
+sentinel continuations.  As an engine exits (whether
+through success or failure), the <code class=scheme><span class=keyword>fluid&#x2011;let</span></code> will
+ensure that the next enclosing engine's sentinels take
+over.</p>
+<p>
+Combining all this, the code for nestable engines looks
+as follows:</p>
+<p>
+</p>
+<pre class=scheme>(<span class=keyword>define</span> <span class=variable>make-engine</span>
+  (<span class=keyword>lambda</span> (<span class=variable>th</span>)
+    (<span class=keyword>lambda</span> (<span class=variable>ticks</span> <span class=variable>s</span> <span class=variable>f</span>)
+      (<span class=keyword>let*</span> ((<span class=variable>parent-ticks</span> 
+              (<span class=variable>clock</span> <span class=keyword>'</span><span class=variable>set</span> <span class=global>*infinity*</span>))
+
+             <span class=comment>;A child can't have more ticks than its parent's</span>
+             <span class=comment>;remaining ticks</span>
+             (<span class=variable>child-available-ticks</span> 
+              (<span class=variable>clock-min</span> <span class=variable>parent-ticks</span> <span class=variable>ticks</span>))
+
+             <span class=comment>;A child's ticks must be counted against the parent</span>
+             <span class=comment>;too</span>
+             (<span class=variable>parent-ticks-left</span>
+              (<span class=variable>clock-minus</span> <span class=variable>parent-ticks</span> <span class=variable>child-available-ticks</span>))
+
+             <span class=comment>;If child was promised more ticks than parent could</span>
+             <span class=comment>;afford, remember how much it was short-changed by</span>
+             (<span class=variable>child-ticks-left</span> 
+              (<span class=variable>clock-minus</span> <span class=variable>ticks</span> <span class=variable>child-available-ticks</span>))
+
+             <span class=comment>;Used below to store ticks left in clock</span>
+             <span class=comment>;if child completes in time</span>
+             (<span class=variable>ticks-left</span> <span class=selfeval>0</span>)
+
+             (<span class=variable>engine-succeeded?</span> <span class=selfeval>#f</span>)
+
+             (<span class=variable>result</span>
+              (<span class=keyword>fluid-let</span> ((<span class=global>*engine-escape*</span> <span class=selfeval>#f</span>)
+                          (<span class=global>*engine-entrance*</span> <span class=selfeval>#f</span>))
+                (<span class=variable>call/cc</span>
+                 (<span class=keyword>lambda</span> (<span class=variable>k</span>)
+                   (<span class=keyword>set!</span> <span class=global>*engine-escape*</span> <span class=variable>k</span>)
+                   (<span class=keyword>let</span> ((<span class=variable>result</span>
+                          (<span class=variable>call/cc</span>
+                           (<span class=keyword>lambda</span> (<span class=variable>k</span>)
+                             (<span class=keyword>set!</span> <span class=global>*engine-entrance*</span> <span class=variable>k</span>)
+                             (<span class=variable>clock</span> <span class=keyword>'</span><span class=variable>set</span> <span class=variable>child-available-ticks</span>)
+
+                             (<span class=keyword>let</span> ((<span class=variable>v</span> (<span class=variable>th</span>)))
+
+                               (<span class=global>*engine-entrance*</span> <span class=variable>v</span>))))))
+                     (<span class=keyword>set!</span> <span class=variable>ticks-left</span>
+                       (<span class=keyword>let</span> ((<span class=variable>n</span> (<span class=variable>clock</span> <span class=keyword>'</span><span class=variable>set</span> <span class=global>*infinity*</span>)))
+                         (<span class=keyword>if</span> (<span class=variable>eqv?</span> <span class=variable>n</span> <span class=global>*infinity*</span>) <span class=selfeval>0</span> <span class=variable>n</span>)))
+                     (<span class=keyword>set!</span> <span class=variable>engine-succeeded?</span> <span class=selfeval>#t</span>)
+                     <span class=variable>result</span>))))))
+
+        <span class=comment>;Parent can reclaim ticks that child didn't need</span>
+        (<span class=keyword>set!</span> <span class=variable>parent-ticks-left</span>
+          (<span class=variable>clock-plus</span> <span class=variable>parent-ticks-left</span> <span class=variable>ticks-left</span>))
+
+        <span class=comment>;This is the true ticks that child has left --</span>
+        <span class=comment>;we include the ticks it was short-changed by</span>
+        (<span class=keyword>set!</span> <span class=variable>ticks-left</span> 
+          (<span class=variable>clock-plus</span> <span class=variable>child-ticks-left</span> <span class=variable>ticks-left</span>))
+
+        <span class=comment>;Restart parent with its remaining ticks</span>
+        (<span class=variable>clock</span> <span class=keyword>'</span><span class=variable>set</span> <span class=variable>parent-ticks-left</span>)
+        <span class=comment>;The rest is now parent computation</span>
+
+        (<span class=keyword>cond</span>
+         <span class=comment>;Child finished in time -- celebrate its success</span>
+         (<span class=variable>engine-succeeded?</span> (<span class=variable>s</span> <span class=variable>result</span> <span class=variable>ticks-left</span>))
+
+         <span class=comment>;Child failed because it ran out of promised time --</span>
+         <span class=comment>;call failure procedure</span>
+         ((<span class=variable>=</span> <span class=variable>ticks-left</span> <span class=selfeval>0</span>)
+          (<span class=variable>f</span> (<span class=variable>make-engine</span> (<span class=keyword>lambda</span> () (<span class=variable>result</span> <span class=keyword>'</span><span class=variable>resume</span>)))))
+
+         <span class=comment>;Child failed because parent didn't have enough time,</span>
+         <span class=comment>;ie, parent failed too.  If so, when parent is</span>
+         <span class=comment>;resumed, its first order of duty is to resume the</span>
+         <span class=comment>;child with its fair amount of ticks</span>
+         (<span class=keyword>else</span>
+          ((<span class=variable>make-engine</span> (<span class=keyword>lambda</span> () (<span class=variable>result</span> <span class=keyword>'</span><span class=variable>resume</span>)))
+           <span class=variable>ticks-left</span> <span class=variable>s</span> <span class=variable>f</span>)))))))
+</pre>
+<p class=noindent></p>
+<p>
+Note that we have used the arithmetic operators
+<code class=scheme><span class=variable>clock&#x2011;min</span></code>, <code class=scheme><span class=variable>clock&#x2011;minus</span></code>, and <code class=scheme><span class=variable>clock&#x2011;plus</span></code>
+instead of <code class=scheme><span class=variable>min</span></code>, <code class=scheme><span class=variable>&#x2011;</span></code>, and <code class=scheme><span class=variable>+</span></code>.  This is because
+the values used by the clock arithmetic includes
+<code class=scheme><span class=global>*infinity*</span></code> in addition to the integers.  Some Scheme
+dialects provide an <code class=scheme><span class=global>*infinity*</span></code> value in their
+arithmetic<a name="node_call_footnote_Temp_12"></a><sup><small><a href="#node_footnote_Temp_12">1</a></small></sup> --- if so, you can use the regular
+arithmetic operators.  If not, it is an easy exercise
+to define the enhanced operators.</p>
+<p>
+</p>
+<p>
+</p>
+<div class=footnoterule><hr></div><p></p>
+<div class=footnote><p><a name="node_footnote_Temp_12"></a><sup><small><a href="#node_call_footnote_Temp_12">1</a></small></sup> Eg, in Guile, you can <code class=scheme>(<span class=keyword>define</span>
+<span class=global>*infinity*</span> (<span class=variable>/</span> <span class=selfeval>1</span> <span class=selfeval>0</span>))</code>.</p>
+</div>
+<div class=smallskip></div>
+<p style="margin-top: 0pt; margin-bottom: 0pt">
+<div align=right class=navigation>[Go to <span><a href="index.html">first</a>, <a href="index-Z-H-16.html">previous</a></span><span>, <a href="index-Z-H-18.html">next</a></span> page<span>; &nbsp;&nbsp;</span><span><a href="index-Z-H-1.html#node_toc_start">contents</a></span><span><span>; &nbsp;&nbsp;</span><a href="index-Z-H-25.html#node_index_start">index</a></span>]</div>
+</p>
+<p></p>
+</div>
+</body>
+</html>
