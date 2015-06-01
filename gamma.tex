@@ -1,0 +1,136 @@
+\section{Improper integrals}
+
+Simpson's rule cannot be directly applied to {\em
+improper integrals} (integrals such that either
+the value of the integrand is unbounded somewhere
+within the interval of integration, or the interval of
+integration is itself unbounded).  However, the rule can still be 
+applied for a {\em part} of the integral, with the
+remaining being approximated by other means.  For
+example, consider the $\Gamma$ function.
+For $n > 0$, $\Gamma(n)$ is defined as the
+following integral with unbounded upper limit:
+
+$$ \Gamma(n) = \int_0^{\infty} x^{n-1}e^{-x} dx $$
+%
+From this, it follows that (a) $\Gamma(1) = 1$, and (b)
+for $n > 0$, $\Gamma(n+1) = n\Gamma(n)$.  This implies
+that if we know the value of $\Gamma$ in the interval
+$(1, 2)$, we can find $\Gamma(n)$ for any {\em real} $n > 0$.
+Indeed, if we relax the condition $n > 0$, we can use
+result (b) to extend the domain of $\Gamma(n)$ to
+include $n \le 0$, with the understanding that the function
+will diverge for {\em integer} $n \le 0$.\f{$\Gamma(n)$ for real $n > 0$ is
+itself an extension of the ``decrement-then-factorial'' function
+that maps {\em integer} $n > 0$ to $(n-1)!$.}
+
+We first implement a Scheme procedure \q{gamma-1-to-2}
+that requires its argument \q{n} to be within the
+interval $(1, 2)$.  \q{gamma-1-to-2} takes a
+second argument \q{e} for the tolerance.
+
+\scmdribble{
+(define gamma-1-to-2
+  (lambda (n e)
+    (unless (< 1 n 2)
+      (error 'gamma-1-to-2 "argument outside (1, 2)"))
+    ;...
+}
+
+\n
+We introduce a local variable \q{gamma-integrand} to hold
+the $\Gamma$-integrand $g(x) = x^{n-1}e^x$:
+
+\scmdribble{
+    ;...
+    (let ((gamma-integrand
+            (let ((n-1 (- n 1)))
+              (lambda (x)
+                (* (expt x n-1)
+                   (exp (- x))))))
+          ;...
+}
+             
+\n We now need to integrate $g(x)$ from 0 to $\infty$.
+Clearly we cannot deal with an infinite number of
+intervals; we therefore use Simpson's rule for only a
+portion of the interval $[0, \infty)$, say $[0, x_c]$
+($c$ for ``cut-off'').  For the remaining, ``tail'',
+interval $[x_c, \infty)$, we use a tail-integrand
+$t(x)$ that reasonably approximates $g(x)$, but has the
+advantage of being more tractable to analytic solution.
+Indeed, it is easy to see that for sufficiently large
+$x_c$, we can replace $g(x)$ by an exponential decay
+function $t(x) = y_c e^{-(x - x_c )}$, where $y_c
+= g(x_c)$.  Thus:
+
+$$
+\int_0^{\infty} g(x) dx \approx 
+\int_0^{x_c} g(x) dx +
+\int_{x_c}^{\infty} t(x) dx 
+$$
+%
+The first integral can be solved using Simpson's rule,
+and the second integral is just $y_c$.  To find $x_c$,
+we start with a low-ball value (say 4), and then refine
+it by successively doubling it until the ordinate at
+$2x_c$ (ie, $g(2x_c)$) is within a certain
+tolerance of the ordinate predicted by the tail-integrand 
+(ie, $t(2x_c)$).  For both the Simpson
+integral and the tail-integrand calculation, we will
+require a tolerance of \q{e/100}, an order of 2 less than
+the given tolerance \q{e}, so the overall
+tolerance is not affected:
+
+\scmdribble{
+          ;...
+          (e/100 (/ e 100)))
+       (let loop ((xc 4) (yc (gamma-integrand 4)))
+         (let* ((tail-integrand
+                  (lambda (x)
+                    (* yc (exp (- (- x xc))))))
+                (x1 (* 2 xc))
+                (y1 (gamma-integrand x1))
+                (y1-estimated (tail-integrand x1)))
+           (if (<= (abs (- y1 y1-estimated)) e/100)
+               (+ (integrate-adaptive-simpson 
+                    gamma-integrand
+                    0 xc e/100)
+                  yc)
+               (loop x1 y1)))))))
+}
+
+\n We can now write a more general procedure \q{gamma}
+that returns $\Gamma(n)$ for any real $n$:
+
+\scmdribble{
+(define gamma
+  (lambda (n e)
+    (cond ((< n 1) (/ (gamma (+ n 1) e) n))
+          ((= n 1) 1)
+          ((< 1 n 2) (gamma-1-to-2 n e))
+          (else (let ((n-1 (- n 1)))
+                  (* n-1 (gamma n-1 e)))))))
+}
+
+\n
+Let us now calculate $\Gamma(3/2)$.
+
+\q{
+(gamma 3/2 .001)
+(* 1/2 (sqrt *pi*))
+}
+
+\n The second value is the analytically correct answer.
+(This is because $\Gamma(3/2) =
+(1/2)\Gamma(1/2)$, and $\Gamma(1/2)$ is known to be
+\ifx\shipout\UNDEFINED
+$\pi^{1/2}$\else
+$\sqrt{\pi}$\fi.)
+You can modify \q{gamma}'s  second
+argument (the tolerance) to get as close an
+approximation as you desire.
+
+
+
+

@@ -1,0 +1,199 @@
+\chapter{Forms}
+
+The reader will have noted that the Scheme example
+programs provided thus far are also s-expressions.
+This is true of all Scheme programs: Programs are data.
+
+Thus, the character datum \q{#\c} is a program, or a
+{\em form}.  We will use the more general term {\em
+form} instead of {\em program}, so that we can deal
+with program fragments too.
+
+Scheme evaluates the form \q{#\c} to the value \q{#\c},
+because \q{#\c} is self-evaluating.  Not all
+s-expressions are self-evaluating.  For instance the
+symbol s-expression
+\q{xyz} evaluates to the value held by the {\em variable}
+\q{xyz}.  The list s-expression
+\q{(string->number "16")}
+evaluates to the number 16.
+
+Not all s-expressions are valid programs.  If you typed
+the dotted-pair s-expression \q{(1 . 2)} at the Scheme
+listener, you will get an error.
+
+Scheme evaluates a list form by examining the first
+element, or {\em head}, of the form.  If the head
+evaluates to a procedure, the rest of the form is
+evaluated to get the procedure's arguments, and the
+procedure is {\em applied} to the arguments. 
+
+If the head of the form is a {\em special form}, the
+evaluation proceeds in a manner idiosyncratic to that
+form.  Some special forms we have already seen
+are \q{begin}, \q{define}, and \q{set!}.  \q{begin} causes its
+subforms to be evaluated in order, the result of the
+entire form being the result of the last subform.
+\q{define} introduces and initializes a variable.
+\q{set!} changes the binding of a variable.  
+
+\index{procedure}
+\index{lambda@\q{lambda}}
+\section{Procedures}
+
+We have seen quite a few primitive Scheme procedures,
+eg, \q{cons}, \q{string->list}, and the like.  Users
+can create their own procedures using the special form
+\q{lambda}.  For example, the following defines a
+procedure that adds \q{2} to its argument:
+
+\q{
+(lambda (x) (+ x 2))
+}
+
+The first subform, \q{(x)}, is the list of parameters.
+The remaining subform(s) constitute the procedure's
+body.  This procedure can be called on an argument,
+just like a primitive procedure:
+
+\q{
+((lambda (x) (+ x 2)) 5)
+|evalsto 7
+}
+
+If we wanted to call this same procedure many times, we
+could create a replica using \q{lambda} each time, but
+we can do better.   We can use a variable to hold the
+procedure value:
+
+\q{
+(define add2
+  (lambda (x) (+ x 2)))
+}
+
+We can then use the variable \q{add2} each time we need
+a procedure for adding \q{2} to its argument:
+
+\q{
+(add2 4) |evalsto 6
+(add2 9) |evalsto 11
+}
+
+\index{procedure!parameters}
+\subsection{Procedure parameters}
+
+The parameters of a \q{lambda}-procedure are specified
+by its first subform (the form immediately following
+the head, the symbol \q{lambda}).  \q{add2}
+is a single-argument --- or {\em unary} --- procedure, and so its parameter
+list is the singleton list \q{(x)}.  The symbol \q{x}
+acts as a variable holding the procedure's argument.
+Each occurrence of \q{x} in the procedure's body refers
+to the procedure's argument.  The variable \q{x} is
+said to be {\em local} to the procedure's body.
+
+We can use 2-element lists for 2-argument procedures,
+and in general, {\em n}-element lists for {\em
+n}-argument procedures.  The following is a 2-argument
+procedure that calculates the area of a rectangle.  Its
+two arguments are the length and breadth of the
+rectangle.
+
+\q{
+(define area
+  (lambda (length breadth)
+    (* length breadth)))
+}
+
+Notice that \q{area} multiplies its arguments, and so
+does the primitive procedure \q{*}.  We could have
+simply said:
+
+\q{
+(define area *)
+}
+
+\subsection{Variable number of arguments}
+
+Some procedures can be called at different times with
+different numbers of arguments.  To do this, the
+\q{lambda} parameter list is replaced by a single
+symbol.  This symbol acts as a variable that is bound
+to the list of the arguments that the procedure is
+called on.
+
+In general, the \q{lambda} parameter list can be a list
+of the form \q{(x ...)}, a symbol, or a dotted pair of
+the form \q{(x ... . z)}.  In the dotted-pair case, all
+the variables before the dot are bound to the
+corresponding arguments in the procedure call, with the
+single variable after the dot picking up all the
+remaining arguments as one list.
+
+%examples
+\index{apply@\q{apply}}
+
+\section{\q{apply}}
+
+The Scheme procedure \q{apply} lets us call a procedure
+on a {\em list} of its arguments.
+
+\q{
+(define x '(1 2 3))
+
+(apply + x)
+|evalsto 6
+}
+
+In general, \q{apply} takes a procedure, followed by a
+variable number of other arguments, the last of which
+must be a list.  It constructs the argument list by
+prefixing the last argument with all the other
+(intervening) arguments.  It then returns the result of
+calling the procedure
+on this argument list.  Eg,
+
+\q{
+(apply + 1 2 3 x)
+|evalsto 12
+}
+
+\index{begin@\q{begin}}
+
+\section{Sequencing}
+
+We used the \q{begin} special form to bunch together a
+group of subforms that need to be evaluated in
+sequence.  Many Scheme forms have {\em implicit}
+\q{begin}s.  For example, let's define a 3-argument procedure that
+displays its three arguments, with spaces between
+them.  A possible definition is:
+
+\q{
+(define display3
+  (lambda (arg1 arg2 arg3)
+    (begin
+      (display arg1)
+      (display " ")
+      (display arg2)
+      (display " ")
+      (display arg3)
+      (newline))))
+}
+
+\index{begin@\q{begin}!implicit}
+
+In Scheme, \q{lambda}-bodies are implicit \q{begin}s.
+Thus, the \q{begin} in \q{display3}'s body isn't needed, although it doesn't
+hurt.  \q{display3}, more simply, is:
+
+\q{
+(define display3
+  (lambda (arg1 arg2 arg3)
+    (display arg1)
+    (display " ")
+    (display arg2)
+    (display " ")
+    (display arg3)
+    (newline)))
+}

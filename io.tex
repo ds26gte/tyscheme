@@ -1,0 +1,246 @@
+\chapter{I/O}
+
+\index{port}
+Scheme has input/output (I/O) procedures that will let you
+read from an input port or write to an output port.  Ports
+can be associated with the console, files or strings.
+
+\section{Reading}
+
+Scheme's reader procedures take an optional input port
+argument.  If the port is not specified, the current input
+port (usually the console) is assumed.
+
+\index{eof-object?@\q{eof-object?}}
+
+Reading can be character-, line- or s-expression-based.
+Each time a read is performed, the port's state changes so
+that the next read will read material following what was
+already read.  If the port has no more material to be read,
+the reader procedure returns a specific datum called the
+end-of-file or eof object.  This datum is the only value
+that satisfies the \q{eof-object?} predicate.
+
+\index{read-char@\q{read-char}}
+\index{read-line@\q{read-line}}
+\index{read@\q{read}}
+
+The procedure \q{read-char} reads the next character from
+the port.  \q{read-line} reads the next line, returning it
+as a string (the final newline is not included).  The
+procedure \q{read} reads the next s-expression.
+
+\section{Writing}
+
+Scheme's writer procedures take the object that is to be
+written and an optional output port argument.  If the port
+is not specified, the current output port (usually the
+console) is assumed.
+
+Writing can be character- or s-expression-based.
+
+\index{write-char@\q{write-char}}
+
+The procedure \q{write-char} writes the given character
+(without the \p{#\}) to the output port.
+
+\index{write@\q{write}}
+\index{display@\q{display}}
+\index{newline@\q{newline}}
+
+The procedures \q{write} and \q{display} both
+write the given s-expression to the port, with one
+difference: \q{write} attempts to use a machine-readable
+format and \q{display} doesn't.  Eg, \q{write} uses double
+quotes for strings and the \p{#\} syntax for characters.
+\q{display} doesn't.
+
+The procedure \q{newline} starts a new line on 
+the output port.
+
+\index{port!for file}
+\index{file!port for}
+
+\section{File ports}
+
+\index{current-input-port@\q{current-input-port}}
+\index{current-output-port@\q{current-output-port}}
+\index{standard input}
+\index{standard output}
+Scheme's I/O procedures do not need a port argument if the
+port happens to be standard input or standard output.
+However, if you need these ports explicitly, the
+zero-argument procedures \q{current-input-port} and
+\q{current-output-port} furnish them.  Thus,
+
+\q{
+(display 9)
+(display 9 (current-output-port))
+}
+
+\n have the same behavior.
+
+\index{open-input-file@\q{open-input-file}}
+\index{open-output-file@\q{open-output-file}}
+
+A port is associated with a file by {\em opening} the file.
+The procedure \q{open-input-file} takes a filename argument
+and returns a new input port associated with it.  The
+procedure \q{open-output-file} takes a filename argument and
+returns a new output port associated with it.  It is an
+error to open an input file that doesn't exist, or to open
+an output file that already exists.
+
+\index{close-input-port@\q{close-input-port}}
+\index{close-output-port@\q{close-output-port}}
+
+After you have performed I/O on a port, you should close it
+with \q{close-input-port} or \q{close-output-port}.
+
+In the following, assume the file \p{hello.txt} contains the
+single word \q{hello}.  
+
+\q{
+(define i (open-input-file "hello.txt"))
+
+(read-char i)
+|evalsto #\h
+
+(define j (read i))
+
+j
+|evalsto ello
+}
+
+Assume the file \p{greeting.txt} does not exist before the
+following programs are fed to the listener:
+
+\q{
+(define o (open-output-file "greeting.txt"))
+
+(display "hello" o)
+(write-char #\space o)
+(display 'world o)
+(newline o)
+
+(close-output-port o)
+}
+
+\n The file \p{greeting.txt} will now contain the
+line:
+
+\p{
+hello world
+}
+
+\subsection{Automatic opening and closing of file ports}
+
+\index{call-with-input-file@\q{call-with-input-file}}
+\index{call-with-output-file@\q{call-with-output-file}}
+Scheme supplies the procedures \q{call-with-input-file} and
+\q{call-with-output-file} that will take care of opening a
+port and closing it after you're done with it.
+
+The procedure \q{call-with-input-file} takes a filename
+argument and a procedure.  The procedure is applied to an
+input port opened on the file.  When the procedure
+completes, its result is returned after ensuring that the
+port is closed.
+
+\q{
+(call-with-input-file "hello.txt"
+  (lambda (i)
+    (let* ((a (read-char i))
+           (b (read-char i))
+           (c (read-char i)))
+      (list a b c))))
+|evalsto (#\h #\e #\l)
+}
+
+The procedure \q{call-with-output-file} does the analogous
+services for an output file.
+
+
+\index{string!port for}
+\index{port!for string}
+
+\section{String ports}
+
+\index{open-input-string@\q{open-input-string}}
+It is often convenient to associate ports with strings.
+Thus, the procedure \q{open-input-string} associates a port
+with a given string.  Reader procedures on this port will
+read off the string:
+
+\q{
+(define i (open-input-string "hello world"))
+
+(read-char i)
+|evalsto #\h
+
+(read i)
+|evalsto ello
+
+(read i)
+|evalsto world
+}
+
+\index{open-output-string@\q{open-output-string}}
+
+The procedure \q{open-output-string} creates an 
+output port that will eventually be used to create a string:
+
+\q{
+(define o (open-output-string))
+
+(write 'hello o)
+(write-char #\, o)
+(display " " o)
+(display "world" o)
+}
+
+\index{get-output-string@\q{get-output-string}}
+
+You can now use the procedure \q{get-output-string} to get
+the accumulated string in the string port \q{o}:
+
+\q{
+(get-output-string o)
+|evalsto "hello, world"
+}
+
+String ports need not be explicitly closed.
+
+\index{file!loading}
+\index{load@\q{load}}
+
+\section{Loading files}
+
+We have already seen the procedure \q{load} that loads
+files containing Scheme code.  {\em Loading} a file
+consists in evaluating in sequence every Scheme form in
+the file.  The pathname argument given to \q{load} is
+reckoned relative to the current working directory of
+Scheme, which is normally the directory in which the
+Scheme executable was called.
+
+Files can load other files, and this is useful in a
+large program spanning many files.  Unfortunately,
+unless full pathnames are used, the argument file of a
+\q{load} is dependent on Scheme's current
+directory.  Supplying full pathnames is not always
+convenient, because we would like to move the program
+files as a unit (preserving their relative pathnames),
+perhaps to many different machines.  
+
+\index{load-relative@\q{load-relative}}
+
+MzScheme provides the \q{load-relative} procedure that
+greatly helps in fixing the files to be loaded.
+\q{load-relative}, like \q{load}, takes a pathname
+argument.  When a \q{load-relative} call occurs in a
+file \q{foo.scm}, the path of its argument is reckoned
+from the directory of the calling file \q{foo.scm}.  In
+particular, this pathname is reckoned independent of
+Scheme's current directory, and thus allows convenient
+multifile program development.

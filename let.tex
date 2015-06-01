@@ -1,0 +1,270 @@
+\chapter{Lexical variables}
+
+\index{variable!lexical}
+\index{variable!local}
+\index{variable!global}
+Scheme's variables have lexical scope, ie, they are
+visible only to forms within a certain contiguous
+stretch of program text.  The {\em global} variables we
+have seen thus far are no exception: Their scope is all
+program text, which is certainly contiguous.
+
+We have also seen some examples of {\em local}
+variables.  These were the \q{lambda} parameters, which
+get {\em bound} each time the procedure is called, and
+whose scope is that procedure's body.  Eg,
+
+\q{
+(define x 9)
+(define add2 (lambda (x) (+ x 2)))
+
+x        |evalsto 9
+
+(add2 3) |evalsto 5
+(add2 x) |evalsto 11
+
+x        |evalsto 9
+}
+
+Here, there is a global \q{x}, and there is also a
+local \q{x}, the latter introduced by procedure
+\q{add2}.  The global \q{x} is always
+\q{9}.  The local \q{x} gets bound to \q{3} in the
+first call to \q{add2} and to the value of the global
+\q{x}, ie, \q{9}, in the second call to \q{add2}.
+When the procedure calls return, the global \q{x}
+continues to be \q{9}.
+
+The form \q{set!} modifies the lexical binding of a
+variable.
+
+\q{
+(set! x 20)
+}
+
+\n modifies the global binding of \q{x} from \q{9} to
+\q{20}, because that is the binding of \q{x} that is
+visible to \q{set!}.  If the \q{set!} was inside
+\q{add2}'s body, it would have modified the local
+\q{x}:
+
+\q{
+(define add2
+  (lambda (x)
+    (set! x (+ x 2))
+    x))
+}
+
+The \q{set!} here adds \q{2} to the local variable
+\q{x}, and the procedure returns this new value of the local \q{x}.  (In terms of effect,
+this procedure is indistinguishable from the previous
+\q{add2}.)  We can call \q{add2} on the
+global \q{x}, as before:
+
+\q{
+(add2 x) |evalsto 22
+}
+
+\n (Remember global \q{x} is now \q{20}, not \q{9}!)
+
+The \q{set!} inside \q{add2} affects only the local
+variable used by \q{add2}.  Although the local variable
+\q{x} got its  binding from the global \q{x},
+the latter is unaffected by the \q{set!} to the local
+\q{x}.
+
+\q{
+x |evalsto 20
+}
+
+Note that we had all this discussion because we used
+the same identifier for a local variable and a global
+variable.  In any text, an identifier named \q{x} refers
+to the lexically closest variable named \q{x}.  This
+will {\em shadow} any outer or global \q{x}'s.  Eg,
+in \q{add2}, the parameter \q{x} shadows the global
+\q{x}.
+
+A procedure's body can access and modify variables in
+its surrounding scope provided the procedure's
+parameters don't shadow them.  This can give some
+interesting programs.  Eg,
+
+\q{
+(define counter 0)
+
+(define bump-counter
+  (lambda ()
+    (set! counter (+ counter 1))
+    counter))
+}
+
+The procedure \q{bump-counter} is a zero-argument
+procedure (also called a {\em thunk}).  It introduces
+no local variables, and thus cannot shadow anything.
+Each time it is called, it modifies the {\em global}
+variable
+\q{counter} --- it increments it by 1 --- and returns
+its current value.  Here are some successive calls to
+\q{bump-counter}:
+
+\q{
+(bump-counter) |evalsto 1
+(bump-counter) |evalsto 2
+(bump-counter) |evalsto 3
+}
+
+\index{let@\q{let}}
+\index{let*@\q{let*}}
+\section{\q{let} and \q{let*}}
+
+Local variables can be introduced without explicitly
+creating a procedure.  The special form \q{let}
+introduces a list of local variables for use within its
+body:
+
+\q{
+(let ((x 1)
+      (y 2)
+      (z 3))
+  (list x y z))
+|evalsto (1 2 3)
+}
+
+\n As with \q{lambda}, within the \q{let}-body, the local
+\q{x} (bound to \q{1}) shadows the global \q{x} (which
+is bound to \q{20}).
+
+The local variable initializations --- \q{x} to \q{1};
+\q{y} to \q{2}; \q{z} to \q{3} --- are not considered
+part of the \q{let} body.  Therefore, a reference to
+\q{x} in the initialization will refer to the global,
+not the local \q{x}:
+
+\q{
+(let ((x 1)
+      (y x))
+  (+ x y))
+|evalsto 21
+}
+
+\n This is because \q{x} is bound to \q{1}, and \q{y} is
+bound to the {\em global} \q{x}, which is \q{20}.
+
+Sometimes, it is convenient to have \q{let}'s list of
+lexical variables be introduced in sequence, so that
+the initialization of a later variable occurs in the
+{\em lexical scope} of earlier variables.   The form
+\q{let*} does this:
+
+\q{
+(let* ((x 1)
+       (y x))
+  (+ x y))
+|evalsto 2
+}
+
+\n The \q{x} in \q{y}'s initialization refers to the \q{x}
+just above.  The example is entirely equivalent to ---
+and is in fact intended to be a convenient abbreviation
+for --- the following program with nested \q{let}s:
+
+\q{
+(let ((x 1))
+  (let ((y x))
+    (+ x y)))
+|evalsto 2
+}
+
+The values bound to lexical variables can be
+procedures:
+
+\q{
+(let ((cons (lambda (x y) (+ x y))))
+  (cons 1 2))
+|evalsto 3
+}
+
+\n Inside this \q{let} body, the lexical variable \q{cons}
+adds its arguments.   Outside, \q{cons} continues to
+create dotted pairs.
+
+\index{fluid-let@\q{fluid-let}}
+
+\section{\q{fluid-let}}
+\label{fluid-let}
+
+A lexical variable is visible throughout its scope,
+provided it isn't shadowed.  Sometimes, it is helpful
+to {\em temporarily} set a lexical variable to a
+certain value.  For this, we use the form
+\q{fluid-let}.\f{\q{fluid-let} is a nonstandard special
+form.  See sec \ref{fluid-let-macro} for a definition
+of \q{fluid-let} in Scheme.}
+
+\q{
+(fluid-let ((counter 99))
+  (display (bump-counter)) (newline)
+  (display (bump-counter)) (newline)
+  (display (bump-counter)) (newline))
+}
+
+\n
+This looks similar to a \q{let}, but instead of
+shadowing the global variable \q{counter}, it
+temporarily sets it to \q{99} before continuing with
+the
+\q{fluid-let} body.  Thus the \q{display}s in the body
+produce
+
+\p{
+100
+101
+102
+}
+
+\n After the \q{fluid-let} expression has evaluated,
+the global \q{counter} reverts to the value it had
+before the \q{fluid-let}.
+
+\q{
+counter |evalsto 3
+}
+
+Note that \q{fluid-let} has an entirely different
+effect from \q{let}.  \q{fluid-let} does not introduce
+new lexical variables like \q{let} does.  It modifies
+the bindings of {\em existing} lexical variables, and
+the modification ceases as soon as the \q{fluid-let} does.
+
+To drive home this point, consider the program
+
+\q{
+(let ((counter 99))
+  (display (bump-counter)) (newline)
+  (display (bump-counter)) (newline)
+  (display (bump-counter)) (newline))
+}
+
+\n which substitutes \q{let} for \q{fluid-let} in
+the previous example.  The output is now
+
+\q{
+4
+5
+6
+}
+
+\n Ie, the global \q{counter}, which is initially
+\q{3}, is updated by each call to \q{bump-counter}.
+The new lexical variable \q{counter}, with its
+initialization of \q{99}, has no impact on the calls to
+\q{bump-counter}, because although the calls to
+\q{bump-counter} are within the scope of this local
+\q{counter}, the body of \q{bump-counter} isn't.  The
+latter continues to refer to the {\em global}
+\q{counter}, whose final value is \q{6}.
+
+\q{
+counter |evalsto 6
+}

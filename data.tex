@@ -1,0 +1,820 @@
+\chapter{Data types}
+
+\index{data type}
+A {\em data type} is a collection of related values.
+These collections
+need not be disjoint, and they are often hierarchical.
+Scheme has a rich set of data types: some are simple
+(indivisible) data types and others are compound data types
+made by combining other data types.
+
+\index{data type!simple}
+
+\section{Simple data types}
+
+The simple data types of Scheme include booleans, numbers,
+characters, and symbols.
+
+
+\index{boolean}
+
+\subsection{Booleans}
+\label{booleans}
+
+\index{boolean?@\q{boolean?}}
+\index{t@\q{#t}}
+\index{f@\q{#f}}
+\index{truth}
+\index{falsity}
+Scheme's booleans are \q{#t} for true and \q{#f} for false.
+Scheme has a predicate procedure called \q{boolean?} that
+checks if its argument is boolean.
+
+\q{
+(boolean? #t)              |evalsto #t
+(boolean? "Hello, World!") |evalsto #f
+}
+
+\index{not@\q{not}}
+
+\n The procedure \q{not} negates its argument, considered as a
+boolean.
+
+\q{
+(not #f)              |evalsto #t
+(not #t)              |evalsto #f
+(not "Hello, World!") |evalsto #f
+}
+
+\n The last expression illustrates a Scheme convenience:
+In a context that requires a boolean, Scheme will treat
+any value that is not \q{#f} as a true value.
+
+
+\index{number}
+
+\subsection{Numbers}
+
+Scheme numbers can be integers (eg, \q{42}), rationals
+(\q{22/7}), reals (\q{3.1416}), or complex (\q{2+3i}).  An
+integer is a rational is a real is a complex number is a
+number.  Predicates exist for testing the various kinds of
+numberness:
+
+\index{number?@\q{number?}}
+\index{integer?@\q{integer?}}
+\index{rational?@\q{rational?}}
+\index{real?@\q{real?}}
+\index{complex?@\q{complex?}}
+
+\q{
+(number? 42)       |evalsto #t
+(number? #t)       |evalsto #f
+(complex? 2+3i)    |evalsto #t
+(real? 2+3i)       |evalsto #f
+(real? 3.1416)     |evalsto #t
+(real? 22/7)       |evalsto #t
+(real? 42)         |evalsto #t
+(rational? 2+3i)   |evalsto #f
+(rational? 3.1416) |evalsto #t
+(rational? 22/7)   |evalsto #t
+(integer? 22/7)    |evalsto #f
+(integer? 42)      |evalsto #t
+}
+
+\index{b@\q{#b} (binary number)}
+\index{o@\q{#o} (octal number)}
+\index{x@\q{#x} (hexadecimal number)}
+\index{d@\q{#d} (decimal number)}
+
+\n Scheme integers need not be specified in decimal (base 10)
+format.  They can be specified in binary by prefixing the
+numeral with \q{#b}.  Thus \q{#b1100} is the number twelve.
+The octal prefix is \q{#o} and the hex prefix is
+\q{#x}.  (The optional decimal prefix is \q{#d}.)
+
+\index{eqv?@\q{eqv?}}
+
+Numbers can tested for equality using the general-purpose
+equality predicate \q{eqv?}.
+
+\q{
+(eqv? 42 42)   |evalsto #t
+(eqv? 42 #f)   |evalsto #f
+(eqv? 42 42.0) |evalsto #f
+}
+
+\index{=@\q{=}}
+
+\n However, if you know that the arguments to be compared are
+numbers, the special number-equality predicate \q{=} is more
+apt.
+
+\q{
+(= 42 42)   |evalsto #t
+(= 42 #f)   |causeserror
+(= 42 42.0) |evalsto #t
+}
+
+\index{<@\q{<}}
+\index{<=@\q{<=}}
+\index{>@\q{>}}
+\index{>=@\q{>=}}
+
+\n Other number comparisons allowed are
+\q{<}, \q{<=}, \q{>}, \q{>=}.
+
+\q{
+(< 3 2)    |evalsto #f
+(>= 4.5 3) |evalsto #t
+}
+
+\index{+@\q{+}}
+\index{-@\q{-}}
+\index{*@\q{*}}
+\index{/@\q{/}}
+\index{expt@\q{expt}}
+
+\n Arithmetic procedures \q{+}, \q{-}, \q{*}, \q{/}, \q{expt} have the
+expected behavior:
+
+\q{
+(+ 1 2 3)    |evalsto 6
+(- 5.3 2)    |evalsto 3.3
+(- 5 2 1)    |evalsto 2
+(* 1 2 3)    |evalsto 6
+(/ 6 3)      |evalsto 2
+(/ 22 7)     |evalsto 22/7
+(expt 2 3)   |evalsto 8
+(expt 4 1/2) |evalsto 2.0
+}
+
+\n For a single argument, \q{-} and \q{/} return the negation
+and the reciprocal respectively:
+
+\q{
+(- 4) |evalsto -4
+(/ 4) |evalsto 1/4
+}
+
+\index{max@\q{max}}
+\index{min@\q{min}}
+
+\n The procedures \q{max} and \q{min} return the maximum and
+minimum respectively of the number arguments supplied to
+them.  Any number of arguments can be so supplied.
+
+\q{
+(max 1 3 4 2 3) |evalsto 4
+(min 1 3 4 2 3) |evalsto 1
+}
+
+\index{abs@\q{abs}}
+
+\n The procedure \q{abs} returns the absolute value of
+its argument.
+
+\q{
+(abs  3) |evalsto 3
+(abs -4) |evalsto 4
+}
+
+\index{atan@\q{atan}}
+\index{exp@\q{exp}}
+\index{sqrt@\q{sqrt}}
+
+\n This is just the tip of the iceberg.  Scheme
+provides a large and comprehensive suite of arithmetic
+and trigonometric procedures.  For instance, \q{atan},
+\q{exp}, and \q{sqrt} respectively return the
+arctangent, natural antilogarithm, and 
+square root of their argument.  Consult
+R5RS \cite{r5rs} for more details.
+
+\index{character}
+
+\subsection{Characters}
+
+\index{character!-notation@\p+#\+ notation for}
+Scheme character data are represented by prefixing the
+character with \p{#\}.  Thus, \q{#\c} is the character
+\p{c}.  Some non-graphic characters have more descriptive
+names, eg, \q{#\newline}, \q{#\tab}.  The character for
+space can be written \q{#\ }~,  or more readably, \q{#\space}.
+
+\index{char?@\q{char?}}
+
+The character predicate is \q{char?}:
+
+\q{
+(char? #\c) |evalsto #t
+(char? 1)   |evalsto #f
+(char? #\;) |evalsto #t
+}
+
+\n Note that a semicolon character datum does not trigger
+a comment.
+
+\index{char=?@\q{char=?}}
+\index{char<?@\q{char<?}}
+\index{char<=?@\q{char<=?}}
+\index{char>?@\q{char>?}}
+\index{char>=?@\q{char>=?}}
+
+The character data type has its set of comparison
+predicates: \q{char=?}, \q{char<?}, \q{char<=?}, \q{char>?},
+\q{char>=?}.
+
+\q{
+(char=? #\a #\a)  |evalsto #t
+(char<? #\a #\b)  |evalsto #t
+(char>=? #\a #\b) |evalsto #f
+}
+
+\index{char-ci=?@\q{char-ci=?}}
+\index{char-ci<?@\q{char-ci<?}}
+\index{char-ci<=?@\q{char-ci<=?}}
+\index{char-ci>?@\q{char-ci>?}}
+\index{char-ci>=?@\q{char-ci>=?}}
+
+\n To make the comparisons case-insensitive, use \q{char-ci}
+instead of \q{char} in the procedure name:
+
+\q{
+(char-ci=? #\a #\A) |evalsto #t
+(char-ci<? #\a #\B) |evalsto #t
+}
+
+\index{char-downcase@\q{char-downcase}}
+\index{char-upcase@\q{char-upcase}}
+
+\n The case conversion procedures are \q{char-downcase} and
+\q{char-upcase}:
+
+\q{
+(char-downcase #\A) |evalsto #\a
+(char-upcase #\a)   |evalsto #\A
+}
+
+\index{symbol}
+
+\subsection{Symbols}
+
+\index{self-evaluation}
+The simple data types we saw above are {\em
+self-evaluating}.  Ie, if you typed any object from these
+data types to the listener, the evaluated result returned by
+the listener will be the same as what you typed in.
+
+\q{
+#t  |evalsto #t
+42  |evalsto 42
+#\c |evalsto #\c
+}
+
+\index{identifier}
+\index{variable}
+
+\n Symbols don't behave the same way.  This is because symbols
+are used by Scheme programs as {\em identifiers} for {\em
+variables}, and thus will evaluate to the value that the
+variable holds.  Nevertheless, symbols are a simple data
+type, and symbols are legitimate values that Scheme can
+traffic in, along with characters, numbers, and the rest.
+
+\index{quote@\q{quote}}
+
+To specify a symbol without making Scheme think it is a
+variable, you should {\em quote} the symbol:
+
+
+\q{
+(quote xyz)
+|evalsto xyz
+}
+
+\index{'@\q{'} (\q{quote})}
+
+Since this type of quoting is very common in Scheme, a
+convenient abbreviation is provided.  The expression
+
+\q{
+'E
+}
+
+\n will be treated by Scheme as equivalent to
+
+\q{
+(quote E)
+}
+
+\index{symbol?@\q{symbol?}}
+
+\n Scheme symbols are named by a sequence of characters.  About
+the only limitation on a symbol's name is that it shouldn't
+be mistakable for some other data, eg, characters or booleans
+or numbers or compound data.  Thus, \q{this-is-a-symbol},
+\q{i18n},
+\q{<=>}, and \q{$!#*} are all symbols; \q{16}, \q{-i} (a
+complex number!), %$
+\q{#t}, \q{"this-is-a-string"}, and
+\q{(barf)} (a list) are not.    The predicate for
+checking symbolness is called \q{symbol?}:
+
+\q{
+(symbol? 'xyz) |evalsto #t
+(symbol? 42)   |evalsto #f
+}
+
+\index{symbol!case-insensitivity}
+
+\n Scheme symbols are normally case-insensitive.  Thus the
+symbols
+\q{Calorie} and \q{calorie} are identical:
+
+\q{
+(eqv? 'Calorie 'calorie)
+|evalsto #t
+}
+
+\index{define@\q{define}}
+\index{variable!global}
+
+\n We can use the symbol \q{xyz} as a global variable by using
+the form \q{define}:
+
+\q{
+(define xyz 9)
+}
+
+\n This says the variable \q{xyz} holds the value \q{9}.  If we
+feed \q{xyz} to the listener, the result will be the value
+held by \q{xyz}:
+
+\q{
+xyz
+|evalsto 9
+}
+
+\index{set"!@\q{set"!}}
+\n We can use the form \q{set!} to {\em change} the value held by a
+variable:
+
+\q{
+(set! xyz #\c)
+}
+
+\n Now
+
+\q{
+xyz
+|evalsto #\c
+}
+
+\index{data type!compound}
+
+\section{Compound data types}
+
+Compound data types are built by combining values from
+other data types in structured ways.
+
+\index{string}
+
+\subsection{Strings}
+
+Strings are sequences of characters (not to be confused with
+symbols, which are simple data that have a sequence of
+characters as their name).  You can specify strings by
+enclosing the constituent characters in double-quotes.
+Strings evaluate to themselves.
+
+\q{
+"Hello, World!"
+|evalsto "Hello, World!"
+}
+
+\index{string@\q{string} (procedure)}
+
+\n The procedure \q{string} takes a bunch of characters and
+returns the string made from them:
+
+\q{
+(string #\h #\e #\l #\l #\o)
+|evalsto "hello"
+}
+
+\n Let us now define a global variable \q{greeting}.  
+
+\q{
+(define greeting "Hello; Hello!")
+}
+
+\n Note that a semicolon inside a string datum does not
+trigger a comment.
+
+\index{string-ref@\q{string-ref}}
+
+The characters in a given string can be individually
+accessed and modified.  The procedure \q{string-ref} takes a
+string and a (0-based) index, and returns the character at
+that index:
+
+\q{
+(string-ref greeting 0)
+|evalsto #\H
+}
+
+
+\index{string-append@\q{string-append}}
+
+\n New strings can be created by appending other strings:
+
+\q{
+(string-append "E "
+               "Pluribus "
+               "Unum")
+|evalsto "E Pluribus Unum"
+}
+
+\index{make-string@\q{make-string}}
+
+You can make a string of a specified length, and fill it
+with the desired characters later.
+
+\q{
+(define a-3-char-long-string (make-string 3))
+}
+
+\index{string?@\q{string?}}
+
+The predicate for checking stringness is \q{string?}.
+
+\index{string-set"!@\q{string-set"!}}
+
+Strings obtained as a result of calls to \q{string},
+\q{make-string}, and \q{string-append} are mutable.
+The procedure \q{string-set!} replaces the
+character at a given index:
+
+\q{
+(define hello (string #\H #\e #\l #\l #\o)) 
+hello
+|evalsto "Hello"
+
+(string-set! hello 1 #\a)
+hello
+|evalsto "Hallo"
+}
+\index{vector}
+
+\subsection{Vectors}
+
+Vectors are sequences like strings, but their elements can
+be anything, not just characters.  Indeed, the elements can
+be vectors themselves, which is a good way to generate
+multidimensional vectors.
+
+\index{vector@\q{vector} (procedure)}
+
+Here's a way to create a vector of the first five integers:
+
+\q{
+(vector 0 1 2 3 4)
+|evalsto #(0 1 2 3 4)
+}
+
+\n Note Scheme's representation of a vector value: a \p{#}
+character followed by the vector's contents enclosed in
+parentheses.
+
+\index{make-vector@\q{make-vector}}
+
+In analogy with \q{make-string}, the procedure
+\q{make-vector} makes a vector of a specific length:
+
+\q{
+(define v (make-vector 5))
+}
+
+\n The procedures \q{vector-ref} and \q{vector-set!} access and
+modify vector elements.
+The predicate for checking if something is a vector is \q{vector?}.
+
+\index{dotted pair}
+\index{list}
+\index{car@\q{car}}
+\index{cdr@\q{cdr}}
+\index{cons@\q{cons}}
+
+\subsection{Dotted pairs and lists}
+
+A {\em dotted pair} is a compound value made by combining
+any two arbitrary values into an ordered couple.  The
+first element is called the {\em car}, the second
+element is called the {\em cdr}, and the combining
+procedure is \q{cons}.
+
+\q{
+(cons 1 #t)
+|evalsto (1 . #t)
+}
+
+\n Dotted pairs are not self-evaluating, and so to specify
+them directly as data (ie, without producing them via
+a \q{cons}-call), one must explicitly quote them:
+
+\q{
+'(1 . #t) |evalsto (1 . #t)
+
+(1 . #t)  |causeserror
+}
+
+\n The accessor procedures are \q{car} and \q{cdr}:
+
+\q{
+(define x (cons 1 #t))
+
+(car x)
+|evalsto 1
+
+(cdr x)
+|evalsto #t
+}
+
+\index{set-car"!@\q{set-car"!}}
+\index{set-cdr"!@\q{set-cdr"!}}
+
+\n The elements of a dotted pair can be replaced by the
+mutator procedures \q{set-car!} and \q{set-cdr!}:
+
+\q{
+(set-car! x 2)
+
+(set-cdr! x #f)
+
+x
+|evalsto (2 . #f)
+}
+
+\n Dotted pairs can contain other dotted pairs.
+
+\q{
+(define y (cons (cons 1 2) 3))
+
+y
+|evalsto ((1 . 2) . 3)
+}
+
+\n The \q{car} of the \q{car} of this list is \q{1}.
+The \q{cdr} of the \q{car} of this list is \q{2}.
+Ie,
+
+\q{
+(car (car y))
+|evalsto 1
+
+(cdr (car y))
+|evalsto 2
+}
+
+\index{c...r@\q{c...r}}
+
+\n Scheme provides procedure abbreviations for cascaded
+compositions of the \q{car} and \q{cdr} procedures.
+Thus, \q{caar} stands for ``\q{car} of \q{car} of'',
+and \q{cdar} stands for ``\q{cdr} of \q{car} of'', etc.
+
+\q{
+(caar y)
+|evalsto 1
+
+(cdar y)
+|evalsto 2
+}
+
+\n \q{c...r}-style abbreviations for upto four cascades are
+guaranteed to exist.  Thus, \q{cadr}, \q{cdadr}, and
+\q{cdaddr} are all valid.  \q{cdadadr} might be pushing it.
+
+When nested dotting occurs along the second element,
+Scheme uses a special notation to represent the
+resulting expression:
+
+\q{
+(cons 1 (cons 2 (cons 3 (cons 4 5))))
+|evalsto (1 2 3 4 . 5)
+}
+
+\n Ie, \q{(1 2 3 4 . 5)} is an abbreviation for \q{(1
+. (2 . (3 . (4 . 5))))}.  The last cdr of this
+expression is \q{5}.
+
+\index{empty list}
+
+Scheme provides a further abbreviation if the last cdr
+is a special object called the {\em empty list}, which
+is represented by the expression \q{()}.  The empty
+list is not considered self-evaluating, and so one
+should quote it when supplying it as a value in a
+program:
+
+\q{
+'() |evalsto ()
+}
+
+\n The abbreviation for a dotted pair of the form \q{(1
+. (2 . (3 . (4 . ()))))} is
+
+\q{
+(1 2 3 4)
+}
+
+\n 
+\index{list@\q{list} (procedure)}
+This special kind of nested dotted pair is called a
+{\em list}.  This particular list is four elements
+long.  It could have been created by saying
+
+\q{
+(cons 1 (cons 2 (cons 3 (cons 4 '()))))
+}
+
+\n but Scheme provides a procedure called \q{list} that
+makes list creation more convenient.  \q{list} takes
+any number of arguments and returns the list containing
+them:
+
+\q{
+(list 1 2 3 4)
+|evalsto (1 2 3 4)
+}
+
+Indeed, if we know all the elements of a list, we can use
+\q{quote} to specify the list:
+
+\q{
+'(1 2 3 4)
+|evalsto (1 2 3 4)
+}
+
+\n 
+\index{list-ref@\q{list-ref}}
+\index{list-tail@\q{list-tail}}
+List elements can be accessed by index.
+
+\q{
+(define y (list 1 2 3 4))
+
+(list-ref y 0) |evalsto 1
+(list-ref y 3) |evalsto 4
+
+(list-tail y 1) |evalsto (2 3 4)
+(list-tail y 3) |evalsto (4)
+}
+
+\n \q{list-tail} returns the {\em tail} of the list
+starting from the given index.
+
+\index{pair?@\q{pair?}}
+\index{null?@\q{null?}}
+\index{list?@\q{list?}}
+
+The predicates \q{pair?}, \q{list?}, and \q{null?}
+check if their argument is a dotted pair, list, or the
+empty list, respectively:
+
+\q{
+(pair? '(1 . 2)) |evalsto #t
+(pair? '(1 2))   |evalsto #t
+(pair? '())      |evalsto #f
+(list? '())      |evalsto #t
+(null? '())      |evalsto #t
+(list? '(1 2))   |evalsto #t
+(list? '(1 . 2)) |evalsto #f
+(null? '(1 2))   |evalsto #f
+(null? '(1 . 2)) |evalsto #f
+}
+
+\subsection{Conversions between data types}
+
+\index{data type!conversion to and fro}
+\index{char->integer@\q{char->integer}}
+\index{integer->char@\q{integer->char}}
+\index{string->list@\q{string->list}}
+\index{list->string@\q{list->string}}
+\index{vector->list@\q{vector->list}}
+\index{list->vector@\q{list->vector}}
+\index{number->string@\q{number->string}}
+\index{string->number@\q{string->number}}
+Scheme offers many procedures for converting among
+the data types.  We already know how to convert between
+the character cases using \q{char-downcase} and
+\q{char-upcase}.  Characters can be converted into
+integers using \q{char->integer}, and integers can be
+converted into characters using \q{integer->char}.
+(The integer corresponding to a character is usually
+its ascii code.)
+
+\q{
+(char->integer #\d) |evalsto 100
+(integer->char 50)  |evalsto #\2
+}
+
+\n Strings can be converted into the corresponding list of
+characters.
+
+\q{
+(string->list "hello") |evalsto (#\h #\e #\l #\l #\o)
+}
+
+\n Other conversion procedures in the same vein are
+\q{list->string}, \q{vector->list}, and
+\q{list->vector}.
+
+Numbers can be converted to strings:
+
+\q{
+(number->string 16) |evalsto "16"
+}
+
+Strings can be converted to numbers.  If the string
+corresponds to no number, \q{#f} is returned.
+
+\q{
+(string->number "16")
+|evalsto 16
+
+(string->number "Am I a hot number?")
+|evalsto #f
+}
+
+\n \q{string->number} takes an optional second argument,
+the radix.
+
+\q{
+(string->number "16" 8) |evalsto 14
+}
+
+\n because \q{16} in base 8 is the number fourteen.
+
+Symbols can be converted to strings, and vice versa:
+
+\q{
+(symbol->string 'symbol)
+|evalsto "symbol"
+
+(string->symbol "string")
+|evalsto string
+}
+
+\section{Other data types}
+
+\index{procedure}
+Scheme contains some other data types.  One is the
+{\em procedure}.  We have already seen many procedures, eg,
+\q{display}, \q{+}, \q{cons}.  In reality, these are
+variables holding the procedure values, which are
+themselves not visible as are numbers or characters:
+
+\q{
+cons
+|evalsto <procedure>
+}
+
+\n The procedures we have seen thus far are {\em primitive}
+procedures, with standard global variables holding them.
+Users can create additional procedure values.
+
+\index{port}
+
+Yet another data type is the {\em port}.  A port is the
+conduit through which input and output is performed.
+Ports are usually associated with files and consoles.
+
+In our ``Hello, World!''\ program, we used the
+procedure \q{display} to write a string to the console.
+\q{display} can take two arguments, one the value to be
+displayed, and the other the output port it should be
+displayed on.
+
+In our program, \q{display}'s second argument was
+implicit.  The default output port used is the standard
+output port.  We can get the current standard output
+port via the procedure-call \q{(current-output-port)}.
+We could have been more explicit and written
+
+\q{
+(display "Hello, World!" (current-output-port))
+}
+
+\index{S-expression}
+
+\section{S-expressions}
+
+All the data types discussed here can be lumped
+together into a single all-encompassing data type
+called the {\em s-expression} ({\em s} for {\em
+symbolic}).  Thus \q{42}, \q{#\c}, \q{(1 . 2)}, \q{#(a
+b c)}, \q{"Hello"}, \q{(quote xyz)},
+\q{(string->number "16")}, and \q{(begin
+(display "Hello, World!") (newline))} are all s-expressions.

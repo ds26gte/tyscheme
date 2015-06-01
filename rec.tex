@@ -1,0 +1,253 @@
+\chapter{Recursion}
+
+\index{recursion}
+\index{procedure!recursive}
+A procedure body can contain calls to other procedures,
+not least itself:
+
+\q{
+(define factorial
+  (lambda (n)
+    (if (= n 0) 1
+        (* n (factorial (- n 1))))))
+}
+
+\n This {\em recursive} procedure calculates the {\em
+factorial} of a number.  If the number is \q{0}, the
+answer is \q{1}.  For any other number \q{n}, the
+procedure uses itself to calculate the factorial of
+\q{n - 1}, multiplies that subresult by \q{n}, and
+returns the product.
+
+Mutually recursive procedures are also possible.  The
+following predicates for evenness and oddness use each
+other:
+
+\q{
+(define is-even?
+  (lambda (n)
+    (if (= n 0) #t
+        (is-odd? (- n 1)))))
+
+(define is-odd?
+  (lambda (n)
+    (if (= n 0) #f
+        (is-even? (- n 1)))))
+}
+
+\index{even?@\q{even?}}
+\index{odd?@\q{odd?}}
+
+These definitions are offered here only as simple
+illustrations of mutual recursion.  Scheme already
+provides the primitive predicates \q{even?} and
+\q{odd?}.
+
+\index{letrec@\q{letrec}}
+\index{recursion!letrec@\q{letrec}}
+
+\section{\q{letrec}}
+
+If we wanted the above procedures as local
+variables, we could try to use a \q{let} form:
+
+\q{
+(let ((local-even? (lambda (n)
+                     (if (= n 0) #t
+                         (local-odd? (- n 1)))))
+      (local-odd? (lambda (n)
+                    (if (= n 0) #f
+                        (local-even? (- n 1))))))
+  (list (local-even? 23) (local-odd? 23)))
+}
+
+\n This won't quite work, because the occurrences of
+\q{local-even?} and \q{local-odd?} in the initializations
+don't refer to the lexical variables themselves.
+Changing the \q{let} to a \q{let*} won't work either,
+for while the \q{local-even?} inside \q{local-odd?}'s body
+refers to the correct procedure value, the \q{local-odd?}
+in \q{local-even?}'s body still points elsewhere.
+
+To solve problems like this, Scheme provides the form
+\q{letrec}:
+
+\q{
+(letrec ((local-even? (lambda (n)
+                        (if (= n 0) #t
+                            (local-odd? (- n 1)))))
+         (local-odd? (lambda (n)
+                       (if (= n 0) #f
+                           (local-even? (- n 1))))))
+  (list (local-even? 23) (local-odd? 23)))
+}
+
+\n The lexical variables introduced by a \q{letrec} are
+visible not only in the \q{letrec}-body but also within
+all the initializations.  \q{letrec} is thus
+tailor-made for defining recursive and mutually
+recursive local procedures.
+
+
+\index{named let@named \q{let}}
+\index{let@\q{let}!named}
+
+\section{Named \q{let}}
+
+A recursive procedure defined using \q{letrec} can
+describe loops.  Let's say we want to display a
+countdown from \q{10}:
+
+\q{
+(letrec ((countdown (lambda (i)
+                      (if (= i 0) 'liftoff
+                          (begin
+                            (display i)
+                            (newline)
+                            (countdown (- i 1)))))))
+  (countdown 10))
+}
+
+\n This outputs on the console the numbers \q{10} down to
+\q{1}, and returns the result \q{liftoff}.
+
+Scheme allows a variant of \q{let} called {\em named}
+\q{let} to write this kind of loop more compactly:
+
+\q{
+(let countdown ((i 10))
+  (if (= i 0) 'liftoff
+      (begin
+        (display i)
+        (newline)
+        (countdown (- i 1)))))
+}
+
+\n Note the presence of a variable identifying the loop
+immediately after the \q{let}.  This program is
+equivalent to the one written with \q{letrec}.  You may
+consider the named \q{let} to be a macro
+(chap \ref{sugar}) expanding to the \q{letrec} form.
+
+\index{iteration}
+\index{loop}
+\index{recursion!iteration as}
+\index{tail recursion}
+\index{recursion!tail}
+\index{tail call}
+\index{tail call!elimination of}
+\index{procedure!tail-recursive}
+
+\section{Iteration}
+
+\q{countdown} defined above is really a recursive
+procedure.  Scheme can define loops only through
+recursion.  There are no special looping or iteration
+constructs.
+
+Nevertheless, the loop as defined above is a {\em
+genuine} loop, in exactly the same way that other
+languages bill their loops.  Ie, Scheme takes special
+care to ensure that recursion of the type used above
+will not generate the procedure call/return overhead.
+
+Scheme does this by a process called {\em tail-call
+elimination}.  If you look closely at the \q{countdown}
+procedure, you will note that when the recursive call
+occurs in \q{countdown}'s body, it is the {\em tail call},
+or the very last thing done --- each invocation of
+\q{countdown} either does not call itself, or when it
+does, it does so as its very last act.  To a Scheme
+implementation, this makes the recursion
+indistinguishable from iteration.  So go ahead, use
+recursion to write loops.  It's safe.
+
+Here's another example of a useful tail-recursive
+procedure:
+
+\index{list-position@\q{list-position}}
+\scmfilename listpos.scm
+\scmdribble{
+(define list-position
+  (lambda (o l)
+    (let loop ((i 0) (l l))
+      (if (null? l) #f
+          (if (eqv? (car l) o) i
+              (loop (+ i 1) (cdr l)))))))
+}
+
+\n \q{list-position} finds the index of the first
+occurrence of the object \q{o} in the list \q{l}.  If
+the object is not found in the list, the procedure
+returns \q{#f}.
+
+Here's yet another tail-recursive procedure, one that
+reverses its argument list ``in place'', ie, by mutating
+the contents of the existing list, and without
+allocating a new one: 
+
+\index{reverse"!@\q{reverse"!}}
+\scmfilename reverseb.scm
+\scmdribble{
+(define reverse!
+  (lambda (s)
+    (let loop ((s s) (r '()))
+      (if (null? s) r
+	  (let ((d (cdr s)))
+            (set-cdr! s r)
+	    (loop d s))))))
+}
+
+\n 
+(\q{reverse!} is a useful enough procedure that it is
+provided primitively in many Scheme dialects, eg,
+MzScheme and Guile.) 
+
+For some numerical examples of recursion (including iteration),
+see Appendix~\ref{numint}.
+
+\index{map@\q{map}}
+\index{for-each@\q{for-each}}
+
+\section{Mapping a procedure across a list}
+
+A special kind of iteration involves repeating the same
+action for each element of a list.  Scheme offers two
+procedures for this situation: \q{map} and \q{for-each}.
+
+The \q{map} procedure applies a given procedure to every
+element of a given list, and returns the list of the
+results.  Eg,
+
+\q{
+(map add2 '(1 2 3))
+|evalsto (3 4 5)
+}
+
+The \q{for-each} procedure also applies a procedure to each
+element in a list, but returns void.  The procedure
+application is done purely for any side-effects it may
+cause.  Eg,
+
+\q{
+(for-each display
+  (list "one " "two " "buckle my shoe"))
+}
+
+\n has the side-effect of displaying the strings (in
+  the order they appear) on the console.
+
+The procedures applied by \q{map} and \q{for-each}
+need not be one-argument procedures.  For example,
+given an \q{n}-argument procedure, \q{map}
+takes \q{n} lists and applies the procedure to
+every set of \q{n} of arguments selected from across
+the lists.  Eg,
+
+\q{
+(map cons '(1 2 3) '(10 20 30))
+|evalsto ((1 . 10) (2 . 20) (3 . 30))
+
+(map + '(1 2 3) '(10 20 30))
+|evalsto (11 22 33)
+}

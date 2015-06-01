@@ -1,0 +1,410 @@
+\chapter{Numerical techniques}
+\label{numint}
+
+\index{numerical integration}
+\index{Simpson's rule}
+Recursion (including iteration) combines well with
+Scheme's mathematical primitive procedures to implement
+various numerical techniques.  As an example,
+let's implement Simpson's rule, a procedure for finding
+an approximation for a definite integral.  
+
+\section{Simpson's rule}
+
+The definite integral of a function $f(x)$ within an
+interval of integration $[a,b]$ can be viewed as the
+{\em area under the curve} representing $f(x)$ from the
+lower limit $x = a$ to the upper limit $x = b$.
+In other words, we consider the graph of the curve for
+$f(x)$ on the $x,y$-plane, and find the area enclosed
+between that curve, the $x$-axis, and the {\em
+ordinates} of $f(x)$ at $x = a$ and $x = b$.  
+
+\verbwritefile numint.mp
+\verbwrite{
+% File: numint.mp
+beginfig(1);
+
+u = 1mm;
+
+x.max = 120u;
+y.max = 70u;
+
+% draw x- and y-axes
+drawarrow (-5u,0) -- (x.max,0);
+drawarrow (0,-5u) -- (0,y.max);
+
+% label the axes
+label.rt(btex $x$ etex, (x.max,0) shifted (5,0));
+label.top(btex $y$ etex, (0,y.max) shifted (0,5));
+
+x0 = 25u;
+
+% interval between x[i] and x[i+1] is h
+h = 5u;
+
+% number of intervals (minus 1)
+n = 14;
+
+% calculate all the x[i]
+for i = 1 upto n:
+  x[i] = x0 + i*h;
+%  drawdot(x[i],0);
+endfor;
+
+% specify a function f(x) that is defined 
+% for all x in [ x0, x[n] ]
+path f;
+f = (x0-5u,40u) .. (x0+2h,55u) .. (x0+4h,65u) ..
+(x0+6h,55u) .. (x0+7h,55u) .. (x[n]+10u,50u); 
+draw f;     
+
+% label f(x)
+label.rt(btex $f(x)$ etex, point infinity of f);
+
+% x[i] is a good-looking abcissa in the middle
+% of [ x0, x[n] ] 
+%i = 8;
+i = n div 2;
+
+path ord[];
+
+% calculate (and draw) the ordinates for f(x)
+% at x0, x[i], x[i+1], x[n]
+for j = 0,i,i+1,n:
+z[j]f = ( (x[j],0)--(x[j],y.max) ) intersectionpoint f;
+ord[j] = (x[j],0) -- (x[j],y[j]f);
+draw ord[j];
+endfor;
+
+%% gray the integral area
+%path integ;
+%integ = buildcycle(((x0-5,0)--(x[n]+5,0)),
+%          ( (x0,-1) .. ord0 .. (x0,y0f+1)), f, 
+%((x[n],-1) ..  ord[n] .. (x[n], y[n]f+1))) ;
+%fill integ withcolor .8white;
+
+% identify x[i]--x[i+1] distance as h
+path hline;
+hline = (x[i],2h)--(x[i+1],2h);
+
+drawdblarrow hline;
+label.top(btex $h$ etex, point .5 of hline);
+
+% label the abcissae x0, x[i], x[i+1], x[n]
+
+dotlabel.bot(btex $\strut x_0 = a$ etex, (x0,0));
+dotlabel.bot(btex $\strut x_i$ etex, (x[i],0));
+dotlabel.lrt(btex $\strut x_{i+1}$ etex, (x[i+1],0));
+dotlabel.bot(btex $\strut x_n = b$ etex, (x[n],0));
+
+% label the corresponding ordinates 
+label.lft(btex $y_0$ etex, point .5 of ord0);
+label.lft(btex $y_i$ etex, point .5 of ord[i]);
+label.rt(btex $y_{i+1}$ etex, point .5 of ord[i+1]);
+label.rt(btex $y_n$ etex, point .5 of ord[n]); 
+
+
+endfig;
+end.
+}
+\centerline{\epsfbox{numint.1}}
+
+According to Simpson's rule, we divide 
+the interval of integration $[a,b]$ 
+into $n$ evenly spaced
+intervals, where $n$ is even. (The larger $n$
+is, the better the approximation.)
+The interval boundaries constitute
+$n+1$ points on the $x$-axis, viz, $x_0$, $x_1$,
+\dots, $x_i$, $x_{i+1}$, \dots, $x_n$, where
+$x_0 = a$ and $x_n = b$.
+The length of each
+interval is $h = (b - a)/n$, so each $x_i = a+ih$.   We then
+calculate the ordinates of $f(x)$ at the interval
+boundaries.  There are $n+1$ such ordinates, viz,
+$y_0$, \dots, $y_i$, \dots, $y_n$, where  $y_i = f(x_i)
+= f(a+ih)$.
+Simpson's rule
+approximates the definite integral of $f(x)$ between
+$a$ and $b$ with the value\f{Consult any elementary
+text on the calculus for an explanation of why this
+approximation is reasonable.}:
+
+$$
+{h\over 3} \left[ (y_0 + y_n) 
++ 4(y_1 + y_3 + \cdots + y_{n-1}) 
++ 2(y_2 + y_4 + \cdots + y_{n-2}) \right]
+$$
+%
+We define
+the procedure \q{integrate-simpson}
+to take four arguments: the integrand \q{f}; the
+$x$-values at the limits \q{a} and \q{b}; and the
+number of intervals \q{n}.  
+
+\scmfilename simpson.scm
+\scmdribble{
+(define integrate-simpson
+  (lambda (f a b n)
+    ;...
+}
+
+\n The first thing we do in
+\q{integrate-simpson}'s body is ensure that
+\q{n} is even --- if it isn't, we simply bump its
+value by 1.  
+
+\scmdribble{
+    ;...
+    (unless (even? n) (set! n (+ n 1)))
+    ;...
+}
+
+\n Next, we put in the local variable \q{h}
+the length of the interval.  We introduce two more local variables
+\q{h*2} and \q{n/2} to store the values of twice \q{h}
+and half \q{n} respectively, as we expect to
+use these values often in the ensuing calculations.
+
+\scmdribble{
+    ;...
+    (let* ((h (/ (- b a) n))
+           (h*2 (* h 2))
+           (n/2 (/ n 2))
+           ;...
+}
+
+\n We note that the sums $y_1 + y_3 + \cdots + y_{n-1}$
+and $y_2 + y_4 + \cdots + y_{n-2}$ both involve adding
+every other ordinate. So let's define a local procedure
+\q{sum-every-other-ordinate-starting-from} that
+captures this common iteration.  By abstracting this
+iteration into a procedure, we avoid having to repeat
+the iteration textually.  This not only reduces
+clutter, but reduces the chance of error, since we have
+only one textual occurrence of the iteration to debug.
+
+\q{sum-every-other-ordinate-starting-from} takes two arguments:
+the starting ordinate and the number of ordinates to be summed.
+
+\scmdribble{
+           ;...
+           (sum-every-other-ordinate-starting-from
+             (lambda (x0 num-ordinates)
+               (let loop ((x x0) (i 0) (r 0))
+                 (if (>= i num-ordinates) r
+                     (loop (+ x h*2)
+                           (+ i 1)
+                           (+ r (f x)))))))
+           ;...
+}         
+
+\n We can now calculate the three ordinate sums, and
+combine them to produce the final answer.  Note
+that there are $n/2$ terms in $y_1 + y_3 + \cdots +
+y_{n-1}$, and $(n/2) - 1$ terms in $y_2 + y_4 + \cdots
++ y_{n-2}$.
+
+\scmdribble{
+           ;...
+           (y0+yn (+ (f a) (f b)))
+           (y1+y3+...+y.n-1
+             (sum-every-other-ordinate-starting-from 
+               (+ a h) n/2))
+           (y2+y4+...+y.n-2
+             (sum-every-other-ordinate-starting-from 
+               (+ a h*2) (- n/2 1))))
+      (* 1/3 h
+         (+ y0+yn
+            (* 4.0 y1+y3+...+y.n-1)
+            (* 2.0 y2+y4+...+y.n-2))))))
+}
+
+\n Let's use \q{integrate-simpson} to find the definite
+integral of the function 
+
+$$
+\phi(x) = {1\over \sqrt{2\pi}} e^{-x^2/2}
+$$
+%
+We first define $\phi$ in Scheme's prefix
+notation.\f{$\phi$
+is the probability density of a
+random variable with a {\em normal} or {\em Gaussian}
+distribution, with mean = 0 and standard deviation = 1.
+The definite integral $\int_0^z \phi(x) dx$
+is the probability that the random
+variable assumes a value between 0 and $z$.  
+However, you don't need to know all this in
+order to understand the example!}
+
+\scmdribble{
+(define *pi* (* 4 (atan 1)))
+
+(define phi
+  (lambda (x)
+    (* (/ 1 (sqrt (* 2 *pi*)))
+       (exp (- (* 1/2 (* x x)))))))
+}
+
+\n Note that we exploit the fact that $\tan^{-1} 1 =
+\pi/4$ in order to define \q{*pi*}.\f{If Scheme didn't
+have the \q{atan} procedure, we could use our
+numerical-integration procedure to get an approximation
+for $\int_0^1 (1 + x^2)^{-1} dx$, which is $\pi/4$.}
+ 
+The following calls calculate the definite integrals of
+\q{phi} from 0 to 1, 2, and 3 respectively.  They
+all use 10 intervals.
+
+\q{
+(integrate-simpson phi 0 1 10)
+(integrate-simpson phi 0 2 10)
+(integrate-simpson phi 0 3 10)
+}
+
+\n To four decimal places, these values should be
+0.3413, 0.4772, and 0.4987 respectively \cite[Table
+26.1]{hmf}.  Check to see that our implementation
+of Simpson's rule does indeed produce comparable
+values!\f{By pulling constant factors --- such as \q{(/
+1 (sqrt (* 2 *pi*)))} in \q{phi} --- out of the
+integrand, we could speed up the ordinate calculations
+within \q{integrate-simpson}.} 
+
+\section{Adaptive interval sizes}
+
+It is not always convenient to specify the number \q{n}
+of intervals.  A number that is good enough for
+one integrand may be woefully inadequate for another.  In
+such cases, it is better to specify the amount of
+{\it tolerance\/} \q{e} we are willing to grant the final answer, and let
+the program figure out how many intervals are needed.  A
+typical way to accomplish this is to have the program
+try increasingly better answers by steadily increasing
+\q{n}, and stop when two successive sums differ within
+\q{e}.  Thus:
+
+\q{
+(define integrate-adaptive-simpson-first-try
+  (lambda (f a b e)
+    (let loop ((n 4) 
+               (iprev (integrate-simpson f a b 2))) 
+      (let ((icurr (integrate-simpson f a b n)))
+        (if (<= (abs (- icurr iprev)) e)
+            icurr
+            (loop (+ n 2)))))))
+}
+
+\n Here we calculate successive Simpson integrals (using
+our original procedure \q{integrate-simpson}) for
+\q{n} = 2, 4, \dots.  (Remember that \q{n} must be even.)
+When the integral \q{icurr} for the current \q{n}
+differs within \q{e} from the integral \q{iprev} for
+the immediately preceding \q{n}, we return \q{icurr}.
+                                               
+One problem with this approach is that we don't take
+into account that only some {\it segments\/} of the
+function benefit from the addition of intervals.  For
+the other segments, the addition of intervals merely
+increases the computation without contributing to a
+better overall answer.  For an improved adaptation, we
+could split the integral into adjacent segments, and
+improve each segment separately.
+
+\q{
+(define integrate-adaptive-simpson-second-try
+  (lambda (f a b e)
+    (let integrate-segment ((a a) (b b) (e e))
+      (let ((i2 (integrate-simpson f a b 2))
+            (i4 (integrate-simpson f a b 4)))
+        (if (<= (abs (- i2 i4)) e)
+            i4
+            (let ((c (/ (+ a b) 2))
+                  (e (/ e 2)))
+              (+ (integrate-segment a c e)
+                 (integrate-segment c b e))))))))
+}
+
+\n The initial segment is from \q{a} to \q{b}.  To find
+the integral for a segment, we calculate the Simpson
+integrals \q{i2} and \q{i4} with the two smallest
+interval numbers 2 and 4.  If these are within \q{e} of
+each other, we return \q{i4}.  If not we split the
+segment in half, recursively calculate the integral
+separately for each segment, and add.  In
+general, different segments at the same level converge
+at their own pace.  Note that when we integrate a half
+of a segment, we take care to also halve the tolerance,
+so that the precision of the eventual sum does not
+decay.
+
+There are still some inefficiencies in this
+procedure: The integral \q{i4} recalculates three
+ordinates already determined by \q{i2}, and the integral
+of each half-segment recalculates three ordinates 
+already determined by \q{i2} and \q{i4}.  We avoid
+these inefficiencies by making explicit the sums used
+for \q{i2} and \q{i4}, and by transmitting more parameters
+in the named-\q{let} \q{integrate-segment}.  This makes for
+more sharing, both within the body of \q{integrate-segment}
+and across successive calls to \q{integrate-segment}:
+
+\scmdribble{
+(define integrate-adaptive-simpson
+  (lambda (f a b e)
+    (let* ((h (/ (- b a) 4))
+           (mid.a.b (+ a (* 2 h))))
+      (let integrate-segment ((x0 a)
+                              (x2 mid.a.b)
+                              (x4 b)
+                              (y0 (f a))
+                              (y2 (f mid.a.b))
+                              (y4 (f b))
+                              (h h)
+                              (e e))
+        (let* ((x1 (+ x0 h))
+               (x3 (+ x2 h))
+               (y1 (f x1))
+               (y3 (f x3))
+               (i2 (* 2/3 h (+ y0 y4 (* 4.0 y2))))
+               (i4 (* 1/3 h (+ y0 y4 (* 4.0 (+ y1 y3)) 
+                               (* 2.0 y2)))))
+          (if (<= (abs (- i2 i4)) e)
+              i4
+              (let ((h (/ h 2)) (e (/ e 2)))
+                (+ (integrate-segment
+                     x0 x1 x2 y0 y1 y2 h e)
+                   (integrate-segment
+                     x2 x3 x4 y2 y3 y4 h e)))))))))
+}
+
+\n \q{integrate-segment} now explicitly sets four
+intervals of size \q{h}, giving five ordinates \q{y0},
+\q{y1}, \q{y2}, \q{y3}, and \q{y4}.  The integral
+\q{i4} uses all of these ordinates, while the integral
+\q{i2} uses just \q{y0}, \q{y2}, and \q{y4}, with an
+interval size of twice \q{h}.  It is easy to verify that
+the explicit sums used for \q{i2} and \q{i4} do correspond
+to Simpson sums.
+ 
+Compare the following approximations of
+$\int_0^{20} e^x dx$:
+
+\q{
+(integrate-simpson          exp 0 20 10)
+(integrate-simpson          exp 0 20 20)
+(integrate-simpson          exp 0 20 40)
+(integrate-adaptive-simpson exp 0 20 .001)
+(- (exp 20) 1)
+}
+
+\n The last one is the analytically correct answer.  See
+if you can figure out the smallest \q{n} (overshooting is
+expensive!)
+such that \q{(integrate-simpson exp 0 20 n)} yields a result
+comparable to that returned by the \q{integrate-adaptive-simpson}
+call.
+
+\input gamma

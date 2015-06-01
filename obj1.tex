@@ -1,0 +1,321 @@
+\scmfilename obj1.scm
+
+\scmwrite{
+(load-relative "deldup.scm")
+(load-relative "defstruct.scm")
+}
+
+\section{A simple object system}
+
+\index{inheritance!single}
+Let us now implement a basic object system in Scheme.
+We will allow only one superclass per class ({\em
+single inheritance}).  If we don't want to specify a
+superclass, we will use \q{#t} as a ``zero''
+superclass, one that has neither slots nor methods.
+The superclass of \q{#t} is deemed to be itself.
+
+As a first approximation, it is useful to define
+classes using a struct called \q{standard-class}, with
+fields for the slot names, the superclass, and the
+methods.  The first two fields we will call \q{slots}
+and \q{superclass} respectively.  We will use {\em two}
+fields for methods, a
+\q{method-names} field that will hold the list of names
+of the class's methods, and a
+\q{method-vector} field that will hold the vector of
+the values of the class's methods.\f{We could in theory
+define methods also as slots (whose values happen to be
+procedures), but there is a good reason not to.  The
+instances of a class share methods but in general
+differ in their slot values.  In other words, methods
+can be included in the class definition and don't have
+to be allocated per instance as slots have to be.}
+Here is the definition of the \q{standard-class}:
+
+\scmdribble{
+(defstruct standard-class
+  slots superclass method-names method-vector)
+}
+
+\n We can use \q{make-standard-class}, the maker procedure of
+\q{standard-class}, to create a new class.  Eg,
+
+\q{
+(define trivial-bike-class
+  (make-standard-class
+   'superclass #t
+   'slots '(frame parts size)
+   'method-names '()
+   'method-vector #()))
+}
+
+\n This is a very simple class.   More complex classes
+will have non-trivial superclasses and methods, which
+will require a lot of standard initialization that we
+would like to hide within the class creation process.
+We will therefore define a macro called
+\q{create-class} that will make the appropriate call to
+\q{make-standard-class}.
+
+\scmdribble{
+(define-macro create-class
+  (lambda (superclass slots . methods)
+    `(create-class-proc
+      ,superclass
+      (list ,@(map (lambda (slot) `',slot) slots))
+      (list ,@(map (lambda (method) `',(car method)) methods))
+      (vector ,@(map (lambda (method) `,(cadr method)) methods)))))
+}
+
+\n We will defer the definition of the
+\q{create-class-proc} procedure to later. 
+
+The procedure \q{make-instance} creates an {\em
+instance} of a class by generating a fresh vector based
+on information enshrined in the class.  The format of
+the instance vector is very simple: Its first element
+will refer to the class, and its remaining elements
+will be slot values.  \q{make-instance}'s arguments are
+the class followed by a sequence of twosomes, where
+each twosome is a slot name and the value it assumes in
+the instance.
+
+\scmdribble{
+(define make-instance
+  (lambda (class . slot-value-twosomes)
+
+    ;Find `n', the number of slots in `class'.
+    ;Create an instance vector of length `n + 1',
+    ;because we need one extra element in the instance
+    ;to contain the class.
+
+    (let* ((slotlist (standard-class.slots class))
+           (n (length slotlist))
+           (instance (make-vector (+ n 1))))
+      (vector-set! instance 0 class)
+
+      ;Fill each of the slots in the instance
+      ;with the value as specified in the call to
+      ;`make-instance'.
+
+      (let loop ((slot-value-twosomes slot-value-twosomes))
+        (if (null? slot-value-twosomes) instance
+            (let ((k (list-position (car slot-value-twosomes) 
+                                    slotlist)))
+              (vector-set! instance (+ k 1) 
+                (cadr slot-value-twosomes))
+              (loop (cddr slot-value-twosomes))))))))
+}
+
+\n Here is an example of instantiating a class:
+
+\q{
+(define my-bike
+  (make-instance trivial-bike-class
+                 'frame 'cromoly
+                 'size '18.5
+                 'parts 'alivio))
+}
+
+\n This  binds \q{my-bike} to the instance
+
+\q{
+#(<trivial-bike-class> cromoly 18.5 alivio)
+}
+
+\n where \q{<trivial-bike-class>} is a Scheme datum (another
+vector) that is the value of \q{trivial-bike-class}, as defined
+above.
+
+The procedure \q{class-of} returns the class of an instance:
+
+\q{
+(define class-of
+  (lambda (instance)
+    (vector-ref instance 0)))
+}
+
+\n This assumes that \q{class-of}'s argument will be a class
+instance, ie, a vector whose first element points to some
+instantiation of the \q{standard-class}.
+We probably want to make \q{class-of} return an appropriate value
+for any kind of Scheme object we feed to it.
+
+\scmdribble{
+(define class-of
+  (lambda (x)
+    (if (vector? x)
+        (let ((n (vector-length x)))
+          (if (>= n 1)
+              (let ((c (vector-ref x 0)))
+                (if (standard-class? c) c #t))
+              #t))
+        #t)))
+}
+
+\n The class of a Scheme object that isn't created
+using \q{standard-class} is deemed to be \q{#t}, the
+zero class.
+
+The procedures \q{slot-value} and \q{set!slot-value}
+access and mutate the values of a class instance:
+
+\scmdribble{
+(define slot-value
+  (lambda (instance slot)
+    (let* ((class (class-of instance))
+           (slot-index
+            (list-position slot (standard-class.slots class))))
+      (vector-ref instance (+ slot-index 1)))))
+
+(define set!slot-value
+  (lambda (instance slot new-val)
+    (let* ((class (class-of instance))
+           (slot-index
+            (list-position slot (standard-class.slots class))))
+      (vector-set! instance (+ slot-index 1) new-val))))
+}
+
+\n We are now ready to tackle the definition of
+\q{create-class-proc}.  This procedure takes a
+superclass, a list of slots, a list of method names,
+and a vector of methods and makes the appropriate call
+to \q{make-standard-class}.  The only tricky part is
+the value to be given to the \q{slots} field.  It can't
+be just the slots argument supplied via
+\q{create-class}, for a class must include the slots of
+its superclass as well.  We must append the supplied
+slots to the superclass's slots, making sure that we
+don't have duplicate slots.
+
+\scmdribble{
+(define create-class-proc
+  (lambda (superclass slots method-names method-vector)
+    (make-standard-class
+     'superclass superclass
+     'slots
+     (let ((superclass-slots 
+            (if (not (eqv? superclass #t))
+                (standard-class.slots superclass)
+                '())))
+       (if (null? superclass-slots) slots
+           (delete-duplicates
+            (append slots superclass-slots))))
+     'method-names method-names
+     'method-vector method-vector)))
+}
+
+\index{delete-duplicates@\q{delete-duplicates}}
+\n The procedure \q{delete-duplicates} called on a list
+\q{s}, returns a new list that only includes the {\em last}
+occurrence of each element of \q{s}.
+
+\q{
+(define delete-duplicates
+  (lambda (s)
+    (if (null? s) s
+        (let ((a (car s)) (d (cdr s)))
+          (if (memv a d) (delete-duplicates d)
+              (cons a (delete-duplicates d)))))))
+}
+
+Now to the application of methods.  We invoke the
+method on an instance by using the procedure \q{send}.
+\q{send}'s arguments are the method name, followed by
+the instance, followed by any arguments the method has
+in addition to the instance itself.  Since methods are
+stored in the instance's class instead of the instance
+itself, \q{send} will search the instance's class for
+the method.  If the method is not found there, it is
+looked for in the class's superclass, and so on further
+up the superclass chain:
+
+\scmdribble{
+(define send
+  (lambda (method instance . args)
+    (let ((proc
+           (let loop ((class (class-of instance)))
+             (if (eqv? class #t) (error 'send)
+                 (let ((k (list-position 
+                           method
+                           (standard-class.method-names class))))
+                   (if k
+                       (vector-ref (standard-class.method-vector class) k)
+                       (loop (standard-class.superclass class))))))))
+      (apply proc instance args))))
+}
+
+We can now define some more interesting classes:
+
+\scmfilename bike.scm
+
+\scmdribble{
+(define bike-class
+  (create-class
+   #t
+   (frame size parts chain tires)
+   (check-fit (lambda (me inseam)
+                (let ((bike-size (slot-value me 'size))
+                      (ideal-size (* inseam 3/5)))
+                  (let ((diff (- bike-size ideal-size)))
+                    (cond ((<= -1 diff 1) 'perfect-fit)
+                          ((<= -2 diff 2) 'fits-well)
+                          ((< diff -2) 'too-small)
+                          ((> diff 2) 'too-big))))))))
+}
+
+\n Here, \q{bike-class} includes a method \q{check-fit}, that
+takes a bike and an inseam measurement and reports on
+the fit of the bike for a person of that inseam.
+
+Let's redefine \q{my-bike}:
+
+\scmdribble{
+(define my-bike
+  (make-instance bike-class
+                 'frame 'titanium ; I wish
+                 'size 21
+                 'parts 'ultegra
+                 'chain 'sachs
+                 'tires 'continental))
+}
+
+To check if this will fit someone with inseam 32:
+
+\q{
+(send 'check-fit my-bike 32)
+}
+
+We can subclass \q{bike-class}.
+
+\scmdribble{
+(define mtn-bike-class
+  (create-class
+    bike-class
+    (suspension)
+    (check-fit (lambda (me inseam)
+                (let ((bike-size (slot-value me 'size))
+                      (ideal-size (- (* inseam 3/5) 2)))
+                  (let ((diff (- bike-size ideal-size)))
+                    (cond ((<= -2 diff 2) 'perfect-fit)
+                          ((<= -4 diff 4) 'fits-well)
+                          ((< diff -4) 'too-small)
+                          ((> diff 4) 'too-big))))))))
+}
+
+\n \q{mtn-bike-class} adds a slot called \q{suspension}
+and uses a slightly different definition for the method
+\q{check-fit}.
+
+\scmfilename deldup.scm
+
+\scmwrite{
+(define delete-duplicates
+  (lambda (s)
+    (if (null? s) s
+        (let ((a (car s)) (d (cdr s)))
+          (if (memv a d) (delete-duplicates d)
+              (cons a (delete-duplicates d)))))))
+}
+

@@ -1,0 +1,201 @@
+\chapter{Structures}
+
+\index{structure}
+Data that are naturally grouped are called {\em
+structures}.  One can use Scheme's compound data types,
+eg, vectors or lists, to represent structures.  Eg,
+let's say we are dealing with grouped data relevant to
+a (botanical) {\em tree}.  The individual elements of
+the data, or {\em fields}, could be: {\em height}, {\em
+girth}, {\em age}, {\em leaf-shape}, and {\em
+leaf-color}, making a total of 5 fields.  Such data
+could be represented as a 5-element vector.  The fields
+could be accessed using
+\q{vector-ref} and modified using \q{vector-set!}.
+Nevertheless, we wouldn't want to be saddled with the
+burden of remembering which vector index corresponds to
+which field.  That would be a thankless and error-prone
+activity, especially if fields get excluded or included
+over the course of time.
+
+\index{defstruct@\q{defstruct}}
+\index{structure!defstruct@\q{defstruct}}
+
+We will therefore use a Scheme macro \q{defstruct} to
+define a structure data type, which is basically a
+vector, but which comes with an appropriate suite of
+procedures for creating instances of the structure, and
+for accessing and modifying its fields.  Thus, our \q{tree}
+structure could be defined as:
+
+\q{
+(defstruct tree height girth age leaf-shape leaf-color)
+}
+
+This gives us a constructor procedure named
+\q{make-tree}; accessor procedures for each field,
+named
+\q{tree.height}, \q{tree.girth}, etc; and modifier
+procedures for each field, named \q{set!tree.height},
+\q{set!tree.girth}, etc.  The constructor is used as
+follows:
+
+\q{
+(define coconut 
+  (make-tree 'height 30
+             'leaf-shape 'frond
+             'age 5))
+}
+
+\n The constructor's arguments are in the form of
+twosomes, a field name followed by its initialization.
+The fields can occur in any order, and may even be
+missing, in which case their value is undefined.
+
+The accessor procedures are invoked as follows:
+
+\q{
+(tree.height coconut) |evalsto 30
+(tree.leaf-shape coconut) |evalsto frond
+(tree.girth coconut) |evalsto <undefined>
+}
+
+\n The \q{tree.girth} accessor returns an undefined value,
+because we did not specify \q{girth} for the
+\q{coconut} \q{tree}.
+
+The modifier procedures are invoked as follows:
+
+\q{
+(set!tree.height coconut 40)
+(set!tree.girth coconut 10)
+}
+
+If we now access these fields using the corresponding
+accessors, we will get the new values:
+
+\q{
+(tree.height coconut) |evalsto 40
+(tree.girth coconut) |evalsto 10
+}
+
+\section{Default initializations}
+
+We can have some initializations done during the
+definition of the structure itself, instead of per
+instance.  Thus, we could postulate that \q{leaf-shape}
+and \q{leaf-color} are by default \q{frond} and
+\q{green} respectively.  We can always override these
+defaults by providing explicit initialization in the
+\q{make-tree} call, or by
+using a field modifier after the structure instance has
+been created:
+
+\q{
+(defstruct tree height girth age
+                (leaf-shape 'frond)
+                (leaf-color 'green))
+
+(define palm (make-tree 'height 60))
+
+(tree.height palm) 
+|evalsto 60
+
+(tree.leaf-shape palm) 
+|evalsto frond
+
+(define plantain 
+  (make-tree 'height 7
+             'leaf-shape 'sheet))
+
+(tree.height plantain) 
+|evalsto 7
+
+(tree.leaf-shape plantain) 
+|evalsto sheet
+
+(tree.leaf-color plantain) 
+|evalsto green
+}
+
+\section{\q{defstruct} defined}
+
+The \q{defstruct} macro definition follows:
+
+\scmfilename defstruct.scm
+
+\scmwrite&
+;(defstruct structname [field | (field default-value)] ...)
+;
+;creates
+;the constructor make-structname
+;the predicate structname?
+;the accessors structname.field (for each field)
+;the setters set!structname.field (for each field)
+;
+;make-structname can take {field init-value} arguments,
+;in which it case it sets field to init-value.  Otherwise,
+;it sets field to default-value, if such was provided in
+;the defstruct call
+
+(load-relative "listpos.scm")
+&
+
+\scmdribble{
+(define-macro defstruct
+  (lambda (s . ff)
+    (let ((s-s (symbol->string s)) (n (length ff)))
+      (let* ((n+1 (+ n 1))
+             (vv (make-vector n+1)))
+        (let loop ((i 1) (ff ff))
+          (if (<= i n)
+            (let ((f (car ff)))
+              (vector-set! vv i 
+                (if (pair? f) (cadr f) '(if #f #f)))
+              (loop (+ i 1) (cdr ff)))))
+        (let ((ff (map (lambda (f) (if (pair? f) (car f) f))
+                       ff)))
+          `(begin
+             (define ,(string->symbol 
+                       (string-append "make-" s-s))
+               (lambda fvfv
+                 (let ((st (make-vector ,n+1)) (ff ',ff))
+                   (vector-set! st 0 ',s)
+                   ,@(let loop ((i 1) (r '()))
+                       (if (>= i n+1) r
+                           (loop (+ i 1)
+                                 (cons `(vector-set! st ,i 
+                                          ,(vector-ref vv i))
+                                       r))))
+                   (let loop ((fvfv fvfv))
+                     (if (not (null? fvfv))
+                         (begin
+                           (vector-set! st 
+                               (+ (list-position (car fvfv) ff)
+                                  1)
+                             (cadr fvfv))
+                           (loop (cddr fvfv)))))
+                   st)))
+             ,@(let loop ((i 1) (procs '()))
+                 (if (>= i n+1) procs
+                     (loop (+ i 1)
+                           (let ((f (symbol->string
+                                     (list-ref ff (- i 1)))))
+                             (cons
+                              `(define ,(string->symbol 
+                                         (string-append
+                                          s-s "." f))
+                                 (lambda (x) (vector-ref x ,i)))
+                              (cons
+                               `(define ,(string->symbol
+                                          (string-append 
+                                           "set!" s-s "." f))
+                                  (lambda (x v) 
+                                    (vector-set! x ,i v)))
+                               procs))))))
+             (define ,(string->symbol (string-append s-s "?"))
+               (lambda (x)
+                 (and (vector? x)
+                      (eqv? (vector-ref x 0) ',s))))))))))
+}
+

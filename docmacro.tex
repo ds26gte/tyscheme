@@ -1,0 +1,135 @@
+%\input slatex.sty
+
+%\slatexdisable{enableslatex}
+\ifx\shipout\UnDeFiNeD\else
+\input tex2page
+\input plainsection
+\input btxmac
+
+\input txfonts
+
+\input miniltx
+\input color.sty
+
+\resetatcatcode
+
+\inputepsf
+
+%\enableslatex
+
+\plaintextweaks
+\fi
+
+\let\tag\xrtag
+
+% www.w3.org/StyleSheets/Core/{Chocolate, Midnight,
+% Modernist, Oldstyle, Steely, Swiss, Traditional,
+% Ultramarine}
+
+%\inputcss http://www.w3.org/StyleSheets/Core/Oldstyle
+
+\overfullrule 0pt
+
+\let\c\centerline
+\let\o\item
+\let\f\numberedfootnote
+\let\n\noindent
+\let\p\verb
+%\let\pp\p
+\let\q\scm
+\let\scmfilename\verbwritefile
+\let\scmwrite\verbwrite
+%\let\qq\q
+
+\def\{{{\tt\char`\{}}
+\def\}{{\tt\char`\}}}
+
+\texonly
+%\input 2col
+%\input ptm
+\sidemargin 1.75 true in
+%\nocapdot
+\def\evalsto{$\Rightarrow$ }
+\def\causeserror{$\rightarrow${\em ERROR!!!}}
+\def\eqv{\leavevmode\hbox{$\equiv$}}
+%\let\byline\centerline
+
+\def\robust#1{\global\let\robustcmd#1%
+  \begingroup
+    \def\do##1{\catcode`##1=9 }\dospecials
+    \catcode`\{1 \catcode`\}2
+    \robustI}
+
+\def\robustI#1{\endgroup
+  \robustcmd}
+
+\ifx\slatexversion\UNDEFINED\else
+  %\defschemetoken{q}
+  \setspecialsymbol{|evalsto}{$\Longrightarrow$}
+  \setspecialsymbol{|causeserror}{$\rightarrow${\em ERROR!!!}}
+\fi
+
+\endtexonly
+
+%\def\em{*\aftergroup\endem}
+%\let\endem*
+
+\ifx\shipout\UNDEFINED
+\htmlonly
+
+\cssblock
+body {
+max-width: 450pt;
+}
+\endcssblock
+
+\imgpreamble
+\magnification\magstep2
+\endimgpreamble
+
+\dontuseimgforhtmlmathintext
+
+%\imgdef\pi{$\pi$}
+%\imgdef\int{$\int$}
+%\def\{{\rawhtml&#123;\endrawhtml}
+%\def\}{\rawhtml&#125;\endrawhtml}
+%\def\it{\color{blue}}
+%\def\em{\color{blue}}
+\def\evalsto{{\color[named]{teal}\tt\bf=>} }
+\def\causeserror{{\color[named]{red}\tt\bf\it-->ERROR!!!}}
+\def\eqv{==}
+\let\byline\leftline
+
+\def\robust#1#2#3{#1{#2}}
+
+\def\hfnt#1#2#3{\rawhtml<font color=#1
+size=+#2>
+\endrawhtml #3 \rawhtml
+</font>\endrawhtml}
+
+\evalh{
+    (if 'nil
+     (for-each
+      make-reusable-math-image-as-needed
+      '(
+          "\\infty"
+          "\\int"
+          "\\Gamma"
+          "\\pi"
+          "\\phi"
+       ))
+     (mapc
+      (function make-reusable-math-image-as-needed)
+      '(
+          "\\infty"
+          "\\int"
+          "\\Gamma"
+          "\\pi"
+          "\\phi"
+       )))
+}
+
+\endhtmlonly
+\fi
+
+\scmkeyword{amb bag-of coroutine stk%define-macro}

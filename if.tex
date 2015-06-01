@@ -1,0 +1,182 @@
+\chapter{Conditionals}
+
+\index{if@\q{if}}
+\index{conditional}
+Like all languages, Scheme provides {\em
+conditionals}.  The basic form is the \q{if}:
+
+\q{
+(if test-expression
+    then-branch
+    else-branch)
+}
+
+If \q{test-expression} evaluates to true (ie, any value
+other than \q{#f}), the ``then'' branch is evaluated.
+If not, the ``else'' branch  is evaluated.  The
+``else'' branch  is optional.
+
+\q{
+(define p 80)
+
+(if (> p 70) 
+    'safe
+    'unsafe)
+|evalsto safe 
+
+(if (< p 90)
+    'low-pressure) ;no ``else'' branch 
+|evalsto low-pressure 
+}
+
+Scheme provides some other conditional forms for
+convenience.  They can all be defined as macros
+(chap \ref{sugar}) that expand
+into \q{if}-expressions.
+
+\index{when@\q{when}}
+\index{unless@\q{unless}}
+
+\section{\q{when} and \q{unless}}
+
+\q{when} and \q{unless} are convenient conditionals
+to use when only one branch (the ``then'' or the
+``else'' branch) of the basic conditional is needed.
+
+\q{
+(when (< (pressure tube) 60)
+   (open-valve tube)
+   (attach floor-pump tube)
+   (depress floor-pump 5)
+   (detach floor-pump tube)
+   (close-valve tube))
+}
+
+Assuming \q{pressure} of \q{tube} is less than
+\q{60}, this conditional will attach \q{floor-pump} to
+\q{tube} and \q{depress} it \q{5} times.  (\q{attach}
+and \q{depress} are some suitable procedures.)
+
+The same program using \q{if} would be:
+
+\q{
+(if (< (pressure tube) 60)
+    (begin
+      (open-valve tube)
+      (attach floor-pump tube)
+      (depress floor-pump 5)
+      (detach floor-pump tube)
+      (close-valve tube)))
+}
+
+\index{begin@\q{begin}!implicit}
+
+Note that \q{when}'s branch is an implicit \q{begin},
+whereas \q{if} requires an explicit \q{begin} if either
+of its branches has more than one form.
+
+The same behavior can be written using \q{unless} as
+follows:
+
+\q{
+(unless (>= (pressure tube) 60)
+   (open-valve tube)
+   (attach floor-pump tube)
+   (depress floor-pump 5)
+   (detach floor-pump tube)
+   (close-valve tube))
+}
+
+\n Not all Schemes provide \q{when} and \q{unless}.
+If your Scheme does not have them, you can 
+define them as macros (see chap \ref{sugar}).
+
+\index{cond@\q{cond}}
+\section{\q{cond}}
+
+The \q{cond} form is convenient for expressing nested
+\q{if}-expressions, where each ``else'' branch but the last
+introduces a new \q{if}.  Thus, the form 
+
+\q{
+(if (char<? c #\c) -1
+    (if (char=? c #\c) 0
+        1))
+}
+
+can be rewritten using \q{cond} as:
+
+\q{
+(cond ((char<? c #\c) -1)
+      ((char=? c #\c) 0)
+      (else 1))
+}
+
+The \q{cond} is thus a {\em multi-branch} conditional.  Each
+clause has a test and an associated action.  The first
+test that succeeds triggers its associated action.  The
+final \q{else} clause is chosen if no other test
+succeeded.
+
+The \q{cond} actions are implicit \q{begin}s.
+
+\index{case@\q{case}}
+\section{\q{case}}
+
+A special case of the \q{cond} can be compressed into a
+\q{case} expression.  This is when every test is a
+membership test.
+
+\q{
+(case c
+  ((#\a) 1)
+  ((#\b) 2)
+  ((#\c) 3)
+  (else 4))
+|evalsto 3
+}
+
+The clause whose head contains the value of \q{c} is chosen.
+
+\index{and@\q{and}}
+\index{or@\q{or}}
+\section{\q{and} and \q{or}}
+
+Scheme provides special forms for boolean conjunction
+(``and'') and disjunction (``or'').  (We have already
+seen (sec \ref{booleans}) Scheme's boolean negation
+\q{not}, which is a 
+procedure.) 
+
+The special form
+\q{and} returns a true value if all its subforms are true.  The
+actual value returned is the value of the final
+subform.  If any of the subforms are false, \q{and}
+returns \q{#f}.
+
+\q{
+(and 1 2)  |evalsto 2
+(and #f 1) |evalsto #f
+}
+
+\n The special form \q{or} returns the value of its
+first true subform.  If all the subforms are false,
+\q{or} returns \q{#f}.
+
+\q{
+(or 1 2)  |evalsto 1
+(or #f 1) |evalsto 1
+}
+
+\n Both \q{and} and \q{or} evaluate their subforms
+left-to-right.  As soon as the result can be
+determined, \q{and} and \q{or} will ignore the
+remaining subforms.
+
+\q{
+(and 1 #f expression-guaranteed-to-cause-error)
+|evalsto #f
+
+(or 1 #f expression-guaranteed-to-cause-error)
+|evalsto 1
+}

@@ -1,0 +1,858 @@
+% tex2page.tex
+% Dorai Sitaram
+
+% TeX files using these macros
+% can be converted by the program
+% tex2page into HTML
+
+\ifx\shipout\UnDeFiNeD\endinput\fi
+
+\message{version 20150526} % last change
+
+\let\texonly\relax
+\let\endtexonly\relax
+
+\let\htmlonly\iffalse
+\let\endhtmlonly\fi
+
+\edef\atcatcodebeforetexzpage{%
+  \noexpand\catcode`\noexpand\@=\the\catcode`\@}
+\catcode`\@11
+
+%
+
+\def\verbwritefile{%
+  \ifx\verbwritefileQport\UnDeFiNeD
+    \expandafter\csname newwrite\endcsname\verbwritefileQport
+  \else\immediate\closeout\verbwritefileQport
+  \fi
+  \futurelet\verbwritefileQnext\verbwritefileQcheckchar}
+
+\def\verbwritefileQcheckchar{%
+  \ifx\verbwritefileQnext\bgroup
+    \let\verbwritefileQnext\verbwritefileQbracedfile
+  \else
+    \let\verbwritefileQnext\verbwritefileQspacedfile
+  \fi\verbwritefileQnext}
+
+\def\verbwritefileQspacedfile#1 {%
+  \immediate\openout\verbwritefileQport #1
+}
+
+\def\verbwritefileQbracedfile#1{%
+  \verbwritefileQspacedfile #1
+}
+
+\def\verbwrite{%
+  \ifx\verbwritefileQport\UnDeFiNeD
+    \verbwritefile \jobname.txt \fi
+  \begingroup
+    \def\do##1{\catcode`##1=12 }\dospecials
+    \catcode`\{=1 \catcode`\}=2
+    \catcode`\^^M=12 \newlinechar=`\^^M%
+    \futurelet\verbwriteQopeningchar\verbwriteQii}
+
+\def\verbwriteQii{\ifx\verbwriteQopeningchar\bgroup
+  \let\verbwriteQiii\verbwriteQbrace\else
+  \let\verbwriteQiii\verbwriteQnonbrace\fi
+  \verbwriteQiii}
+
+\def\verbwriteQbrace#1{\immediate
+  \write\verbwritefileQport{#1}\endgroup}
+
+\def\verbwriteQnonbrace#1{%
+  \catcode`\{12 \catcode`\}12
+  \def\verbwriteQnonbraceQii##1#1{%
+    \immediate\write\verbwritefileQport{##1}\endgroup}%
+  \verbwriteQnonbraceQii}
+
+\ifx\slatexignorecurrentfile\UnDeFiNeD\relax\fi
+
+%
+
+\def\defcsactive#1{\defnumactive{`#1}}
+
+\def\defnumactive#1{\catcode#1\active
+  \begingroup\lccode`\~#1%
+    \lowercase{\endgroup\def~}}
+
+% gobblegobblegobble
+
+\def\gobblegroup{\bgroup
+  \def\do##1{\catcode`##1=9 }\dospecials
+  \catcode`\{1 \catcode`\}2 \catcode`\^^M=9
+  \gobblegroupQii}
+
+\def\gobblegroupQii#1{\egroup}
+
+% \verb
+% Usage: \verb{...lines...} or \verb|...lines...|
+% In the former case, | can be used as escape char within
+% the verbatim text
+
+\let\verbhook\relax
+
+\def\verbfont{\tt}
+%\hyphenchar\tentt-1
+
+\def\verbsetup{\frenchspacing
+  \def\do##1{\catcode`##1=12 }\dospecials
+  \catcode`\|=12 % needed?
+  \verbfont
+  \edef\verbQoldhyphenchar{\the\hyphenchar\font}%
+  \hyphenchar\font-1
+  \def\verbQendgroup{\hyphenchar\font\verbQoldhyphenchar\endgroup}%
+}
+
+\def\verbavoidligs{% avoid ligatures
+  \defcsactive\`{\relax\lq}%
+  \defcsactive\ {\leavevmode\ }%
+  \defcsactive\^^I{\leavevmode\ \ \ \ \ \ \ \ }%
+  \defcsactive\^^M{\leavevmode\endgraf}%
+  \ifx\noncmttQspecific\UnDeFiNeD\else\noncmttQspecific\fi}
+
+\def\verbinsertskip{%
+  \let\firstpar y%
+  \defcsactive\^^M{\ifx\firstpar y%
+    \let\firstpar n%
+    \verbdisplayskip
+    \parskip 0pt
+    \aftergroup\verbdisplayskip
+    \aftergroup\noindent % to get automatic noindent after display
+    \aftergroup\ignorespaces % ,,
+    \else\leavevmode\fi\endgraf}%
+  \verbhook}
+
+%\def\verb{\begingroup
+%  \verbsetup\verbQii}
+
+\ifx\verb\UnDeFiNeD\else % save away LaTeX's \verb
+  \let\LaTeXverb\verb
+\fi
+
+\def\verb{\begingroup
+  \verbsetup\verbavoidligs\verbQcheckstar}%
+
+\def\verbQcheckstar{%
+  \futurelet\verbQcheckstarQnext\verbQcheckstarQii}
+
+\def\verbQcheckstarQii{%
+  \if\verbQcheckstarQnext*%
+    \let\verbQcheckstarQnext\verbQcheckstarQiii
+  \else
+    \let\verbQcheckstarQnext\verbQii
+  \fi
+  \verbQcheckstarQnext}
+
+\def\verbQcheckstarQiii#1{%
+  \defcsactive\ {\relax\char`\ }%
+  \verbQii}
+
+\newcount\verbbracebalancecount
+
+\def\verblbrace{\char`\{}
+\def\verbrbrace{\char`\}}
+
+\ifx\verbatimescapechar\UnDeFiNeD
+% don't clobber Eplain's \verbatimescapechar
+\def\verbatimescapechar#1{%
+  \def\@makeverbatimescapechar{\catcode`#1=0 }}%
+\fi
+\let\verbescapechar\verbatimescapechar
+
+\verbatimescapechar\|
+
+{\catcode`\[1 \catcode`\]2
+\catcode`\{12 \catcode`\}12
+\gdef\verbQii#1[%\verbavoidligs
+  \verbinsertskip\verbhook
+  %\edef\verbQoldhyphenchar{\the\hyphenchar\tentt}%
+  %\hyphenchar\tentt=-1
+  %\def\verbQendgroup{\hyphenchar\tentt\verbQoldhyphenchar\endgroup}%
+  %\let\verbQendgroup\endgroup%
+  \if#1{\@makeverbatimescapechar
+    \def\{[\char`\{]%
+    \def\}[\char`\}]%
+    \def\|[\char`\|]%
+    \verbbracebalancecount0
+    \defcsactive\{[\advance\verbbracebalancecount by 1
+      \verblbrace]%
+    \defcsactive\}[\ifnum\verbbracebalancecount=0
+      \let\verbrbracenext\verbQendgroup\else
+      \advance\verbbracebalancecount by -1
+      \let\verbrbracenext\verbrbrace\fi
+      \verbrbracenext]\else
+  \defcsactive#1[\verbQendgroup]\fi
+  \verbQiii
+]]
+
+\def\verbQiii{\futurelet\verbQiiinext\verbQiv}
+
+{\catcode`\^^M\active%
+\gdef\verbQiv{\ifx\verbQiiinext^^M\else%
+  \defcsactive\^^M{\leavevmode\ }\fi}}
+
+\let\verbdisplayskip\medbreak
+
+% \verbatiminput FILENAME
+% displays contents of file FILENAME verbatim.
+
+%\def\verbatiminput#1 {{\verbsetup\verbavoidligs\verbhook
+%  \input #1 }}
+
+% ^ original \verbatiminput
+
+\ifx\verbatiminput\UnDeFiNeD
+% LaTeX's (optional) verbatim package defines a \verbatiminput --
+% don't clobber it
+\def\verbatiminput{%
+  \futurelet\verbatiminputQnext\verbatiminputQcheckchar}%
+\fi
+
+\def\verbatiminputQcheckchar{%
+  \ifx\verbatiminputQnext\bgroup
+    \let\verbatiminputQnext\verbatiminputQbracedfile
+  \else
+    \let\verbatiminputQnext\verbatiminputQspacedfile
+  \fi\verbatiminputQnext}
+
+\def\verbatiminputQbracedfile#1{\verbatiminputQdoit{#1}}
+
+\def\verbatiminputQspacedfile#1 {\verbatiminputQdoit{#1}}
+
+\def\verbatiminputQdoit#1{{\verbsetup
+  \verbavoidligs\verbhook
+  \input #1 }}
+
+% \url{URL} becomes
+% <a href="URL">URL</a> in HTML, and
+% URL in DVI.
+
+% A-VERY-VERY-LONG-URL in a .bib file
+% could be split by BibTeX
+% across a linebreak, with % before the newline.
+% To accommodate this, %-followed-by-newline will
+% be ignored in the URL argument of \url and related
+% macros.
+
+\ifx\url\UnDeFiNeD
+\def\url{\bgroup\urlsetup\let\dummy=}%
+\fi
+
+\def\urlsetup{\verbsetup\urlfont\verbavoidligs
+  \catcode`\{1 \catcode`\}2
+  \defcsactive\%{\urlQpacifybibtex}%
+  \defcsactive\ {\relax}%
+  \defcsactive\^^M{\relax}%
+  \defcsactive\.{\discretionary{}{\char`\.}{\char`\.}}%
+  \defcsactive\/{\discretionary{\char`\/}{}{\char`\/}}%
+  \defcsactive\`{\relax\lq}}
+
+\let\urlfont\relax
+
+\def\urlQpacifybibtex{\futurelet\urlQpacifybibtexQnext\urlQpacifybibtexQii}
+
+\def\urlQpacifybibtexQii{\ifx\urlQpacifybibtexQnext^^M%
+  \else\%\fi}
+
+% \urlh{URL}{TEXT} becomes
+% <a href="URL">TEXT</a> in HTML, and
+% TEXT in DVI.
+
+% If TEXT contains \\, the part after \\ appears in
+% the DVI only.  If, further, this part contains \1,
+% the latter is replaced by a fixed-width representation
+% of URL.
+
+\def\urlh{\bgroup\urlsetup
+  \afterassignment\urlhQii
+  \gdef\urlhQurlarg}
+
+\def\urlhQii{\egroup
+  \bgroup
+    \let\\\relax
+    \def\1{{\urlsetup\urlhQurlarg}}%
+    \let\dummy=}
+
+\def\urlp#1{{#1} \bgroup\urlsetup
+  \afterassignment\urlpQwrapparens
+  \gdef\urlpQurlarg}
+
+\def\urlpQwrapparens{\egroup
+  {\rm(}{\urlsetup\urlpQurlarg}{\rm)}}
+
+% \urlhd{URL}{HTML-TEXT}{DVI-TEXT} becomes
+% <a href="URL">HTML-TEXT</a> in HTML, and
+% DVI-TEXT in DVI
+
+\def\urlhd{\bgroup
+  \def\do##1{\catcode`##1=12 }\dospecials
+  \catcode`\{1 \catcode`\}2
+  \urlhdQeaturlhtmlargs}
+
+\def\urlhdQeaturlhtmlargs#1#2{\egroup}
+
+\ifx\href\UnDeFiNeD
+\let\href\urlh
+\fi
+
+% \path is like \verb except that its argument
+% can break across lines at `.' and `/'.
+
+\ifx\path\UnDeFiNeD
+\def\path{\begingroup\verbsetup
+  \pathfont
+  \defcsactive\.{\discretionary{\char`\.}{}{\char`\.}}%
+  \defcsactive\/{\discretionary{\char`\/}{}{\char`\/}}%
+  \verbQii}%
+\fi
+
+\let\pathfont\relax
+
+% Scheme
+
+\let\scm\verb
+\let\scminput\verbatiminput
+\let\lispinput\verbatiminput
+\let\scmdribble\scm
+
+% Images
+
+\let\imgdef\def
+
+\let\makehtmlimage\relax
+
+\def\mathg{$\bgroup\aftergroup\closemathg\let\dummy=}
+\def\closemathg{$}
+
+\let\mathp\mathg
+
+\def\mathdg{$$\bgroup\aftergroup\closemathdg\let\dummy=}
+\def\closemathdg{$$}
+
+%
+
+\ifx\label\UnDeFiNeD
+\else
+\def\xrtag#1#2{\@bsphack
+  \protected@write\@auxout{}%
+    {\string\newlabel{#1}{{#2}{\thepage}}}%
+\@esphack}%
+%\let\tagref\ref
+\fi
+
+\ifx\definexref\UnDeFiNeD
+\else
+\def\xrtag#1#2{\definexref{#1}{#2}{}}%
+\fi
+
+\ifx\IfFileExists\UnDeFiNeD
+\def\IfFileExists#1#2#3{%
+  \openin0 #1 %
+  \ifeof0 %
+    #3%
+  \else
+    #2\fi
+  \closein0 }%
+\fi
+
+\ifx\InputIfFileExists\UnDeFiNeD
+\def\InputIfFileExists#1#2#3{%
+  \IfFileExists{#1}{#2\input #1 }{#3}}%
+\fi
+
+\InputIfFileExists{eval4tex}{}{}%
+
+%\InputIfFileExists{.texrc}{}{}%
+
+\ifx\futurenonspacelet\UnDeFiNeD
+\ifx\@futurenonspacelet\UnDeFiNeD
+%
+\def\futurenonspaceletQpickupspace/{%
+  \global\let\futurenonspaceletQspacetoken= }%
+\futurenonspaceletQpickupspace/ %
+%
+\def\futurenonspacelet#1{\def\futurenonspaceletQargQi{#1}%
+  \afterassignment\futurenonspaceletQstepQone
+  \let\futurenonspaceletQargQii=}%
+%
+\def\futurenonspaceletQstepQone{%
+  \expandafter\futurelet\futurenonspaceletQargQi
+    \futurenonspaceletQstepQtwo}%
+%
+\def\futurenonspaceletQstepQtwo{%
+  \expandafter\ifx\futurenonspaceletQargQi\futurenonspaceletQspacetoken
+    \let\futurenonspaceletQnext=\futurenonspaceletQstepQthree
+    \else\let\futurenonspaceletQnext=\futurenonspaceletQargQii
+    \fi\futurenonspaceletQnext}%
+%
+\def\futurenonspaceletQstepQthree{%
+  \afterassignment\futurenonspaceletQstepQone
+    \let\futurenonspaceletQnext= }%
+%
+\else\let\futurenonspacelet\@futurenonspacelet
+\fi
+\fi
+
+\ifx\slatexversion\UnDeFiNeD
+% SLaTeX compat
+\let\scmkeyword\gobblegroup
+\let\scmbuiltin\gobblegroup
+\let\scmconstant\scmbuiltin
+\let\scmvariable\scmbuiltin
+\let\setbuiltin\scmbuiltin
+\let\setconstant\scmbuiltin
+\let\setkeyword\scmkeyword
+\let\setvariable\scmvariable
+\def\schemedisplay{\begingroup
+  \verbsetup\verbavoidligs
+  \verbinsertskip
+  \schemedisplayI}%
+\def\schemeresponse{\begingroup
+  \verbsetup\verbavoidligs
+  \verbinsertskip
+  \schemeresponseI}%
+{\catcode`\|0 |catcode`|\12
+  |long|gdef|schemedisplayI#1\endschemedisplay{%
+    #1|endgroup}%
+  |long|gdef|schemeresponseI#1\endschemeresponse{%
+    #1|endgroup}}%
+\fi
+
+% STOP LOADING HERE FOR LATEX
+
+\ifx\section\UnDeFiNeD
+\let\maybeloadfollowing\relax
+\else
+\atcatcodebeforetexzpage
+\let\maybeloadfollowing\endinput
+\fi\maybeloadfollowing
+
+\newwrite\sectionQscratchfileport
+
+% Title
+
+\def\subject{%
+  \immediate\openout\sectionQscratchfileport Z-sec-temp
+  \begingroup
+    \def\do##1{\catcode`##1=11 }\dospecials
+    \catcode`\{=1 \catcode`\}=2
+    \subjectI}
+
+\def\subjectI#1{\endgroup
+  \immediate\write\sectionQscratchfileport {#1}%
+  \immediate\closeout\sectionQscratchfileport
+  $$\vbox{\bf \def\\{\cr}%
+      \halign{\hfil##\hfil\cr
+        \input Z-sec-temp
+        \cr}}$$%
+  \medskip}
+
+\let\title\subject
+
+% toc
+
+\let\tocactive0
+
+\newcount\tocdepth
+
+%\tocdepth=10
+\tocdepth=3
+
+\def\tocoutensure{\ifx\tocout\UnDeFiNeD
+  \csname newwrite\endcsname\tocout\fi}
+
+\def\tocactivate{\ifx\tocactive0%
+  \tocoutensure
+  \tocsave
+  \openout\tocout \jobname.toc
+  \global\let\tocactive1\fi}
+
+\def\tocspecials{\def\do##1{\catcode`##1=12 }\dospecials}
+
+\def\tocsave{\openin0=\jobname.toc
+  \ifeof0 \closein0 \else
+    \openout\tocout Z-T-\jobname.tex
+    \let\tocsaved 0%
+    \loop
+      \ifeof0 \closeout\tocout
+        \let\tocsaved1%
+      \else{\tocspecials
+         \read0 to \tocsaveline
+         \edef\temp{\write\tocout{\tocsaveline}}\temp}%
+      \fi
+    \ifx\tocsaved0%
+    \repeat
+  \fi
+  \closein0 }
+
+\def\tocentry#1#2{%
+  %#1=depth #2=secnum
+  \def\tocentryQsecnum{#2}%
+  \ifnum#1=1
+    \ifnum\tocdepth>2
+    \medbreak\begingroup\bf
+    \else\begingroup\fi
+  \else\begingroup\fi
+  \vtop\bgroup\raggedright
+  \noindent\hskip #1 em
+  \ifx\tocentryQsecnum\empty
+  \else
+  %\qquad\llap{\tocentryQsecnum}\enspace
+  \tocentryQsecnum\enspace
+  \fi
+  \bgroup
+  \aftergroup\tocentryQii
+  %read section title
+  \let\dummy=}
+
+\def\tocentryQii#1{%
+  %#1=page nr
+  , #1\strut\egroup
+  \endgroup\par
+}
+
+% allow {thebibliography} to be used directly
+% in (plain-TeX) source document without
+% generating it via BibTeX
+
+\ifx\thebibliography\UnDeFiNeD
+\def\thebibliography#1{\vskip-\lastskip
+  \begingroup
+  \def\endthebibliography{\endgroup\endgroup}%
+  \def\input##1 ##2{\relax}%
+  \setbox0=\hbox{\biblabelcontents{#1}}%
+  \biblabelwidth=\wd0
+  \@readbblfile}%
+\fi
+
+%
+
+\def\italiccorrection{\futurelet\italiccorrectionI
+  \italiccorrectionII}
+
+\def\italiccorrectionII{%
+  \if\noexpand\italiccorrectionI,\else
+  \if\noexpand\italiccorrectionI.\else
+  \/\fi\fi}
+
+\def\em{\it\ifmmode\else\aftergroup\italiccorrection\fi}
+
+\def\emph{\bgroup\it
+  \ifmmode\else\aftergroup\italiccorrection\fi
+  \let\dummy=}
+
+\def\raggedleft{%
+  \leftskip 0pt plus 1fil
+  \parfillskip 0pt
+  \parskip 0pt
+}
+
+\def\begin#1{\begingroup
+  \def\end##1{\csname end#1\endcsname\endgroup}%
+  \csname #1\endcsname}
+
+\ifx\TM\undefined
+% using fontch names
+\def\TM{\ifmmode^{\rm TM}\else$^{\rm TM}$\fi}
+\def\degree{\ifmmode^\circ\else$^\circ$\fi}
+\fi
+
+% STOP LOADING HERE FOR EPLAIN
+
+\ifx\eplain\UnDeFiNeD
+\let\maybeloadfollowing\relax
+\else
+\atcatcodebeforetexzpage
+\let\maybeloadfollowing\endinput
+\fi\maybeloadfollowing
+%
+
+% Index generation
+%
+% Your TeX source contains \index{NAME} to
+% signal that NAME should be included in the index.
+% Check the makeindex documentation to see the various
+% ways NAME can be specified, eg, for subitems, for
+% explicitly specifying the alphabetization for a name
+% involving TeX control sequences, etc.
+%
+% The first run of TeX will create \jobname.idx.
+% makeindex on \jobname[.idx] will create the sorted
+% index \jobname.ind.
+%
+% Use \inputindex (without arguments) to include this
+% sorted index, typically somewhere to the end of your
+% document.  This will produce the items and subitems.
+% It won't produce a section heading however -- you
+% will have to typeset one yourself.
+
+%\def\sanitizeidxletters{\def\do##1{\catcode`##1=11 }%
+%  \dospecials
+%  \catcode`\{=1 \catcode`\}=2 \catcode`\ =10 }
+
+\def\sanitizeidxletters{\def\do##1{\catcode`##1=11 }%
+  \do\\\do\$\do\&\do\#\do\^\do\_\do\%\do\~%
+  \do\@\do\"\do\!\do\|\do\-\do\ \do\'}
+
+\def\index{%\unskip
+  \ifx\indexout\UnDeFiNeD
+    \csname newwrite\endcsname\indexout
+    \openout\indexout \jobname.idx\fi
+  \begingroup
+    \sanitizeidxletters
+    \indexQii}
+
+\def\indexQii#1{\endgroup
+  \write\indexout{\string\indexentry{#1}{\folio}}%
+  \ignorespaces}
+
+% The following index style indents subitems on a
+% separate lines
+
+\def\theindex{\begingroup
+  \parskip0pt \parindent0pt
+  \def\indexitem##1{\par\hangindent30pt \hangafter1
+    \hskip ##1 }%
+  \def\item{\indexitem{0em}}%
+  \def\subitem{\indexitem{2em}}%
+  \def\subsubitem{\indexitem{4em}}%
+  \def\see{{\it see} \bgroup\aftergroup\gobblegroup\let\dummy=}%
+  \let\indexspace\medskip}
+
+\def\endtheindex{\endgroup}
+
+\def\inputindex{%
+  \openin0 \jobname.ind
+  \ifeof0 \closein0
+    \message{\jobname.ind missing.}%
+  \else\closein0
+    \begingroup
+      \def\begin##1{\csname##1\endcsname}%
+      \def\end##1{\csname end##1\endcsname}%
+      \input\jobname.ind
+    \endgroup\fi}
+
+% Cross-references
+
+% \openxrefout loads all the TAG-VALUE associations in
+% \jobname.xrf and then opens \jobname.xrf as an
+% output channel that \xrtag can use
+
+\def\openxrefout{%
+  \openin0=\jobname.xrf
+  \ifeof0 \closein0
+  \else \closein0 {\catcode`\\0 \input \jobname.xrf }%
+  \fi
+  \expandafter\csname newwrite\endcsname\xrefout
+  \openout\xrefout=\jobname.xrf
+}
+
+% I'd like to call \openxrefout lazily, but
+% unfortunately it produces a bug in MiKTeX.
+% So let's call it up front.
+
+\openxrefout
+
+% \xrtag{TAG}{VALUE} associates TAG with VALUE.
+% Hereafter, \ref{TAG} will output VALUE.
+% \xrtag stores its associations in \xrefout.
+% \xrtag calls \openxrefout if \jobname.xrf hasn't
+% already been opened
+
+\def\xrtag#1#2{\ifx\xrefout\UnDeFiNeD\openxrefout\fi
+  {\let\folio0%
+    \edef\temp{%
+     \write\xrefout{\string\expandafter\string\gdef
+        \string\csname\space XREF#1\string\endcsname
+        {#2}\string\relax}}%
+    \temp}\ignorespaces}
+
+% \xrdef, as in Eplain
+
+\def\xrdef#1{\xrtag{#1}{\folio}}
+
+% \label, as in LaTeX
+
+% The sectioning commands
+% define \@currentlabel so a subsequent call to \label will pick up the
+% right label.
+
+\let\@currentlabel\relax
+
+\def\label#1{\xrtag{#1}{\@currentlabel}%
+  \xrtag{PAGE#1}{\folio}}
+
+% \ref{TAG} outputs VALUE, assuming \xrtag put such
+% an association into \xrefout.  \ref calls
+% \openxrefout if \jobname.xrf hasn't already
+% been opened
+
+\def\ref#1{\ifx\xrefout\UnDeFiNeD\openxrefout\fi
+  \expandafter\ifx\csname XREF#1\endcsname\relax
+  %\message or \write16 ?
+  \message{\the\inputlineno: Unresolved label `#1'.}?\else
+  \csname XREF#1\endcsname\fi}
+
+% \pageref, as in LaTeX
+
+\def\pageref#1{\ref{PAGE#1}}
+
+%
+
+\def\writenumberedtocline#1#2#3{%
+  %#1=depth
+  %#2=secnum
+  %#3=title
+  \tocactivate
+  \edef\@currentlabel{#2}%
+  {\let\folio0%
+   \edef\writetotocQtemp{\write\tocout
+     {\string\tocentry{#1}{#2}{#3}{\folio}}}%
+   \writetotocQtemp}}
+
+\def\tableofcontents{%
+  \ifx\tocactive0%
+    \openin0 \jobname.toc
+    \edef\QatcatcodebeforeToC{%
+      \noexpand\catcode`\noexpand\@=\the\catcode`\@}%
+    \catcode`\@=11
+    \ifeof0 \closein0 \else
+      \closein0 \input \jobname.toc
+    \fi
+    \QatcatcodebeforeToC
+    \tocoutensure
+    \openout\tocout \jobname.toc
+    \global\let\tocactive1%
+  \else
+    \input Z-T-\jobname.tex
+  \fi}
+
+% plain's \beginsection splits pages too easily, and also doesn't allow
+% verbatim macros in its arg
+
+\def\beginsection{\vskip-\lastskip
+  \vskip1.5\bigskipamount
+  \goodbreak
+  \noindent
+  \begingroup
+  \def\par{\endgraf\endgroup\nobreak\noindent}%
+  \bf}
+
+\ifx\twelvebf\UnDeFiNeD
+\def\fontstem#1{\expandafter\fontstemQii\fontname#1 \end}%
+\def\fontstemQii#1 #2\end{#1 }%
+\font\twelvebf \fontstem\tenbf at 12pt
+\fi
+
+\def\beginchapter#1 #2 \par{%
+  \edef\beginchapterQnr{#1}%
+  % space before \par ensures trailing space not picked
+  % up.
+  % (We don't worry about verbatim text in header.)
+  % Some vert space in print
+  \vskip 2.5\bigskipamount
+  \goodbreak
+  \noindent
+  \global\footnotenumber=0
+  \writenumberedtocline{1}{\beginchapterQnr}{#2}%
+  \noindent\bgroup\twelvebf \baselineskip=14.4pt
+  \ifx\beginchapterQnr\empty\else
+  \beginchapterQnr\enspace\fi
+  #2%
+  \egroup\medskip\nobreak\noindent}
+
+% \plaintextweaks modifies some plain TeX macros to be more
+% robust
+
+\def\plaintextweaks{%
+% plain's \{left,center,right}line can't handle catcode change
+% within their argument
+\def\leftline{\line\bgroup\bgroup
+  \aftergroup\leftlinefinish
+  \let\dummy=}%
+%
+\def\leftlinefinish{\hss\egroup}%
+%
+\def\centerline{\line\bgroup\bgroup
+  \aftergroup\leftlinefinish
+  \hss\let\dummy=}%
+%
+\def\rightline{\line\bgroup\hss\let\dummy=}%
+}
+
+\ifx\bull\UnDeFiNeD
+% from manmac
+\def\bull{\vrule height .9ex width .8ex depth -.1ex } % square bullet
+\fi
+
+\ifx\frac\UnDeFiNeD
+\def\frac#1/#2{\leavevmode\kern.1em
+  \raise.5ex\hbox{\the\scriptfont0 #1}\kern-.1em
+  /\kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
+\fi
+
+\def\obeywhitespace{%
+  \defcsactive\^^M{\endgraf\leavevmode}%
+  \obeyspaces}
+
+%
+% Numbered footnotes
+
+\ifx\plainfootnote\UnDeFiNeD
+  \let\plainfootnote\footnote
+\fi
+
+\newcount\footnotenumber
+
+\def\numberedfootnote{\global\advance\footnotenumber 1
+  \bgroup\csname footnotehook\endcsname
+    \plainfootnote{$^{\the\footnotenumber}$}\bgroup
+      \edef\@currentlabel{\the\footnotenumber}%
+      \aftergroup\egroup
+      \let\dummy=}
+
+%
+
+\def\sidemargin{\afterassignment\sidemarginQadjustoffset
+  \hoffset}
+
+\def\sidemarginQadjustoffset{%
+  \advance\hoffset -1true in
+  \advance\hsize -2\hoffset}
+
+\ifx\Gin@driver\UnDeFiNeD
+  \ifx\pdfoutput\UnDeFiNeD\else\def\Gin@driver{pdftex.def}\fi
+  \ifx\XeTeXversion\UnDeFiNeD\else\def\Gin@driver{xetex.def}\fi
+  \ifx\Gin@driver\UnDeFiNeD\def\Gin@driver{dvips.def}\fi
+\fi
+
+\def\inputepsf{%
+  \ifx\epsfbox\UnDeFiNeD
+    \ifx\pdfoutput\UnDeFiNeD
+      \input epsf
+    \else
+      \ifx\convertMPtoPDF\UnDeFiNeD
+        \input supp-pdf
+      \fi
+      \def\epsfbox##1{\convertMPtoPDF{##1}{1}{1}}%
+    \fi
+  \fi
+  \let\epsfboxSAVE\epsfbox
+  \def\epsfbox##1{%
+    \openin0 ##1
+    \ifeof0 \closein0
+      \message{##1 missing.}%
+    \else\closein0
+      \epsfboxSAVE{##1}%
+    \fi}%
+}
+
+% fluff
+
+\let\p\verb
+\let\q\scm
+
+\atcatcodebeforetexzpage
+
+% end of file

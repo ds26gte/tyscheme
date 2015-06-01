@@ -1,0 +1,471 @@
+\chapter{Jumps}
+
+\index{call-with-current-continuation@\q{call-with-current-continuation}|see{\q{call/cc}}}
+One of the signal features of Scheme is its support for
+jumps or {\em nonlocal control}.  Specifically, Scheme
+allows program control to jump to {\em arbitrary}
+locations in the program, in contrast to the more
+restrained forms of program control flow allowed by
+conditionals and procedure calls.  Scheme's nonlocal
+control operator is a procedure named
+\q{call-with-current-continuation}.   We will
+see how this operator can be used to create a
+breathtaking variety of control idioms.
+
+\section{\q{call-with-current-continuation}}
+
+\index{call/cc@\q{call/cc}}
+\index{continuation}
+The operator \q{call-with-current-continuation} {\em
+call}s its argument, which must be a unary procedure,
+{\em with} a value called the ``{\em current
+continuation}''.  If nothing else, this explains the
+name of the operator.  But it is a long name, and is
+often abbreviated
+\q{call/cc}.\f{If your Scheme does not already have this
+abbreviation, include
+\q{(define call/cc call-with-current-continuation)} in
+your initialization code and protect yourself from
+RSI.}
+
+The current continuation at any point in the execution
+of a program is an abstraction of the {\em rest of the
+program}.  Thus in the program
+
+\q{
+(+ 1 (call/cc
+       (lambda (k)
+         (+ 2 (k 3)))))
+}
+
+\n
+the rest of the program, from the point of view of the
+\q{call/cc}-application, is the following
+program-with-a-hole (with \q{[]} representing the
+hole):
+
+\q{
+(+ 1 [])
+}
+
+\n
+In other words, this continuation is a program that
+will add \q{1} to whatever is used to fill its hole.
+
+This is what the argument of \q{call/cc} is {\em called
+with}.  Remember that the argument of \q{call/cc} is
+the procedure
+
+\q{
+(lambda (k)
+  (+ 2 (k 3)))
+}
+
+\n
+This procedure's body applies the continuation (bound
+now to the parameter \q{k}) to the argument \q{3}.
+This is when the unusual aspect of the continuation
+springs to the fore.  The continuation call abruptly
+abandons its own computation and replaces it with the
+rest of the program saved in \q{k}!  In other words,
+the part of the procedure involving the addition of
+\q{2} is jettisoned, and \q{k}'s argument \q{3} is sent
+directly to the program-with-the-hole:
+
+\q{
+(+ 1 [])
+}
+
+\n
+The program now running is simply
+
+\q{
+(+ 1 3)
+}
+
+\n
+which returns \q{4}.  In sum,
+
+\q{
+(+ 1 (call/cc
+       (lambda (k)
+         (+ 2 (k 3)))))
+|evalsto 4
+}
+
+\n
+The above illustrates what is called an {\em
+escaping} continuation, one used to exit out of a
+computation (here: the \q{(+ 2 [])} computation).  This
+is a useful property, but Scheme's continuations can
+also be used to return to previously abandoned
+contexts, and indeed to invoke them many times.  The
+``rest of the program'' enshrined in a continuation is
+available whenever and how many ever times we choose to
+recall it, and this is what contributes to the great
+and sometimes confusing versatility of \q{call/cc}.  As
+a quick example, type the following at the listener:
+
+\q{
+(define r #f)
+
+(+ 1 (call/cc
+       (lambda (k)
+         (set! r k)
+         (+ 2 (k 3)))))
+|evalsto 4
+}
+
+\n
+The latter expression returns \q{4} as before.  The
+difference between this use of \q{call/cc} and the
+previous example is that here we also store the
+continuation \q{k} in a global variable \q{r}.
+
+Now we have a permanent record of the continuation in
+\q{r}.  If we call it on a number, it will return that
+number incremented by \q{1}:
+
+\q{
+(r 5)
+|evalsto 6
+}
+
+\n
+Note that \q{r} will abandon its own continuation,
+which is better illustrated by embedding the call to
+\q{r} inside some context:
+
+\q{
+(+ 3 (r 5))
+|evalsto 6
+}
+
+\n
+The continuations provided by \q{call/cc} are thus
+{\em abortive} continuations.
+
+\section{Escaping continuations}
+
+Escaping continuations are the simplest use of
+\q{call/cc} and are very useful for programming
+procedure or loop exits.  Consider a procedure
+\q{list-product} that takes a list of numbers and
+multiplies them.  A straightforward recursive
+definition for \q{list-product} is:
+
+\scmfilename listprod-fun.scm
+
+\scmdribble{
+(define list-product
+  (lambda (s)
+    (let recur ((s s))
+      (if (null? s) 1
+          (* (car s) (recur (cdr s)))))))
+}
+
+\n
+There is a problem with this solution.  If one of the
+elements in the list is \q{0}, and if there are many
+elements after \q{0} in the list, then the answer is a
+foregone conclusion.  Yet, the code will have us go
+through many fruitless recursive calls to \q{recur}
+before producing the answer.  This is where an escape
+continuation comes in handy.  Using \q{call/cc}, we can
+rewrite the procedure as:
+
+\scmfilename listprod-cwcc.scm
+
+\scmdribble{
+(define list-product
+  (lambda (s)
+    (call/cc
+      (lambda (exit)
+        (let recur ((s s))
+          (if (null? s) 1
+              (if (= (car s) 0) (exit 0)
+                  (* (car s) (recur (cdr s))))))))))
+}
+
+\n
+If a \q{0} element is encountered, the continuation
+\q{exit} is called with \q{0}, thereby avoiding
+further calls to \q{recur}.
+
+\section{Tree matching}
+
+A more involved example of continuation usage is the
+problem of determining if two trees (arbitrarily nested
+dotted pairs) have the same {\em fringe}, ie, the
+same elements (or {\em leaves}) in the same sequence.
+Eg,
+
+\q{
+(same-fringe? '(1 (2 3)) '((1 2) 3))
+|evalsto #t
+
+(same-fringe? '(1 2 3) '(1 (3 2)))
+|evalsto #f
+}
+
+The purely functional approach is to flatten both trees
+and check if the results match.
+
+\scmfilename fringe-fun.scm
+
+\scmdribble{
+(define same-fringe?
+  (lambda (tree1 tree2)
+    (let loop ((ftree1 (flatten tree1))
+               (ftree2 (flatten tree2)))
+      (cond ((and (null? ftree1) (null? ftree2)) #t)
+            ((or (null? ftree1) (null? ftree2)) #f)
+            ((eqv? (car ftree1) (car ftree2))
+             (loop (cdr ftree1) (cdr ftree2)))
+            (else #f)))))
+
+(define flatten
+  (lambda (tree)
+    (cond ((null? tree) '())
+          ((pair? (car tree))
+           (append (flatten (car tree))
+                   (flatten (cdr tree))))
+          (else
+           (cons (car tree)
+                 (flatten (cdr tree)))))))
+}
+
+\n
+However, this traverses the trees completely to flatten
+them, and then again till it finds non-matching
+elements.  Furthermore, even the best flattening
+algorithms will require \q{cons}es equal to the total
+number of leaves.  (Destructively modifying the input
+trees is not an option.)
+
+We can use \q{call/cc} to solve the problem without
+needless traversal and without any \q{cons}ing.  Each
+tree is mapped to a {\em generator}, a procedure with
+internal state that successively produces the leaves of
+the tree in the left-to-right order that they occur in
+the tree.
+
+\scmfilename fringe-cwcc.scm
+
+\scmdribble{
+(define tree->generator
+  (lambda (tree)
+    (let ((caller '*))
+      (letrec
+          ((generate-leaves
+            (lambda ()
+              (let loop ((tree tree))
+                (cond ((null? tree) 'skip)
+                      ((pair? tree)
+                       (loop (car tree))
+                       (loop (cdr tree)))
+                      (else
+                       (call/cc
+                        (lambda (rest-of-tree)
+                          (set! generate-leaves
+                            (lambda ()
+                              (rest-of-tree 'resume)))
+                          (caller tree))))))
+              (caller '()))))
+        (lambda ()
+          (call/cc
+           (lambda (k)
+             (set! caller k)
+             (generate-leaves))))))))
+}
+
+\n
+When a generator created by \q{tree->generator} is
+called, it will store the continuation of its call in
+\q{caller}, so that it can know who to send the leaf to
+when it finds it.  It then calls an internal procedure
+called \q{generate-leaves} which runs a loop traversing
+the tree from left to right.  When the loop encounters
+a leaf, it will use \q{caller} to return the leaf as
+the generator's result, but it will remember to store
+the rest of the loop (captured as a \q{call/cc}
+continuation) in the \q{generate-leaves} variable.  The
+next time the generator is called, the loop is resumed
+where it left off so it can hunt for the next leaf.
+
+Note that the last thing \q{generate-leaves} does,
+after the loop is done, is to return the empty list to
+the
+\q{caller}.  Since the empty list is not a valid leaf
+value, we can use it to tell that the generator has
+no more leaves to generate.
+
+The procedure \q{same-fringe?} maps each of its tree
+arguments to a generator, and then calls these two
+generators alternately.  It announces failure as soon
+as two non-matching leaves are found:
+
+\scmdribble{
+(define same-fringe?
+  (lambda (tree1 tree2)
+    (let ((gen1 (tree->generator tree1))
+          (gen2 (tree->generator tree2)))
+      (let loop ()
+        (let ((leaf1 (gen1))
+              (leaf2 (gen2)))
+          (if (eqv? leaf1 leaf2)
+              (if (null? leaf1) #t (loop))
+              #f))))))
+}
+
+\n
+It is easy to see that the trees are traversed at most
+once, and in case of mismatch, the traversals extend
+only upto the leftmost mismatch.  \q{cons} is not used.
+
+\index{coroutine}
+\index{call/cc@\q{call/cc}!and coroutine}
+
+\section{Coroutines}
+
+The generators used above are interesting
+generalizations of the procedure concept.  Each time
+the generator is called, it resumes its computation,
+and when it has a result for its caller returns it, but
+only after storing its continuation in an internal
+variable so the generator can be resumed again.  We can
+generalize generators further, so that they can
+mutually resume each other, sending results back and
+forth amongst themselves.  Such procedures are called
+{\em coroutines}~\cite{coroutine}.
+
+We will view a coroutine as a unary procedure, whose
+body can contain \q{resume} calls.  \q{resume} is a
+two-argument procedure used by a coroutine to resume
+another coroutine with a transfer value.  The macro \q{coroutine}
+defines such a coroutine procedure, given a variable name for 
+the coroutine's initial argument, and the body of the coroutine.
+
+\scmfilename coroutine.scm
+
+\scmdribble{
+(define-macro coroutine
+  (lambda (x . body)
+    `(letrec ((+local-control-state
+               (lambda (,x) ,@body))
+              (resume
+               (lambda (c v)
+                 (call/cc
+                  (lambda (k)
+                    (set! +local-control-state k)
+                    (c v))))))
+       (lambda (v)
+         (+local-control-state v)))))
+}
+
+\n A call of this macro creates a coroutine procedure
+(let's call it $A$) that can be called with one
+argument.  $A$ has an internal variable called
+\q{+local-control-state} that stores, at any point, the
+remaining computation of the coroutine.   Initially
+this is the entire coroutine computation.  When
+\q{resume} is called --- ie, invoking another coroutine
+$B$ --- the current coroutine will update its
+\q{+local-control-state} value to the rest of itself,
+stop itself, and then jump to the \q{resume}d coroutine
+$B$.  When coroutine $A$ is itself \q{resume}d at
+some later point, its computation will proceed from the
+continuation stored in its \q{+local-control-state}.
+
+
+\scmfilename fringe-cor.scm
+
+\subsection{Tree-matching with coroutines}
+
+Tree-matching is further simplified using coroutines.
+The matching process is coded as a coroutine that
+depends on two other coroutines to supply the leaves of
+the respective trees:
+
+\scmdribble{
+(define make-matcher-coroutine
+  (lambda (tree-cor-1 tree-cor-2)
+    (coroutine dont-need-an-init-arg
+      (let loop ()
+        (let ((leaf1 (resume tree-cor-1 'get-a-leaf))
+              (leaf2 (resume tree-cor-2 'get-a-leaf)))
+          (if (eqv? leaf1 leaf2)
+              (if (null? leaf1) #t (loop))
+              #f))))))
+}
+
+\n
+The leaf-generator coroutines remember who to send
+their leaves to:
+
+\scmdribble{
+(define make-leaf-gen-coroutine
+  (lambda (tree matcher-cor)
+    (coroutine dont-need-an-init-arg
+      (let loop ((tree tree))
+        (cond ((null? tree) 'skip)
+              ((pair? tree)
+               (loop (car tree))
+               (loop (cdr tree)))
+              (else
+               (resume matcher-cor tree))))
+      (resume matcher-cor '()))))
+}
+
+\n
+The \q{same-fringe?} procedure can now {\em almost}
+be written as
+
+\q{
+(define same-fringe?
+  (lambda (tree1 tree2)
+    (letrec ((tree-cor-1
+              (make-leaf-gen-coroutine
+               tree1
+               matcher-cor))
+             (tree-cor-2
+              (make-leaf-gen-coroutine
+               tree2
+               matcher-cor))
+             (matcher-cor
+              (make-matcher-coroutine
+               tree-cor-1
+               tree-cor-2)))
+      (matcher-cor 'start-ball-rolling))))
+}
+
+\n
+Unfortunately, Scheme's \q{letrec} can resolve
+mutually recursive references amongst the lexical
+variables it introduces {\em only} if such variable
+references are wrapped inside a \q{lambda}.  And so we
+write:
+
+\scmdribble{
+(define same-fringe?
+  (lambda (tree1 tree2)
+    (letrec ((tree-cor-1
+              (make-leaf-gen-coroutine
+               tree1
+               (lambda (v) (matcher-cor v))))
+             (tree-cor-2
+              (make-leaf-gen-coroutine
+               tree2
+               (lambda (v) (matcher-cor v))))
+             (matcher-cor
+              (make-matcher-coroutine
+               (lambda (v) (tree-cor-1 v))
+               (lambda (v) (tree-cor-2 v)))))
+      (matcher-cor 'start-ball-rolling))))
+}
+
+\n
+Note that \q{call/cc} is not called directly at all in
+this rewrite of \q{same-fringe?}.  All the continuation
+manipulation is handled for us by the
+\q{coroutine} macro.

@@ -1,0 +1,110 @@
+Nov 18, 2004
+
+Replace raw HTML sourcing of leaf.gif image with \htmladdimg.  This allows
+image to be copied automatically to target directory (when latter is
+different from working directory).  Prob reported by Paul Bolle (pebolle at
+tiscali dot nl).
+
+Dec 4, 2003
+
+Use (amb #f #t) instead of (amb #t #f) to better show that backtracking
+occurs in (if (amb #f #t) 1 (amb)).   Suggested by Shriram
+Krishnamurthi.
+
+Aug 26, 2003
+
+Typo fix: s/get or put/get or post/.  Reported by 
+Nobuo Yamashita (nobsun @ sampou.org).
+
+Aug 14, 2003
+
+2.2.1 hello typo fix (Aaron.Hawley @ uvm.edu).
+
+Mar 11, 2003
+
+Use +local-control-state in coroutine macro def, 
+because it should rightly be a gensym.  (Ivan Toshkov)
+
+Jan 3, 2003
+
+added metapost picture for simpson's rule
+
+Dec 7, 2002
+
+Improve presentation of dialect invocation
+command and init files.  Add Chicken.
+
+Nov 30, 2002
+
+Update macro definition description for
+MIT Scheme v 7.7.1
+
+Nov 17, 2002
+
+Added makefile for my own use.
+
+25 Oct 2002
+
+Typo in code example in script.tex.
+
+11 Dec 2001
+
+Modifications to reflect MzScheme changes as it moves
+to v200.  Input from Matthew Flatt.
+
+28 Nov 2001
+
+string-set! only works on non-constant strings!
+Error pointed out by Charles Hixson.
+
+Corrected silly 'if' example bug spotted by Kelly Gerber.
+
+8 Oct 2001
+
+Add treatment of improper integrals with
+Gamma function as example
+
+1 Oct 2001
+
+Refine integrate-adaptive-simpson to reuse
+ordinate calculations when possible
+
+30 Sep 2001
+
+Put numerical integration example in an appendix.
+Add integrate-adaptive-simpson to the example.
+
+23 Sep 2001
+
+Added an impl of Simpson's rule as an example of
+iteration in the service of number-crunching.
+
+5 Feb 2001
+
+Matthias Felleisen corrects me on (rational?
+3.1416), which is true not false.  In other words,
+there is no real (!) difference between the set of
+Scheme real numbers and the set of Scheme rational
+numbers... 
+
+Dec 9, 2000
+
+Added index.  Requested by Robert Bruce Findler.
+
+;
+
+Apr 2000
+
+;
+
+(added objects, amb)
+
+;
+
+6 Mar 1999
+
+announced publicly
+
+Mar/Apr 1998
+
+on web

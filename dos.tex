@@ -1,0 +1,119 @@
+\chapter{DOS batch files in Scheme}
+\label{dos}
+
+\index{script!DOS}
+DOS shell scripts are known as {\em batch files}.  A
+conventional DOS batch file that outputs ``Hello,
+World!''\ has the following contents:
+
+\p{
+echo Hello, World!
+}
+
+It uses the DOS command \p{echo}.  The batch file is
+named \p{hello.bat}, which identifies it to the
+operating system as an executable.  It may then be
+placed in one of the directories on the \p{PATH}
+environment variable.  Thereafter, anytime one types
+
+\p{
+hello.bat
+}
+
+or simply
+
+\p{
+hello
+}
+
+\n at the DOS prompt, one promptly gets the
+insufferable greeting.
+
+A Scheme version of the hello batch file will perform
+the same output using Scheme, but we need something in
+the file to inform DOS that it needs to construe the
+commands in the file as Scheme, and not as its default
+batch language.  The Scheme batch file, also called
+\p{hello.bat}, looks like:
+
+\p+
+;@echo off
+;goto :start
+#|
+:start
+echo. > c:\_temp.scm
+echo (load (find-executable-path "hello.bat" >> c:\_temp.scm
+echo "hello.bat")) >> c:\_temp.scm
+mzscheme -r c:\_temp.scm %1 %2 %3 %4 %5 %6 %7 %8 %9
+goto :eof
+|#
+
+(display "Hello, World!")
+(newline)
+
+;:eof
++
+
+The lines upto \p+|#+ are standard DOS batch.  Then
+follows the Scheme code for the greeting.  Finally,
+there is one more standard DOS batch line, viz,
+\p{;:eof}.  
+
+When the user types \p{hello} at the DOS prompt, DOS
+reads and runs the file \p{hello.bat} as a regular
+batch file.  The first line, \p{;@echo off}, turns off
+the echoing of the commands run --- as we don't want
+excessive verbiage clouding the effect of our script.
+The second line, \p{;goto :start}, causes execution to
+jump forward to the line labeled \p{:start}, ie, the
+fourth line.  The three ensuing \p{echo} lines create a
+temporary Scheme file called \p{c:\_temp.tmp} with the
+following contents:
+
+\q{
+(load (find-executable-path "hello.bat" "hello.bat"))
+}
+
+The next batch command is a call to MzScheme.  The
+\p{-r} option loads the Scheme file \p{c:\_temp.scm}.
+All the arguments (in this example, none) will be
+available to Scheme in the vector \q{argv}.  This call
+to Scheme will evaluate our Scheme script, as we will
+see below.  After Scheme returns, we still need to
+ensure that the batch file winds up cleanly.  The next
+batch command is \p{goto :eof}, which causes
+control to skirt all the Scheme code and go to the very
+end of the file, which contains the label
+\p{;:eof}.   The script thus ends.
+
+Now we can see how the call to Scheme does its part,
+viz, to run the Scheme expressions embedded in the
+batch file.  Loading \p{c:\_temp.scm} will cause Scheme
+to deduce the full pathname of the file \p{hello.bat}
+(using \q{find-executable-path}), and to then {\em
+load}
+\p{hello.bat}.  
+
+Thus, the Scheme script file will now be run as a
+Scheme file, and the Scheme forms in the file will have
+access to the script's original arguments via the
+vector \q{argv}.
+
+Now, Scheme has to skirt the batch commands in the
+script.  This is easily done because these batch
+commands are either prefixed with a semicolon or are
+enclosed in \p+#| ... |#+, making them Scheme comments.
+
+The rest of the file is of course straight Scheme, and
+the expressions therein are evaluated in sequence.  (The
+final expression, \p{;:eof}, is a Scheme comment, and
+causes no harm.)  After all the expressions have been
+evaluated, Scheme will exit.
+
+In sum, typing \p{hello} at the DOS prompt will produce
+
+\p{
+Hello, World!
+}
+
+\n and return you to the DOS prompt.

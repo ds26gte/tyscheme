@@ -1,0 +1,670 @@
+\chapter{CGI scripts}
+
+\index{script!CGI}
+{\color[rgb]{1,0,0}({\bf Warning:} CGI scripts without
+appropriate safeguards can compromise your site's
+security.  The scripts presented here are simple
+examples and are not assured to be secure for actual
+Web use.)}
+
+\medskip
+
+CGI scripts \cite{cgi} are scripts that reside on a
+web server and can be run by a client (browser).  The
+client accesses a CGI script by its URL, just as they
+would a regular page.  The server, recognizing that the
+URL requested is a CGI script, runs it.  How the server
+recognizes certain URLs as scripts is up to the server
+administrator.  For the purposes of this text, we will
+assume that they are stored in a distinguished
+directory called \path{cgi-bin}.  Thus, the script
+\path{testcgi.scm} on the server \path{www.foo.org} would
+be accessed as \path{http://www.foo.org/cgi-bin/testcgi.scm}.
+
+The server runs the CGI script as the user \p{nobody},
+who cannot be expected to have any
+\p{PATH} knowledge (which is highly subjective
+anyway).  Therefore the introductory magic line for a
+CGI script written in Scheme needs to be a bit more
+explicit than the one we used for ordinary Scheme
+scripts.  Eg, the line
+
+\q{
+":";exec mzscheme -r $0 "$@"
+}
+
+\n implicitly assumes that there is a particular shell
+(\p{bash}, say), and that there is a \p{PATH}, and that
+\p{mzscheme} is in it.  For CGI scripts, we will need
+to be more expansive:
+
+\q{
+#!/bin/sh
+":";exec /usr/local/bin/mzscheme -r $0 "$@"
+}
+
+This gives fully qualified pathnames for the shell and
+the Scheme executable.  The transfer of control from
+shell to Scheme proceeds as for regular scripts.
+
+\section{Example: Displaying environment variables}
+
+Here is an example Scheme CGI script,
+\path{testcgi.scm}, that outputs the settings of some
+commonly used CGI environment variables.  This
+information is returned as a new, freshly created, page
+to the browser.  The returned page is simply whatever
+the CGI script writes to its standard output.  This is
+how CGI scripts talk back to whoever called them --- by
+giving them a new page.
+
+Note that the script first outputs the line
+
+\p{
+content-type: text/plain
+}
+
+\n {\em followed by a blank line}.  This is standard ritual
+for a web server serving up a page.  These two lines
+aren't part of what is actually displayed as the page.
+They are there to inform the browser that the page being sent
+is plain (ie, un-marked-up) text, so the browser can
+display it appropriately.  If we were producing text
+marked up in HTML, the
+\p{content-type} would be
+\p{text/html}.
+
+The script \path{testcgi.scm}:
+
+\scmfilename testcgi.scm
+
+\scmdribble{
+#!/bin/sh
+":";exec /usr/local/bin/mzscheme -r $0 "$@"
+
+;Identify content-type as plain text.
+
+(display "content-type: text/plain") (newline)
+(newline)
+
+;Generate a page with the requested info.  This is
+;done by simply writing to standard output.
+
+(for-each
+ (lambda (env-var)
+   (display env-var)
+   (display " = ")
+   (display (or (getenv env-var) ""))
+   (newline))
+ '("AUTH_TYPE"
+   "CONTENT_LENGTH"
+   "CONTENT_TYPE"
+   "DOCUMENT_ROOT"
+   "GATEWAY_INTERFACE"
+   "HTTP_ACCEPT"
+   "HTTP_REFERER" ; [sic]
+   "HTTP_USER_AGENT"
+   "PATH_INFO"
+   "PATH_TRANSLATED"
+   "QUERY_STRING"
+   "REMOTE_ADDR"
+   "REMOTE_HOST"
+   "REMOTE_IDENT"
+   "REMOTE_USER"
+   "REQUEST_METHOD"
+   "SCRIPT_NAME"
+   "SERVER_NAME"
+   "SERVER_PORT"
+   "SERVER_PROTOCOL"
+   "SERVER_SOFTWARE"))
+}
+
+\p{testcgi.scm} can be called directly by opening it on
+  a browser.  The URL is:
+
+\p{
+http://www.foo.org/cgi-bin/testcgi.scm
+}
+
+Alternately, \p{testcgi.scm} can occur as a link in an
+HTML file, which you can click.  Eg,
+
+\p{
+... To view some common CGI environment variables, click
+<a href="http://www.foo.org/cgi-bin/testcgi.scm">here</a>.
+...
+}
+
+However \p{testcgi.scm} is launched, it will produce a
+plain text page containing the settings of the
+environment variables.  An example output:
+
+\p{
+AUTH_TYPE =
+CONTENT_LENGTH =
+CONTENT_TYPE =
+DOCUMENT_ROOT = /home/httpd/html
+GATEWAY_INTERFACE = CGI/1.1
+HTTP_ACCEPT = image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*
+HTTP_REFERER =
+HTTP_USER_AGENT = Mozilla/3.01Gold (X11; I; Linux 2.0.32 i586)
+PATH_INFO =
+PATH_TRANSLATED =
+QUERY_STRING =
+REMOTE_HOST = 127.0.0.1
+REMOTE_ADDR = 127.0.0.1
+REMOTE_IDENT =
+REMOTE_USER =
+REQUEST_METHOD = GET
+SCRIPT_NAME = /cgi-bin/testcgi.scm
+SERVER_NAME = localhost.localdomain
+SERVER_PORT = 80
+SERVER_PROTOCOL = HTTP/1.0
+SERVER_SOFTWARE = Apache/1.2.4
+}
+
+\section{Example: Displaying selected environment variable}
+\label{testcgi2}
+
+\p{testcgi.scm} does not take any input from the user.
+A more focused script would take an argument
+environment variable from the user, and output the
+setting of that variable and none else.  For this, we
+need a mechanism for feeding arguments to CGI scripts.
+The \p{form} tag of HTML provides this capability.
+Here is a sample HTML page for this purpose:
+
+\p{
+<html>
+<head>
+<title>Form for checking environment variables</title>
+</head>
+<body>
+
+<form method=get 
+      action="http://www.foo.org/cgi-bin/testcgi2.scm">
+Enter environment variable: <input type=text name=envvar size=30>
+<p>
+
+<input type=submit>
+</form>
+
+</body>
+</html>
+}
+
+\n The user enters the desired environment variable (eg,
+\p{GATEWAY_INTERFACE})  in the
+textbox and clicks the submit button.  This causes all
+the information in the form --- here, the setting of
+the parameter \p{envvar} to the value
+\p{GATEWAY_INTERFACE} --- to be collected and sent to
+the CGI script identified by the \p{form}, viz,
+\p{testcgi2.scm}.    The information can be sent in one
+of two ways: (1) if the \p{form}'s \p{method=get} (the
+default), the information is sent via the environment
+variable called \p{QUERY_STRING}; (2) if the \p{form}'s
+\p{method=post}, the information is available to the
+CGI script at the latter's standard input port
+(\p{stdin}).  Our form uses \p{QUERY_STRING}.
+
+It is \p{testcgi2.scm}'s responsibility to extract the
+information from
+\p{QUERY_STRING}, and output the answer page
+accordingly.
+
+The information to the CGI script, whether arriving via
+an environment variable or through \p{stdin}, is
+formatted as a sequence of parameter/argument pairs.
+The pairs are separated from each other by the \p{&}
+character.  Within a pair, the parameter occurs first
+and is separated from the argument by the \p{=}
+character.  In this case, there is only
+one parameter/argument pair, viz,
+\p{envvar=GATEWAY_INTERFACE}.
+
+The script \p{testcgi2.scm}:
+\scmfilename testcgi2.scm
+
+\scmdribble{
+#!/bin/sh
+":";exec /usr/local/bin/mzscheme -r $0 "$@"
+
+(display "content-type: text/plain") (newline)
+(newline)
+
+;string-index returns the leftmost index in string s
+;that has character c
+
+(define string-index
+  (lambda (s c)
+    (let ((n (string-length s)))
+      (let loop ((i 0))
+        (cond ((>= i n) #f)
+              ((char=? (string-ref s i) c) i)
+              (else (loop (+ i 1))))))))
+
+;split breaks string s into substrings separated by character c
+
+(define split
+  (lambda (c s)
+    (let loop ((s s))
+      (if (string=? s "") '()
+          (let ((i (string-index s c)))
+            (if i (cons (substring s 0 i)
+                        (loop (substring s (+ i 1)
+                                         (string-length s))))
+                (list s)))))))
+
+(define args
+  (map (lambda (par-arg)
+         (split #\= par-arg))
+       (split #\& (getenv "QUERY_STRING"))))
+
+(define envvar (cadr (assoc "envvar" args)))
+
+(display envvar)
+(display " = ")
+(display (getenv envvar))
+
+(newline)
+}
+
+\n Note the use of a helper procedure \q{split} to split
+the \p{QUERY_STRING} into parameter/argument pairs
+along the \p{&} character, and then splitting parameter
+and argument along the \p{=} character.  (If we had
+used the \p{post} method rather than \p{get}, we would
+have needed to extract the parameters and arguments
+from the standard input.)
+
+The \p{<input type=text>} and \p{<input type=submit>}
+are but two of the many different \p{input} tags
+possible in an HTML \p{form}.  Consult \cite{cgi} for
+the full repertoire.
+
+\section{CGI script utilities}
+
+In the example above, the parameter's name or the
+argument it assumed did not themselves contain any
+`\p{&}' or `\p{=}' characters.  In general, they may.
+To accommodate such characters, and not have them be
+mistaken for separators, the CGI argument-passing
+mechanism treats all characters other than letters,
+digits, and the underscore, as {\em special}, and
+transmits them in an encoded form.  A space is encoded
+as a `\p{+}'.  For other special characters, the
+encoding is a three-character sequence, and consists of
+`\p{%}' followed the special character's hexadecimal
+code.  Thus, the character sequence `\p{20% + 30% =
+50%, &c.}' will be encoded as
+
+\p{
+20%25+%2b+30%25+%3d+50%25%2c+%26c%2e
+}
+
+\n (Space become `\p{+}'; `\p{%}' becomes `\p{%25}';
+`\p{+}' becomes `\p{%2b}'; `\p{=}' becomes `\p{%3d}';
+`\p{,}' becomes `\p{%2c}'; `\p{&}' becomes `\p{%26}';
+and `\p{.}' becomes `\p{%2e}'.)
+
+Instead of dealing anew with the task of getting and
+decoding the form data in each CGI script, it is
+convenient to collect some helpful procedures into a
+library file
+\p{cgi.scm}.  \p{testcgi2.scm} can then be written
+more compactly as
+
+\scmfilename testcgi2a.scm
+
+\scmdribble{
+#!/bin/sh
+":";exec /usr/local/bin/mzscheme -r $0 "$@"
+
+;Load the cgi utilities
+
+(load-relatve "cgi.scm")
+
+(display "content-type: text/plain") (newline)
+(newline)
+
+;Read the data input via the form
+
+(parse-form-data)
+
+;Get the envvar parameter
+
+(define envvar (form-data-get/1 "envvar"))
+
+;Display the value of the envvar
+
+(display envvar)
+(display " = ")
+(display (getenv envvar))
+(newline)
+}
+
+\n This shorter CGI script uses two utility procedures
+defined in \p{cgi.scm}. \q{parse-form-data} to read
+the data supplied by the user via the form.  The data
+consists of parameters and their associated values.
+\q{form-data-get/1}  finds the  value associated with a
+particular parameter.
+
+\q{cgi.scm} defines a global table called
+\q{*form-data-table*} to store form data.
+
+\scmfilename cgi.scm
+
+\scmdribble{
+;Load our table definitions
+
+(load-relative "table.scm")
+
+;Define the *form-data-table*
+
+(define *form-data-table* (make-table 'equ string=?))
+}
+
+\n An advantage of using a general mechanism such
+as the \q{parse-form-data} procedure is that we can
+hide the details of what \p{method} (\p{get} or
+\p{post}) was used.
+
+\scmdribble{
+(define parse-form-data
+  (lambda ()
+    ((if (string-ci=? (or (getenv "REQUEST_METHOD") "GET") "GET")
+         parse-form-data-using-query-string
+         parse-form-data-using-stdin))))
+}
+
+\n The environment variable
+\p{REQUEST_METHOD} tells which method was used to transmit
+the form data.  If the method is \p{GET}, then the form
+data was sent as the string available via another
+environment variable, \p{QUERY_STRING}.  The auxiliary
+procedure
+\q{parse-form-data-using-query-string} is used to pick
+apart \p{QUERY_STRING}:
+
+\scmdribble{
+(define parse-form-data-using-query-string
+  (lambda ()
+    (let ((query-string (or (getenv "QUERY_STRING") "")))
+      (for-each
+       (lambda (par=arg)
+         (let ((par/arg (split #\= par=arg)))
+           (let ((par (url-decode (car par/arg)))
+                 (arg (url-decode (cadr par/arg))))
+             (table-put! 
+              *form-data-table* par
+              (cons arg 
+                    (table-get *form-data-table* par '()))))))
+       (split #\& query-string)))))
+}
+
+\n The  helper procedure \q{split}, and {\em its} helper
+\q{string-index}, are defined as in sec~\ref{testcgi2}.
+As noted, the incoming form data is a sequence of
+name-value pairs separated by \p{&}s.  Within each
+pair, the name comes first, followed by an \p{=}
+character, followed by the value.  Each name-value
+combination is collected into a global table, the
+\q{*form-data-table*}.
+
+\scmwrite{
+;string-index returns the leftmost index in string s
+;that has character c
+
+(define string-index
+  (lambda (s c)
+    (let ((n (string-length s)))
+      (let loop ((i 0))
+        (cond ((>= i n) #f)
+              ((char=? (string-ref s i) c) i)
+              (else (loop (+ i 1))))))))
+
+;split breaks string s into substrings separated by character c
+
+(define split
+  (lambda (c s)
+    (let loop ((s s))
+      (if (string=? s "") '()
+          (let ((i (string-index s c)))
+            (if i (cons (substring s 0 i)
+                        (loop (substring s (+ i 1)
+                                         (string-length s))))
+                (list s)))))))
+}
+
+\n Both name and value are encoded, so we
+need to decode them using the \q{url-decode} procedure
+to get their actual representation.
+
+\scmdribble{
+(define url-decode
+  (lambda (s)
+    (let ((s (string->list s)))
+      (list->string
+       (let loop ((s s))
+         (if (null? s) '()
+             (let ((a (car s)) (d (cdr s)))
+               (case a
+                 ((#\+) (cons #\space (loop d)))
+                 ((#\%) (cons (hex->char (car d) (cadr d))
+                              (loop (cddr d))))
+                 (else (cons a (loop d)))))))))))
+}
+
+\n `\p{+}' is converted into space.  A triliteral of the
+form `\p{%xy}'
+is converted, using the procedure \q{hex->char} into
+the character whose
+ascii encoding is the hex number `\p{xy}'.
+
+\scmdribble{
+(define hex->char
+  (lambda (x y)
+    (integer->char
+     (string->number (string x y) 16))))
+}
+
+\n We still need a form-data parser for the case where the
+request method is \p{POST}.  The auxiliary procedure
+\q{parse-form-data-using-stdin} does this.
+
+\scmdribble{
+(define parse-form-data-using-stdin
+  (lambda ()
+    (let* ((content-length (getenv "CONTENT_LENGTH"))
+           (content-length
+             (if content-length
+                 (string->number content-length) 0))
+           (i 0))
+      (let par-loop ((par '()))
+        (let ((c (read-char)))
+          (set! i (+ i 1))
+          (if (or (> i content-length)
+                  (eof-object? c) (char=? c #\=))
+              (let arg-loop ((arg '()))
+                (let ((c (read-char)))
+                  (set! i (+ i 1))
+                  (if (or (> i content-length)
+                          (eof-object? c) (char=? c #\&))
+                      (let ((par (url-decode
+                                   (list->string
+                                     (reverse! par))))
+                            (arg (url-decode
+                                   (list->string
+                                     (reverse! arg)))))
+                        (table-put! *form-data-table* par
+                          (cons arg (table-get *form-data-table*
+                                      par '())))
+                        (unless (or (> i content-length)
+                                    (eof-object? c))
+                          (par-loop '())))
+                      (arg-loop (cons c arg)))))
+              (par-loop (cons c par))))))))
+}
+
+\n The \p{POST} method sends form data via the script's
+\p{stdin}.  The number of characters sent is placed in
+the environment variable \p{CONTENT_LENGTH}.
+\q{parse-form-data-using-stdin} reads the required
+number of characters from \p{stdin}, and populates the
+\q{*form-data-table*} as before, making sure to decode
+the parameters' names and values.
+
+It remains to retrieve the values for specific
+parameters from the \q{*form-data-table*}.  Note that
+the table associates a list with each parameter, in
+order to accommodate the possibility of multiple values
+for a parameter.  \q{form-data-get} retrieves all the
+values assigned to a parameter.  If there is only one
+value, it returns a singleton containing that value.
+
+\scmdribble{
+(define form-data-get
+  (lambda (k)
+    (table-get *form-data-table* k '())))
+}
+
+\n \q{form-data-get/1} returns the first (or most
+  significant) value associated with a parameter.
+
+\scmdribble{
+(define form-data-get/1
+  (lambda (k . default)
+    (let ((vv (form-data-get k)))
+      (cond ((pair? vv) (car vv))
+            ((pair? default) (car default))
+            (else "")))))
+}
+
+\n In our examples so far, the CGI script has generated
+plain text.  Generally, though, we will want to
+generate an HTML page.  It is not uncommon for a
+combination of HTML form and CGI script to trigger a
+series of HTML pages with forms.  It is also common to
+code all the action corresponding to these various
+forms in a single CGI script.  In any case, it is
+helpful to have a utility procedure that writes out strings
+in HTML format, ie, with the HTML special characters
+encoded appropriately:
+
+\scmdribble{
+(define display-html
+  (lambda (s . o)
+    (let ((o (if (null? o) (current-output-port)
+                 (car o))))
+      (let ((n (string-length s)))
+        (let loop ((i 0))
+          (unless (>= i n)
+            (let ((c (string-ref s i)))
+              (display
+               (case c
+                 ((#\<) "&lt;")
+                 ((#\>) "&gt;")
+                 ((#\") "&quot;")
+                 ((#\&) "&amp;")
+                 (else c)) o)
+              (loop (+ i 1)))))))))
+}
+
+\section{A calculator via CGI}
+
+Here is an CGI calculator script, \p{cgicalc.scm}, that
+exploits Scheme's arbitrary-precision arithmetic.
+
+\scmfilename cgicalc.scm
+
+\scmdribble{
+#!/bin/sh
+":";exec /usr/local/bin/mzscheme -r $0
+
+;Load the CGI utilities
+(load-relative "cgi.scm")
+
+(define uhoh #f)
+
+(define calc-eval
+  (lambda (e)
+    (if (pair? e)
+        (apply (ensure-operator (car e))
+               (map calc-eval (cdr e)))
+        (ensure-number e))))
+
+(define ensure-operator
+  (lambda (e)
+    (case e
+      ((+) +)
+      ((-) -)
+      ((*) *)
+      ((/) /)
+      ((**) expt)
+      (else (uhoh "unpermitted operator")))))
+
+(define ensure-number
+  (lambda (e)
+    (if (number? e) e
+        (uhoh "non-number"))))
+
+(define print-form
+  (lambda ()
+    (display "<form action=\"")
+    (display (getenv "SCRIPT_NAME"))
+    (display "\">
+  Enter arithmetic expression:<br>
+  <input type=textarea name=arithexp><p>
+  <input type=submit value=\"Evaluate\">
+  <input type=reset value=\"Clear\">
+</form>")))
+
+(define print-page-begin
+  (lambda ()
+    (display "content-type: text/html
+
+<html>
+  <head>
+    <title>A Scheme Calculator</title>
+  </head>
+  <body>")))
+
+(define print-page-end
+  (lambda ()
+    (display "</body>
+</html>")))
+
+(parse-form-data)
+
+(print-page-begin)
+
+(let ((e (form-data-get "arithexp")))
+  (unless (null? e)
+    (let ((e1 (car e)))
+      (display-html e1)
+      (display "<p>
+  =&gt;&nbsp;&nbsp;")
+      (display-html
+       (call/cc
+        (lambda (k)
+          (set! uhoh
+                (lambda (s)
+                  (k (string-append "Error: " s))))
+          (number->string
+           (calc-eval (read (open-input-string (car e))))))))
+      (display "<p>"))))
+
+(print-form)
+(print-page-end)
+}
+
+%  A CGI script can accept arguments.  These may be
+%specified as extra path information tagged on to the
+%script's URL, or accumulated from various \p{<input>}
+%statements inside an HTML \p{<form>}.
+
+%input, or with extra path information on the URL, which
+%is made available to the URL via an environment
+%variable called \p{QUERY_STRING}.

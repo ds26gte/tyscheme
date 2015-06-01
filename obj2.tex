@@ -1,0 +1,96 @@
+\scmfilename obj2.scm
+
+\scmwrite{
+(load-relative "obj1.scm")
+}
+
+\section{Classes are instances too}
+
+\index{metaclass}
+It cannot have escaped the astute reader that classes
+themselves look like they could be the instances of
+some class (a {\em metaclass}, if you will).  Note that
+all classes have some common behavior: each of them has
+slots, a superclass, a list of method names, and a
+method vector.  \q{make-instance} looks like it could
+be their shared method.  This suggests that we could
+specify this common behavior by another class (which
+itself should, of course, be a class instance too).
+
+In concrete terms, we could rewrite our class
+implementation to itself make use of the
+object-oriented approach, provided we make sure we
+don't run into chicken-and-egg problems.  In effect, we
+will be getting rid of the \q{class} struct and its
+attendant procedures and rely on the rest of the
+machinery to define classes as objects.
+
+Let us identify \q{standard-class} as the class of
+which other classes are instances of.  In particular,
+\q{standard-class} must be an instance of itself.  What
+should \q{standard-class} look like?
+
+We know \q{standard-class} is an instance, and we are
+representing instances by vectors.  So it is a
+vector whose first element holds its class, ie,
+itself, and whose remaining elements are slot values.
+We have identified four slots that all classes must
+have, so \q{standard-class} is a 5-element vector.
+
+\scmdribble{
+(define standard-class
+  (vector 'value-of-standard-class-goes-here
+          (list 'slots
+                'superclass
+                'method-names
+                'method-vector)
+          #t
+          '(make-instance)
+          (vector make-instance)))
+}
+
+\n Note that the \q{standard-class} vector is
+incompletely filled in: the symbol
+\q{value-of-standard-class-goes-here} functions as a
+placeholder.  Now that we have defined a
+\q{standard-class} value, we can use it to identify its
+own class, which is itself:
+
+\scmdribble{
+(vector-set! standard-class 0 standard-class)
+}
+
+Note that we cannot rely on procedures based on the
+\q{class} struct anymore.  We should replace all calls
+of the form
+
+\q{
+(standard-class? x)
+(standard-class.slots c)
+(standard-class.superclass c)
+(standard-class.method-names c)
+(standard-class.method-vector c)
+(make-standard-class ...)
+}
+
+\n by
+
+\q{
+(and (vector? x) (eqv? (vector-ref x 0) standard-class))
+(vector-ref c 1)
+(vector-ref c 2)
+(vector-ref c 3)
+(vector-ref c 4)
+(send 'make-instance standard-class ...)
+}
+
+\scmwrite{
+(define (standard-class? x)
+  (and (vector? x) (eqv? (vector-ref x 0) standard-class)))
+(define (standard-class.slots c) (vector-ref c 1))
+(define (standard-class.superclass c) (vector-ref c 2))
+(define (standard-class.method-names c) (vector-ref c 3))
+(define (standard-class.method-vector c) (vector-ref c 4))
+(define (make-standard-class . args) 
+  (apply send 'make-instance standard-class args))
+}

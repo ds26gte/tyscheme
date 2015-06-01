@@ -1,0 +1,556 @@
+\chapter{Nondeterminism}
+
+\index{nondeterminism}
+\index{logic programming}
+\index{amb@\q{amb}}
+McCarthy's nondeterministic operator
+\q{amb} \cite{jmc:amb,wc:amb,zmc:amb} is as old as
+Lisp itself, although it is present in no Lisp.
+\q{amb} takes zero or more expressions, and makes a
+nondeterministic (or ``ambiguous'') choice among them,
+preferring those choices that cause the program to
+converge meaningfully.  Here we will explore an
+embedding of \q{amb} in Scheme that makes a depth-first
+selection of the ambiguous choices, and uses Scheme's
+control operator \q{call/cc} to backtrack for alternate
+choices.  The result is an elegant backtracking
+strategy that can be used for searching problem spaces
+directly in Scheme without recourse to an extended
+language.  The embedding recalls the continuation
+strategies used to implement Prolog-style logic
+programming \cite{logick,mf:prolog}, but is sparer because the
+operator provided is much like a Scheme boolean
+operator, does not require special contexts for its
+use, and does not rely on linguistic infrastructure
+such as logic variables and unification.
+
+\section{Description of \q{amb}}
+
+An accessible description of \q{amb} and many example
+uses are found in the premier Scheme textbook
+SICP \cite{sicp}.  Informally,
+\q{amb} takes zero or more expressions and {\em
+nondeterministically} returns the value of {\em one} of
+them.  Thus,
+
+\q{
+(amb 1 2)
+}
+
+\n may evaluate to 1 {\em or} 2.
+
+\q{amb} called with {\em no} expressions has no
+value to return, and is considered to {\em fail}.
+Thus,
+
+\q{
+(amb)
+|causeserror amb tree exhausted
+}
+
+\n (We will examine the wording of the error message later.)
+
+In particular, \q{amb} is required to return a value if at
+least one its subexpressions converges, ie, doesn't fail.
+Thus,
+
+\q{
+(amb 1 (amb))
+}
+
+\n and
+
+\q{
+(amb (amb) 1)
+}
+
+\n both return 1.
+
+Clearly, \q{amb} cannot simply be equated to its first
+subexpression, since it has to return a {\em non-failing}
+value, if this is at all possible.  However, this is not
+all: The bias for convergence is more stringent than a
+merely local choice of \q{amb}'s subexpressions.  \q{amb}
+should furthermore return {\em that} convergent value
+that makes the {\em entire program} converge.  In
+denotational parlance, \q{amb} is an {\em angelic}
+operator.
+
+For example,
+
+\q{
+(amb #f #t)
+}
+
+\n may return either \q{#f} or \q{#t}, but in the program
+
+\q{
+(if (amb #f #t)
+    1
+    (amb))
+}
+
+\n the first \q{amb}-expression {\em must} return \q{#t}.
+If it returned \q{#f}, the \q{if}'s ``else'' branch would be
+chosen, which causes the entire program to fail.
+
+\section{Implementing \q{amb} in Scheme}  
+
+In our implementation of \q{amb}, we will favor
+\q{amb}'s subexpressions from left to right.  Ie, the
+first subexpression is chosen, and if it leads to overall
+failure, the second is picked, and so on.  \q{amb}s occurring
+later in the control flow of the program are searched for
+alternates before backtracking to previous \q{amb}s.  In
+other words, we perform a {\em depth-first} search of the
+\q{amb} {\em choice tree}, and whenever we brush against
+failure, we backtrack to the most recent node of the tree
+that offers a further choice.  (This is called {\em
+chronological backtracking.})
+
+We first define a mechanism for setting the base failure
+continuation:
+
+\scmfilename amb.scm
+\scmdribble{
+(define amb-fail '*)
+
+(define initialize-amb-fail
+  (lambda ()
+    (set! amb-fail
+      (lambda ()
+        (error "amb tree exhausted")))))
+
+(initialize-amb-fail)
+}
+
+\n When \q{amb} fails, it invokes the continuation bound at
+the time to \q{amb-fail}.  This is the continuation invoked
+when all the alternates in the \q{amb} choice tree have been
+tried and were found to fail.
+
+We define \q{amb} as a macro that accepts an indefinite
+number of subexpressions.
+
+\scmdribble{
+(define-macro amb
+  (lambda alts...
+    `(let ((+prev-amb-fail amb-fail))
+       (call/cc
+        (lambda (+sk)
+
+          ,@(map (lambda (alt)
+                   `(call/cc
+                     (lambda (+fk)
+                       (set! amb-fail
+                         (lambda ()
+                           (set! amb-fail +prev-amb-fail)
+                           (+fk 'fail)))
+                       (+sk ,alt))))
+                 alts...)
+
+          (+prev-amb-fail))))))
+}
+
+\n A call to \q{amb} first stores away, in
+\q{+prev-amb-fail}, the \q{amb-fail} value that was
+current at the time of entry.  This is because the
+\q{amb-fail} variable will be set to different failure
+continuations as the various alternates are tried.
+
+We then capture the \q{amb}'s {\em entry} continuation \q{+sk}, so
+that when one of the alternates evaluates to a non-failing
+value, it can immediately exit the \q{amb}.
+
+Each alternate \q{alt} is tried in sequence (the
+implicit-\q{begin} sequence of Scheme).
+
+First, we capture the current continuation \q{+fk}, wrap it
+in a procedure and set \q{amb-fail} to that procedure.  The
+alternate is then evaluated as \q{(+sk alt)}.  If \q{alt}
+evaluates without failure, its return value is fed to the
+continuation \q{+sk}, which immediately exits the \q{amb}
+call.  If \q{alt} fails, it calls \q{amb-fail}.  The first
+duty of \q{amb-fail} is to reset \q{amb-fail} to the value
+it had at the time of entry.  It then invokes the failure
+continuation \q{+fk}, which causes the next alternate, if
+any, to be tried.
+
+If all alternates fail, the \q{amb-fail} at \q{amb} entry,
+which we had stored in \q{+prev-amb-fail}, is
+called.
+
+\section{Using \q{amb} in Scheme} 
+
+To choose a number between 1 and 10, one could say
+
+\q{
+(amb 1 2 3 4 5 6 7 8 9 10)
+}
+
+\n To be sure, as a program, this will give 1, but
+depending on the context, it could return any of the
+mentioned numbers.
+
+The procedure \q{number-between} is
+a more abstract way to generate numbers from a given \q{lo}
+to a given \q{hi} (inclusive):
+
+\q{
+(define number-between
+  (lambda (lo hi)
+    (let loop ((i lo))
+      (if (> i hi) (amb)
+          (amb i (loop (+ i 1)))))))
+}
+
+\n  Thus \q{(number-between 1 6)} will first
+generate 1.  Should that fail, the \q{loop} iterates,
+producing 2.  Should {\em that} fail, we get 3, and
+so on, until 6.  After 6, \q{loop} is called with
+the number 7, which being more than 6, invokes
+\q{(amb)}, which causes final failure.   (Recall that
+\q{(amb)} by itself guarantees
+failure.)  At this point, the program containing the
+call to
+\q{(number-between 1 6)} will backtrack to the
+chronologically previous \q{amb}-call, and try to
+satisfy {\em that} call in another fashion.
+
+The guaranteed failure of \q{(amb)} can be used to program
+{\em assertions}.
+
+\q{
+(define assert
+  (lambda (pred)
+    (if (not pred) (amb))))
+}
+
+\n The call \q{(assert pred)} insists that \q{pred} be
+true.  Otherwise it will cause the current \q{amb} choice
+point to fail.\f{SICP names this procedure
+\q{require}.  We use the identifier \q{assert} in order to
+avoid confusion with the popular if informal use of
+the identifier \q{require} for something else, viz, an
+operator that loads code modules on a per-need basis.}
+
+Here is a procedure using \q{assert} that generates a prime
+less than or equal to its argument \q{hi}:
+
+\q{
+(define gen-prime
+  (lambda (hi)
+    (let ((i (number-between 2 hi)))
+      (assert (prime? i))
+      i)))
+}
+
+\n This seems devilishly simple, except that when called as
+a program with any number (say 20), it will produce the
+uninteresting first solution, ie, 2.
+
+We would certainly like to get {\em all} the solutions,
+not just the first.  In this case, we may want {\em all}
+the primes below
+20.  One way is to explicitly call the failure
+continuation left after the program has produced its first
+solution.  Thus,
+
+\q{
+(amb)
+=> 3
+}
+
+\n This leaves yet another failure continuation, which can
+be called again for yet another solution:
+
+\q{
+(amb)
+=> 5
+}
+
+\n The problem with this method is that the program is
+initially called at the Scheme prompt, and successive
+solutions are also obtained by calling \q{amb} at the Scheme
+prompt.  In effect, we are using different programs (we
+cannot predict how many!), carrying over information from a
+previous program to the next.  Instead, we would like to be
+able to get these solutions as the return value of a
+form that we can call in any context.  To this end, we
+define the
+\q{bag-of} macro, which returns all
+the successful instantiations of its argument.  (If the argument
+never succeeds, \q{bag-of} returns the empty list.)
+Thus, we could say,
+
+\q{
+(bag-of
+  (gen-prime 20))
+}
+
+\n and it would return
+
+\q{
+(2 3 5 7 11 13 17 19)
+}
+
+\n The \q{bag-of} macro is defined as follows:
+
+\q{
+(define-macro bag-of
+  (lambda (e)
+    `(let ((+prev-amb-fail amb-fail)
+           (+results '()))
+       (if (call/cc
+            (lambda (+k)
+              (set! amb-fail (lambda () (+k #f)))
+              (let ((+v ,e))
+                (set! +results (cons +v +results))
+                (+k #t))))
+           (amb-fail))
+       (set! amb-fail +prev-amb-fail)
+       (reverse! +results))))
+}
+
+\n \q{bag-of} first saves away its entry \q{amb-fail}.  It
+redefines \q{amb-fail} to a local continuation \q{+k} created within an
+\q{if}-test.  Inside the test, the \q{bag-of} argument \q{e}
+is evaluated.
+If \q{e} succeeds, its result is collected
+into a list called \q{+results}, and the local continuation
+is called with the value \q{#t}.  This causes the
+\q{if}-test to succeed, causing \q{e} to be {\em retried} at its
+next backtrack point.  More results for \q{e} are obtained this
+way, and they are all collected into \q{+results}.
+
+Finally, when \q{e} fails, it will call the base
+\q{amb-fail}, which is simply a call to the local
+continuation with the value \q{#f}.  This pushes control
+past the \q{if}.   We restore \q{amb-fail} to
+its  pre-entry value, and return the \q{+results}.  (The
+\q{reverse!} is simply to produce the results in the order
+in which they were generated.)
+
+\index{puzzles}
+\section{Logic puzzles}
+
+The power of depth-first search coupled
+with backtracking becomes obvious when applied to solving
+logic puzzles.  These problems are extraordinarily difficult
+to solve procedurally, but can be solved concisely and
+declaratively with \q{amb}, without taking anything away
+from the charm of solving the puzzle.
+
+\subsection{The Kalotan puzzle}
+
+The Kalotans are a tribe with a peculiar quirk.\f{This
+puzzle is due to Hunter \cite{hunter}.}  Their males always
+tell the truth.  Their females never make two consecutive
+true statements, or two consecutive untrue statements.
+
+An anthropologist (let's call him Worf) has begun to
+study them.  Worf does not yet know the Kalotan
+language.  One day, he meets a Kalotan (heterosexual)
+couple and their child Kibi.  Worf asks Kibi: ``Are you
+a boy?''  Kibi answers in Kalotan, which of course Worf
+doesn't understand.
+
+Worf turns to the parents (who know English) for
+explanation.  One of them says: ``Kibi said: `I am a
+boy.' '' The other adds: ``Kibi is a girl.  Kibi lied.''
+
+Solve for the sex of the parents and Kibi.
+
+\centerline{---}
+
+The solution consists in introducing a bunch of variables,
+allowing them to take a choice of values, and
+enumerating the conditions on them as a sequence of
+\q{assert} expressions.
+
+The variables: \q{parent1},
+\q{parent2}, and \q{kibi} are the sexes of the parents (in
+order of appearance) and Kibi; \q{kibi-self-desc} is
+the sex Kibi claimed to be (in Kalotan); \q{kibi-lied?}
+is the boolean on whether Kibi's claim was a lie.
+
+\q{
+(define solve-kalotan-puzzle
+  (lambda ()
+    (let ((parent1 (amb 'm 'f))
+          (parent2 (amb 'm 'f))
+          (kibi (amb 'm 'f))
+          (kibi-self-desc (amb 'm 'f))
+          (kibi-lied? (amb #t #f)))
+      (assert
+       (distinct? (list parent1 parent2)))
+      (assert
+       (if (eqv? kibi 'm)
+           (not kibi-lied?)))
+      (assert
+       (if kibi-lied?
+           (xor
+            (and (eqv? kibi-self-desc 'm)
+                 (eqv? kibi 'f))
+            (and (eqv? kibi-self-desc 'f)
+                 (eqv? kibi 'm)))))
+      (assert
+       (if (not kibi-lied?)
+           (xor
+            (and (eqv? kibi-self-desc 'm)
+                 (eqv? kibi 'm))
+            (and (eqv? kibi-self-desc 'f)
+                 (eqv? kibi 'f)))))
+      (assert
+       (if (eqv? parent1 'm)
+           (and
+            (eqv? kibi-self-desc 'm)
+            (xor
+             (and (eqv? kibi 'f)
+                  (eqv? kibi-lied? #f))
+             (and (eqv? kibi 'm)
+                  (eqv? kibi-lied? #t))))))
+      (assert
+       (if (eqv? parent1 'f)
+           (and
+            (eqv? kibi 'f)
+            (eqv? kibi-lied? #t))))
+      (list parent1 parent2 kibi))))
+}
+
+\n A note on the helper procedures: The procedure
+\q{distinct?} returns true if all the elements in its
+argument list are distinct, and false otherwise.  The
+procedure \q{xor} returns true if only one of its two
+arguments is true, and false otherwise.
+
+Typing \q{(solve-kalotan-puzzle)} will solve the puzzle.
+
+\subsection{Map coloring}
+
+It has been known for some time (but not proven until
+1976~\cite{4cp}) that four colors suffice to
+color a terrestrial map --- ie, to color the countries
+so that neighbors are distinguished.  To actually
+assign the colors is still an undertaking, and the
+following program shows how nondeterministic
+programming can help.
+
+The following program solves the problem of coloring a
+map of Western Europe.  The problem and a Prolog
+solution are given in {\em The Art of
+Prolog} \cite{aop}.  (It is instructive to compare
+our solution with the book's.)
+
+%\input weurope
+
+The procedure \q{choose-color} nondeterministically
+returns one of four colors:
+
+\q{
+(define choose-color
+  (lambda ()
+    (amb 'red 'yellow 'blue 'white)))
+}
+
+\n In our solution, we create for each country a data
+structure.  The data structure is a 3-element list: The
+first element of the list is the country's name; the
+second element is its assigned color; and the third
+element is the colors of its neighbors.  Note we use
+the initial of the country for its color
+variable.\f{Spain (Espa\~na) has \q{e} so as not to
+clash with Switzerland.}  Eg, the list for Belgium is
+\q{(list 'belgium b (list f h l g))}, because --- per
+the problem statement --- the neighbors of Belgium are
+France, Holland, Luxembourg, and Germany.
+
+Once we create the lists for each country, we state the
+(single!) condition they should satisfy, viz, no
+country should have the color of its neighbors.  In
+other words, for every country list, the second element
+should not be a member of the third element.
+
+\q{
+(define color-europe
+  (lambda ()
+
+    ;choose colors for each country
+    (let ((p (choose-color)) ;Portugal
+          (e (choose-color)) ;Spain
+          (f (choose-color)) ;France
+          (b (choose-color)) ;Belgium
+          (h (choose-color)) ;Holland
+          (g (choose-color)) ;Germany
+          (l (choose-color)) ;Luxemb
+          (i (choose-color)) ;Italy
+          (s (choose-color)) ;Switz
+          (a (choose-color)) ;Austria
+          )
+
+      ;construct the adjacency list for
+      ;each country: the 1st element is
+      ;the name of the country; the 2nd
+      ;element is its color; the 3rd
+      ;element is the list of its
+      ;neighbors' colors
+      (let ((portugal
+             (list 'portugal p
+                   (list e)))
+            (spain
+             (list 'spain e
+                   (list f p)))
+            (france
+             (list 'france f
+                   (list e i s b g l)))
+            (belgium
+             (list 'belgium b
+                   (list f h l g)))
+            (holland
+             (list 'holland h
+                   (list b g)))
+            (germany
+             (list 'germany g
+                   (list f a s h b l)))
+            (luxembourg
+             (list 'luxembourg l
+                   (list f b g)))
+            (italy
+             (list 'italy i
+                   (list f a s)))
+            (switzerland
+             (list 'switzerland s
+                   (list f i a g)))
+            (austria
+             (list 'austria a
+                   (list i s g))))
+        (let ((countries
+               (list portugal spain
+                     france belgium
+                     holland germany
+                     luxembourg
+                     italy switzerland
+                     austria)))
+
+          ;the color of a country
+          ;should not be the color of
+          ;any of its neighbors
+          (for-each
+           (lambda (c)
+             (assert
+              (not (memq (cadr c)
+                         (caddr c)))))
+           countries)
+
+          ;output the color
+          ;assignment
+          (for-each
+           (lambda (c)
+             (display (car c))
+             (display " ")
+             (display (cadr c))
+             (newline))
+           countries))))))
+}
+
+\n Type \q{(color-europe)} to get a color assignment.

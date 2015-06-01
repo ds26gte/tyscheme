@@ -1,0 +1,267 @@
+\chapter{Shell scripts}
+\label{script}
+
+\index{script}
+It is often convenient to simply write what one wants
+done into a file or {\em script}, and execute the
+script as though it were any other operating-system
+shell command.  The interface to more weighty programs
+is often provided in the form of a script, and users
+frequently build their own scripts or customize
+existing ones to suit particular needs.  Scripting is
+arguably the most frequent programming task performed.
+For many users, it is the only programming they will
+ever do.
+
+Operating systems such as Unix and DOS (the
+command-line interface provided in Windows)
+provide such a scripting mechanism, but the scripting
+language in both cases is very rudimentary.  Often a
+script is just a sequence or {\em batch} of commands
+that one would type to the shell prompt.  It saves the
+user from having to type every one of the shell
+commands individually each time they require the same
+or similar sequence to be performed.  Some scripting
+languages throw in a small amount of programmability in
+the form of a conditional and a loop, but that is about
+all.  This is enough for smallish tasks, but as one's
+scripts become bigger and more demanding, as scripts
+invariably seem to do, one often feels the need for a
+fuller fledged programming language.  A Scheme with an
+adequate operating-system interface makes scripting
+easy and maintainable.
+
+This section will describe how to write scripts in
+Scheme.  Since there is wide variation in the various
+Scheme dialects on how to accomplish this, we will
+concentrate on the MzScheme dialect, and document in
+appendix \ref{dialect} the modifications needed for
+other dialects.  We will also concentrate on the Unix
+operating system for the moment; appendix \ref{dos}
+will deal with the DOS counterpart.
+
+\section{Hello, World!, again}
+
+We will now create a Scheme script that says hello to
+the world.  Saying hello is of course not a demanding
+scripting problem for traditional scripting languages.
+However, understanding how to transcribe it into Scheme
+will launch us on the path to more ambitious scripts.
+First, a conventional Unix hello script is a file, with
+contents that look like:
+
+\p{
+echo Hello, World!
+}
+
+It uses the shell command \p{echo}.  The script can be
+named \p{hello}, made into an executable by doing
+
+\p{
+chmod +x hello
+}
+
+\n and placed in one of
+the directories named in the \p{PATH} environment
+variable.  Thereafter, anytime one types
+
+\p{
+hello
+}
+
+\n at the shell  prompt, one promptly gets the
+insufferable greeting.
+
+A Scheme hello script will perform the same output
+using Scheme (using the program in sec \ref{hello}),
+but we need something in the file to inform the
+operating system that it needs to construe the commands
+in the file as Scheme, and not as its default script
+language.  The Scheme script file, also called
+\p{hello}, looks like:
+
+\p{
+":"; exec mzscheme -r $0 "$@"
+
+(display "Hello, World!")
+(newline))
+}
+
+Everything following the first line is straight
+Scheme.  However, the first line is the magic that
+makes this into a script.  When the user types
+\p{hello} at the Unix prompt, Unix will read the file
+as a regular script.  The first thing it sees is the
+\p{":"}, which is a shell no-op.  The \p{;} is the shell
+command separator.  The next shell command is the
+\p{exec}.  \p{exec} tells Unix to abandon  the
+current script and run \p{mzscheme -r $0 "$@"} instead,
+where the parameter \p{$0} will be replaced by the name
+of the script, and the parameter \p{"$@"} will be
+replaced by the list of arguments given by the user to
+the script.  (In this case, there are no such
+arguments.)
+
+We have now, in effect, transformed the \p{hello} shell
+command into a different shell command, viz,
+
+\p{
+mzscheme -r /whereveritis/hello
+}
+
+\n where \p{/whereveritis/hello} is the pathname of \p{hello}.
+
+\p{mzscheme} calls the MzScheme executable.  The \p{-r}
+option tells it to load the immediately following
+argument as a Scheme file after collecting any
+succeeding arguments into a vector called \q{argv}.
+(In this example, \q{argv} will be the null vector.)
+
+Thus, the Scheme script will be run as a Scheme file,
+and the Scheme forms in the file will have access to
+the script's original arguments via the vector
+\q{argv}.
+
+Now, Scheme has to tackle the first line in the script,
+which as we've already seen, was really a well-formed,
+{\em traditional} shell script.  The \q{":"} is a
+self-evaluating string in Scheme and thus harmless.
+The
+`\p{;}' marks a Scheme comment, and so the \p{exec ...} is
+safely ignored.  The rest of the file is of course
+straight Scheme, and the expressions therein are
+evaluated in sequence.  After all of them have been
+evaluated, Scheme will exit.
+
+In sum, typing \p{hello} at the shell prompt will produce
+
+\p{
+Hello, World!
+}
+
+and return you to the shell prompt.
+
+\section{Scripts with arguments}
+
+A Scheme script uses the variable \q{argv} to refer to
+its arguments.  For example, the following script
+echoes all its arguments, each on a line:
+
+\q{
+":"; exec mzscheme -r $0 "$@"
+
+;Put in argv-count the number of arguments supplied
+
+(define argv-count (vector-length argv))
+
+(let loop ((i 0))
+  (unless (>= i argv-count)
+    (display (vector-ref argv i))
+    (newline)
+    (loop (+ i 1))))
+}
+
+Let's call this script \p{echoall}.  Calling \p{echoall
+1 2 3} will display
+
+\p{
+1
+2
+3
+}
+
+\n Note that the script name (\q{"echoall"}) is {\em not} included in
+the argument vector.
+
+\section{Example}
+
+Let's now tackle a more substantial problem.  We need
+to transfer files from one computer to another and the
+only method we have is to use a 3.5'' floppy as a
+ferry.  We need a script \p{split4floppy} that will
+split files larger than 1.44 million bytes into
+floppy-sized chunks.  The script file \p{split4floppy}
+is as follows:
+
+\q{
+":";exec mzscheme -r $0 "$@"
+
+;floppy-size = number of bytes that will comfortably fit on a
+;              3.5" floppy
+
+(define floppy-size 1440000)
+
+;split splits the bigfile f into the smaller, floppy-sized
+;subfiles, viz, subfile-prefix.1, subfile-prefix.2, etc.
+
+(define split
+  (lambda (f subfile-prefix)
+    (call-with-input-file f
+      (lambda (i)
+        (let loop ((n 1))
+          (if (copy-to-floppy-sized-subfile i subfile-prefix n)
+              (loop (+ n 1))))))))
+
+;copy-to-floppy-sized-subfile copies the next 1.44 million
+;bytes (if there are less than that many bytes left, it
+;copies all of them) from the big file to the nth
+;subfile.  Returns true if there are bytes left over,
+;otherwise returns false.
+
+(define copy-to-floppy-sized-subfile
+  (lambda (i subfile-prefix n)
+    (let ((nth-subfile (string-append subfile-prefix "."
+                                      (number->string n))))
+      (if (file-exists? nth-subfile) (delete-file nth-subfile))
+      (call-with-output-file nth-subfile
+        (lambda (o)
+          (let loop ((k 1))
+            (let ((c (read-char i)))
+              (cond ((eof-object? c) #f)
+                    (else
+                     (write-char c o)
+                     (if (< k floppy-size)
+                         (loop (+ k 1))
+                         #t))))))))))
+
+;bigfile = script's first arg
+;        = the file that needs splitting
+
+(define bigfile (vector-ref argv 0))
+
+;subfile-prefix = script's second arg
+;               = the basename of the subfiles
+
+(define subfile-prefix (vector-ref argv 1))
+
+;Call split, making subfile-prefix.{1,2,3,...} from
+;bigfile
+
+(split bigfile subfile-prefix)
+}
+
+Script \p{split4floppy} is called as follows:
+
+\p{
+split4floppy largefile chunk
+}
+
+\n This splits \p{largefile} into subfiles \p{chunk.1},
+\p{chunk.2}, ..., such that each subfile fits on a
+floppy.
+
+After the \p{chunk.i} have been ferried over to the
+target computer, the file \p{largefile} can be
+retrieved by stringing the \p{chunk.i} together.  This
+can be  done on Unix with:
+
+\p{
+cat chunk.1 chunk.2 ... > largefile
+}
+
+\n and on DOS with:
+
+\p{
+copy /b chunk.1+chunk.2+... largefile
+}
+

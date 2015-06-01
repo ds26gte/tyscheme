@@ -1,0 +1,35 @@
+\chapter{Objects and classes}
+
+\index{object-oriented programming}
+\index{object}
+\index{class}
+\index{instance|see{object}}
+\index{method|see{object}}
+\index{slot|see{object}}
+A {\em class} describes a collection of {\em objects}
+that share behavior.  The objects described by a class
+are called the {\em instances} of the class.  The class
+specifies the names of the {\em slots} that the
+instance has, although it is up to the instance to
+populate these slots with particular values.
+The class also specifies the {\em methods} that can be
+applied to its instances.  Slot values can be anything,
+but method values must be procedures.  
+
+\index{subclass}
+\index{superclass}
+
+Classes are hierarchical.  Thus, a class can be a {\em
+subclass} of another class, which is called its {\em
+superclass}.  A subclass not only has its own {\em
+direct} slots and methods, but also inherits all the
+slots and methods of its superclass.  If a class has a
+slot or method that has the same name as its
+superclass's, then the subclass's slot or method is the
+one that is retained.
+
+\input obj1.tex
+
+\input obj2.tex
+
+\input mulinh.tex

@@ -1,0 +1,171 @@
+\chapter{A clock for infinity}
+\label{clock}
+
+\index{clock!Guile}
+\index{Guile!clock}
+The Guile \cite{guile} procedure \q{alarm} provides an interruptable
+timer mechanism.  The user can set or reset the alarm
+for some time units, or stop it.  When the alarm's
+timer runs out of this time, it will set off an alarm,
+whose consequences are user-settable.  Guile's
+\q{alarm} is not quite the clock of
+sec \ref{engine-clock}, but we can modify it easily
+enough.
+
+The alarm's timer is initially {\em stopped} or {\em
+quiescent}, ie, it will not set off an alarm even as
+time goes by.  To set the alarm's time-to-alarm to be
+\q{n} seconds, where \q{n} is not \q{0}, run \q{(alarm
+n)}.  If the timer was already set (but has not yet set
+off an alarm), the \q{(alarm n)} procedure call will
+return the number of seconds remaining from the
+previous alarm setting.  If there is no previous alarm
+setting, \q{(alarm n)} returns \q{0}.
+
+The procedure call \q{(alarm 0)} {\em stops} the
+alarm's timer, ie, the countdown of time is stopped,
+the timer becomes quiescent and no alarm will go off.
+\q{(alarm 0)} also returns the seconds remaining from a
+previous alarm setting, if any.
+
+By default, when the alarm's countdown reaches 0,
+Guile will display a message on the console and exit.
+More useful behavior can be obtained by
+using the procedure
+\q{sigaction}, as follows:
+
+\q{
+(sigaction SIGALRM
+  (lambda (sig)
+    (display "Signal ")
+    (display sig)
+    (display " raised.  Continuing...")
+    (newline)))
+}
+
+\n
+The first argument \q{SIGALRM} (which happens to be
+\q{14}) identifies to \q{sigaction} that it is the
+alarm handler that needs setting.\f{There are other
+signals with their corresponding handlers, and
+\q{sigaction} can be used to set these as well.}  The
+second argument is a unary alarm-handling procedure of
+the user's choice.  In this example, when the alarm
+goes off, the handler displays \q{"Signal 14 raised.
+Continuing..."} on the console without exiting Scheme.
+(The \q{14} is the \q{SIGALRM} value that the alarm
+will pass to its handler.  Don't worry about it now.)
+
+From our point of view, this simple timer mechanism
+poses one problem.  A return value of \q{0} from a call
+to the procedure \q{alarm} is ambiguous: It could
+either mean that the alarm was quiescent, or that 
+it was just about to run out of time.  We could resolve
+this ambiguity if we could include ``\q{*infinity*}''
+in the alarm arithmetic.  In other words, we would like
+a {\em clock} that works almost like \q{alarm},
+except that a quiescent clock is one with
+\q{*infinity*} seconds.  This will make many things
+natural, viz,
+
+(1) \q{(clock n)} on a quiescent clock returns
+    \q{*infinity*}, not \q{0}.
+
+(2) To stop the clock, call \q{(clock *infinity*)},
+     {\em not} \q{(clock 0)}.
+
+(3) \q{(clock 0)} is equivalent to setting the clock to
+an infinitesimally small amount of time, viz, to cause
+it to raise an alarm instantaneously.
+
+In Guile, we can define \q{*infinity*} as the following
+``number'':
+
+\scmfilename guile-clock.scm
+\scmdribble{
+(define *infinity* (/ 1 0))
+}
+
+We can define \q{clock} in terms of \q{alarm}.
+
+\scmdribble{
+(define clock
+  (let ((stopped? #t)
+        (clock-interrupt-handler
+         (lambda () (error "Clock interrupt!"))))
+    (let ((generate-clock-interrupt
+           (lambda ()
+             (set! stopped? #t)
+             (clock-interrupt-handler))))
+      (sigaction SIGALRM
+                 (lambda (sig) (generate-clock-interrupt)))
+      (lambda (msg val)
+        (case msg
+          ((set-handler)
+           (set! clock-interrupt-handler val))
+          ((set)
+           (cond ((= val *infinity*)
+                  ;This is equivalent to stopping the clock.
+                  ;This is almost equivalent to (alarm 0), except
+                  ;that if the clock is already stopped,
+                  ;return *infinity*.
+
+                  (let ((time-remaining (alarm 0)))
+                    (if stopped? *infinity*
+                        (begin (set! stopped? #t)
+                          time-remaining))))
+
+                 ((= val 0)
+                  ;This is equivalent to setting the alarm to
+                  ;go off immediately.  This is almost equivalent
+                  ;to (alarm 0), except you force the alarm
+                  ;handler to run.
+
+                  (let ((time-remaining (alarm 0)))
+                    (if stopped?
+                        (begin (generate-clock-interrupt)
+                          *infinity*)
+                        (begin (generate-clock-interrupt)
+                          time-remaining))))
+
+                 (else
+                  ;This is equivalent to (alarm n) for n != 0.
+                  ;Just remember to return *infinity* if the
+                  ;clock was previously quiescent.
+
+                  (let ((time-remaining (alarm val)))
+                    (if stopped?
+                        (begin (set! stopped? #f) *infinity*)
+                        time-remaining))))))))))
+}
+
+\n
+The \q{clock} procedure uses three internal state
+variables:
+
+(1) \q{stopped?}, to describe if the clock is stopped;
+
+(2) \q{clock-interrupt-handler}, which is a thunk
+describing the user-specified part of the
+alarm-handling action; and
+
+(3) \q{generate-clock-interrupt}, another thunk which
+will set \q{stopped?} to false before running the
+user-specified alarm handler.
+
+The \q{clock} procedure takes two arguments.  If the
+first argument is \q{set-handler}, it uses the second
+argument as the alarm handler.
+
+If the first argument is \q{set}, it sets the
+time-to-alarm to the second argument, returning the
+time remaining from a previous setting.  The code
+treats \q{0}, \q{*infinity*} and other values for time
+differently so that the user gets a mathematically
+transparent interface to \q{alarm}.
+
+\scmwrite{
+(define clock-min min)
+(define clock-minus -)
+(define clock-plus +)
+}

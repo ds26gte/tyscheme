@@ -1,0 +1,21 @@
+%\texonly
+  \ifx\epsfbox\UNDEFINED
+    \ifx\pdfoutput\UNDEFINED
+      \input epsf
+    \else
+      \ifx\convertMPtoPDF\UNDEFINED
+        \expandafter\let
+          \expandafter\epsfboxplusSAVE
+          \csname\string+\endcsname
+        \expandafter\def
+          \csname\string+\endcsname{+}%
+        \input supp-pdf
+        \expandafter\let
+          \csname\string+\endcsname
+          \epsfboxplusSAVE
+      \fi
+      %\def\epsfbox#1{\convertMPtoPDF{#1}{1}{1}}
+      \def\epsfbox#1{\convertMPtoPDF{#1}11}
+    \fi
+  \fi
+%\endtexonly

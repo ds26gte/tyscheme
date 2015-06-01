@@ -1,0 +1,97 @@
+\chapter{Alists and tables}
+
+\index{association list|see{alist}}
+\index{alist}
+An {\em association list}, or {\em alist}, is a Scheme
+list of a special format.  Each element of the list is
+a cons cell, the car of which is called a {\em key},
+the cdr being the {\em value} associated with the key.
+Eg,
+
+\q{
+((a . 1) (b . 2) (c . 3))
+}
+
+\index{assv@\q{assv}}
+
+The procedure call \q{(assv k al)} finds the cons cell
+associated with key \q{k} in alist \q{al}.  The keys of
+the alist are compared against the given \q{k} using
+the equality predicate \q{eqv?}.  In general, though we
+may want a different predicate for key comparison.  For
+instance, if the keys were case-insensitive strings,
+the predicate \q{eqv?} is not very useful.
+
+\index{table}
+
+We now define a structure called \q{table}, which is a
+souped-up alist that allows user-defined predicates on
+its keys.  Its fields are \q{equ} and \q{alist}.
+
+\scmfilename table.scm
+
+\scmwrite{
+(load-relative "defstruct.scm")
+}
+
+\scmdribble{
+(defstruct table (equ eqv?) (alist '()))
+}
+
+\n (The default predicate is \q{eqv?} --- as for an
+ordinary alist --- and the alist is initially empty.)
+
+We will use the procedure \q{table-get} to get the
+value (as opposed to the cons cell) associated with a
+given key.  \q{table-get} takes a table and key
+arguments, followed by an optional default value that
+is returned if the key was not found in the table:
+
+\scmdribble{
+(define table-get
+  (lambda (tbl k . d)
+    (let ((c (lassoc k (table.alist tbl) (table.equ tbl))))
+      (cond (c (cdr c))
+            ((pair? d) (car d))))))
+}
+
+The procedure \q{lassoc}, used in \q{table-get}, is
+defined as:
+
+\scmdribble{
+(define lassoc
+  (lambda (k al equ?)
+    (let loop ((al al))
+      (if (null? al) #f
+          (let ((c (car al)))
+            (if (equ? (car c) k) c
+                (loop (cdr al))))))))
+}
+
+The procedure \q{table-put!} is used to update a key's
+value in the given table:
+
+\scmdribble{
+(define table-put!
+  (lambda (tbl k v)
+    (let ((al (table.alist tbl)))
+      (let ((c (lassoc k al (table.equ tbl))))
+        (if c (set-cdr! c v)
+            (set!table.alist tbl (cons (cons k v) al)))))))
+}
+
+The procedure \q{table-for-each} calls the given
+procedure on every key/value pair in the table
+
+\scmdribble{
+(define table-for-each
+  (lambda (tbl p)
+    (for-each
+     (lambda (c)
+       (p (car c) (cdr c)))
+     (table.alist tbl))))
+}
+
+
+
+

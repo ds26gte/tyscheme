@@ -1,0 +1,364 @@
+\chapter{Engines}
+
+\index{engine}
+An engine \cite{engine} represents computation that is
+subject to timed preemption.  In other words, an
+engine's underlying computation is an ordinary thunk
+that runs as a timer-preemptable process.
+
+An engine is called with three arguments: (1) a number
+of time units or {\em ticks}, (2) a {\em success}
+procedure, and (3) a {\em failure} procedure.  If the
+engine computation finishes within the allotted {\em
+ticks}, the {\em success} procedure is applied to the
+computation result and the remaining ticks.  If the
+engine computation could not finish within the allotted
+{\em ticks}, the {\em failure} procedure is applied
+to a new engine representing the unfinished portion of
+the engine computation.
+
+For example, consider an engine whose underlying
+computation is a loop that printed the nonnegative
+integers in sequence.  It is created as follows, with
+the soon-to-be-defined \q{make-engine} procedure.
+\q{make-engine} is called on an argument thunk
+representing the underlying computation, and it
+returns the corresponding engine:
+
+\q{
+(define printn-engine
+  (make-engine
+    (lambda ()
+      (let loop ((i 0))
+        (display i)
+        (display " ")
+        (loop (+ i 1))))))
+}
+
+\n Here is a call to \q{printn-engine}:
+
+\q{
+(define *more* #f)
+(printn-engine 50 list (lambda (ne) (set! *more* ne)))
+|evalsto 0 1 2 3 4 5 6 7 8 9
+}
+
+\n Ie, the loop gets to print upto a certain number
+(here \q{9}) and then fails because of the clock
+interrupt.  However, our {\em failure} procedure sets
+a global variable called \q{*more*} to the failed
+engine, which we can use to resume the loop where the
+previous engine left off:
+
+\q{
+(*more* 50 list (lambda (ne) (set! *more* ne)))
+|evalsto 10 11 12 13 14 15 16 17 18 19
+}
+
+\index{call/cc@\q{call/cc}!and engine}
+
+We will now construct engines using \q{call/cc} to
+capture the unfinished computation of a failing engine.
+First we will construct {\em flat} engines, or
+engines whose computation cannot include the running of
+other engines.  We will later generalize the code to
+the more general {\em nestable} engines or {\em
+nesters}, which can call other engines.  But in both
+cases, we need a timer mechanism, or a {\em clock}.
+
+\index{clock}
+
+\section{The clock}
+\label{engine-clock}
+
+Our engines assume the presence of a global clock or
+interruptable timer that marks the passage of ticks as
+a program executes.  We will assume the following clock
+interface --- if your Scheme provides any kind of alarm
+mechanism, it should be an easy matter to rig up a
+clock of the following type. (Appendix \ref{clock}
+defines a clock for the Guile \cite{guile} dialect of
+Scheme.)
+
+The internal state of our \q{clock} procedure consists
+of two items:
+
+(1) the number of remaining ticks; and
+
+(2) an interrupt handler to be invoked when the
+clock runs out of ticks.
+
+\q{clock} allows the following operations:
+
+(1) \q{(clock 'set-handler h)} sets the
+interrupt handler to \q{h}.
+
+(2) \q{(clock 'set n)} resets the clock's
+remaining ticks to \q{n}, returning the
+previous value.
+
+The number of ticks ranges over the non-negative
+integers and an atom called \q{*infinity*}.  A clock with
+\q{*infinity*} ticks cannot run out of time and so will
+not set off the interrupt handler.  Such a clock is
+{\em quiescent} or ``already stopped''.  To stop a
+clock, set its ticks to \q{*infinity*}.
+
+The clock handler is set to a thunk.  For example,
+
+\q{
+(clock 'set-handler
+  (lambda ()
+    (error "Say goodnight, cat!")))
+
+(clock 'set 9)
+}
+
+\n This will cause an error to be signaled after 9
+ticks have passed, and the message displayed by the
+signal will be ``Say goodnight, cat!''
+
+
+\index{engine!flat}
+\section{Flat engines}
+
+We will first set the clock interrupt handler.  Note
+that the handler is invoked only if a non-quiescent
+clock runs out of ticks.  This happens only during
+engine computations that are on the brink of failure,
+for only engines set the clock.
+
+The handler captures the current continuation, which is
+the rest of the computation of the currently failing
+engine.  This continuation is sent to another
+continuation stored in the global \q{*engine-escape*}.
+The \q{*engine-escape*} variable stores the exit
+continuation of the current engine.  Thus the clock
+handler captures the rest of the failing engine and
+sends it to an exit point in the engine code, so the
+requisite failure action can be taken.
+
+\scmfilename engine.scm
+
+\scmdribble{
+(define *engine-escape* #f)
+(define *engine-entrance* #f)
+
+(clock 'set-handler
+  (lambda ()
+    (call/cc *engine-escape*)))
+}        
+
+Let us now look into the innards of the engine code
+itself.  As said, \q{make-engine} takes a thunk and
+fashions an engine out of it:
+
+\scmdribble{
+(define make-engine
+  (lambda (th)
+    (lambda (ticks success failure)
+      (let* ((ticks-left 0)
+             (engine-succeeded? #f)
+             (result
+              (call/cc
+               (lambda (k)
+                 (set! *engine-escape* k)
+                 (let ((result
+                        (call/cc
+                         (lambda (k)
+                           (set! *engine-entrance* k)
+                           (clock 'set ticks)
+                           (let ((v (th)))
+                             (*engine-entrance* v))))))
+                   (set! ticks-left (clock 'set *infinity*))
+                   (set! engine-succeeded? #t)
+                   result)))))
+        (if engine-succeeded?
+            (success result ticks-left)
+            (failure 
+             (make-engine 
+              (lambda () 
+                (result 'resume)))))))))
+}
+
+\n First we introduce the variables \q{ticks-left}
+and \q{engine-succeeded?}.  The first will hold
+the ticks left over should the engine thunk finish
+in time.  The second is a flag that will be used in
+the engine code to signal if the engine suceeded.
+
+We then run the engine thunk within two nested calls to
+\q{call/cc}.  The first \q{call/cc} captures the
+continuation to be used by a failing engine to abort
+out of its engine computation.  This continuation is
+stored in the global \q{*engine-escape*}.  The second
+\q{call/cc} captures an inner continuation that 
+will be used by the return value of the thunk \q{th} if
+it runs to completion.  This continuation is stored
+in the global
+\q{*engine-entrance*}.
+
+Running through the code, we find that after capturing
+the continuations \q{*engine-escape*} and
+\q{*engine-entrance*}, we set the clock's ticks to the
+time allotted this engine and run the thunk \q{th}.  If
+\q{th} succeeds, its value \q{v} is sent to the
+continuation \q{*engine-entrance*}, after which the
+clock is stopped, the remaining ticks ascertained, and
+the flag \q{engine-succeeded?} is set to true.  We now
+go past the \q{*engine-escape*} continuation, and run
+the final dispatcher in the code: Since we know the
+engine succeeded, we apply the \q{success} procedure to
+the result and the ticks left.
+
+If the thunk \q{th} {\em didn't} finish in time
+though, it will suffer an interrupt.  This invokes the
+clock interrupt handler, which captures the current
+continuation of the running and now failing thunk and
+sends it to the continuation \q{*engine-escape*}.  This
+puts the failed-thunk continuation in the outer
+\q{result} variable, and we are now in the final
+dispatcher in the code: Since \q{engine-succeeded?} is
+still false, we apply the \q{failure} procedure to new
+engine fashioned out of \q{result}.
+
+Notice that when a failed engine is removed, it will
+traverse the control path charted by the first run of
+the original engine.  Nevertheless, because we have
+explicitly use the continuations stored in the global
+variables \q{*engine-entrance*} and
+\q{*engine-escape*}, and we always set them anew before
+executing an engine computation, we are assured that
+the jumps will always come back to the currently
+executing engine code.
+
+\index{engine!nestable}
+\section{Nestable engines}
+
+In order to generalize the code above to accommodate
+the nestable type of engine, we need to incorporate
+into it some {\em tick management} that will take
+care of the apportioning of the right amounts of ticks
+to all the engines in a nested run.
+
+To run a new engine (the {\em child}), we need to
+stop the currently engine (the {\em parent}).  We
+then need to assign an appropriate number of ticks to
+the child.  This may not be the same as the ticks
+assigned by the program text, because it would be {\em
+unfair} for a child to consume more ticks than its
+parent has left.  After the child completes, we need to
+update the parent's ticks.  If the child finished in
+time, any leftover ticks it has revert to the parent.
+If ticks were denied from the child because the parent
+couldn't afford it, then if the child fails, the parent
+will fail too, but must remember to restart the child
+with its promised ticks when it (the parent) restarts.
+
+We also need to \q{fluid-let} the globals
+\q{*engine-escape*} and \q{*engine-entrance*}, because
+each nested engine must have its own pair of these
+sentinel continuations.  As an engine exits (whether
+through success or failure), the \q{fluid-let} will
+ensure that the next enclosing engine's sentinels take
+over.
+
+Combining all this, the code for nestable engines looks
+as follows:
+
+\scmfilename nestable-engine.scm
+\scmdribble{
+(define make-engine
+  (lambda (th)
+    (lambda (ticks s f)
+      (let* ((parent-ticks 
+              (clock 'set *infinity*))
+
+             ;A child can't have more ticks than its parent's
+             ;remaining ticks
+             (child-available-ticks 
+              (clock-min parent-ticks ticks))
+
+             ;A child's ticks must be counted against the parent
+             ;too
+             (parent-ticks-left
+              (clock-minus parent-ticks child-available-ticks))
+
+             ;If child was promised more ticks than parent could
+             ;afford, remember how much it was short-changed by
+             (child-ticks-left 
+              (clock-minus ticks child-available-ticks))
+
+             ;Used below to store ticks left in clock
+             ;if child completes in time
+             (ticks-left 0)
+
+             (engine-succeeded? #f)
+
+             (result
+              (fluid-let ((*engine-escape* #f)
+                          (*engine-entrance* #f))
+                (call/cc
+                 (lambda (k)
+                   (set! *engine-escape* k)
+                   (let ((result
+                          (call/cc
+                           (lambda (k)
+                             (set! *engine-entrance* k)
+                             (clock 'set child-available-ticks)
+
+                             (let ((v (th)))
+
+                               (*engine-entrance* v))))))
+                     (set! ticks-left
+                       (let ((n (clock 'set *infinity*)))
+                         (if (eqv? n *infinity*) 0 n)))
+                     (set! engine-succeeded? #t)
+                     result))))))
+
+        ;Parent can reclaim ticks that child didn't need
+        (set! parent-ticks-left
+          (clock-plus parent-ticks-left ticks-left))
+
+        ;This is the true ticks that child has left --
+        ;we include the ticks it was short-changed by
+        (set! ticks-left 
+          (clock-plus child-ticks-left ticks-left))
+
+        ;Restart parent with its remaining ticks
+        (clock 'set parent-ticks-left)
+        ;The rest is now parent computation
+
+        (cond
+         ;Child finished in time -- celebrate its success
+         (engine-succeeded? (s result ticks-left))
+
+         ;Child failed because it ran out of promised time --
+         ;call failure procedure
+         ((= ticks-left 0)
+          (f (make-engine (lambda () (result 'resume)))))
+
+         ;Child failed because parent didn't have enough time,
+         ;ie, parent failed too.  If so, when parent is
+         ;resumed, its first order of duty is to resume the
+         ;child with its fair amount of ticks
+         (else
+          ((make-engine (lambda () (result 'resume)))
+           ticks-left s f)))))))
+}
+
+Note that we have used the arithmetic operators
+\q{clock-min}, \q{clock-minus}, and \q{clock-plus}
+instead of \q{min}, \q{-}, and \q{+}.  This is because
+the values used by the clock arithmetic includes
+\q{*infinity*} in addition to the integers.  Some Scheme
+dialects provide an \q{*infinity*} value in their
+arithmetic\f{Eg, in Guile, you can \q{(define
+*infinity* (/ 1 0))}.} --- if so, you can use the regular
+arithmetic operators.  If not, it is an easy exercise
+to define the enhanced operators.
+
+
+
+
+

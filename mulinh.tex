@@ -1,0 +1,152 @@
+\scmfilename obj3.scm
+
+\scmwrite{
+(load-relative "obj2.scm")
+(load-relative "appendmap.scm")
+}
+
+\index{inheritance!multiple}
+\index{multiple inheritance}
+
+\section{Multiple inheritance}
+
+It is easy to modify the object system to allow classes
+to have more than one superclass.  We redefine the
+\q{standard-class}  to have a slot called
+\q{class-precedence-list} instead of \q{superclass}.
+The \q{class-precedence-list} of a class is the list of
+{\em all} its superclasses, not just the {\em direct}
+superclasses specified during the creation of the class
+with \q{create-class}.  The name implies that the
+superclasses are listed in a particular order, where
+superclasses occurring toward the front of the list
+have precedence over the ones in the back of the list.
+
+\scmdribble{
+(define standard-class
+  (vector 'value-of-standard-class-goes-here
+          (list 'slots 'class-precedence-list 'method-names 'method-vector)
+          '()
+          '(make-instance)
+          (vector make-instance)))
+}
+
+\scmwrite{
+(vector-set! standard-class 0 standard-class)
+}
+
+\n Not only has the list of slots changed to include
+the new slot, but the erstwhile \q{superclass} slot is
+now \q{()} instead of \q{#t}.  This is because the
+\q{class-precedence-list} of \q{standard-class} must be
+a list.  We could have had its value be \q{(#t)}, but
+we will not mention the zero class since it is in every
+class's \q{class-precedence-list}.
+
+The \q{create-class} macro has to modified to accept
+a list of direct superclasses instead of a solitary superclass:
+
+\scmdribble{
+(define-macro create-class
+  (lambda (direct-superclasses slots . methods)
+    `(create-class-proc
+      (list ,@(map (lambda (su) `,su) direct-superclasses))
+      (list ,@(map (lambda (slot) `',slot) slots))
+      (list ,@(map (lambda (method) `',(car method)) methods))
+      (vector ,@(map (lambda (method) `,(cadr method)) methods))
+      )))
+}
+
+The \q{create-class-proc} must calculate the class precedence list from
+the supplied direct superclasses, and the slot list from the
+class precedence list:
+
+\scmdribble{
+(define create-class-proc
+  (lambda (direct-superclasses slots method-names method-vector)
+    (let ((class-precedence-list
+           (delete-duplicates
+            (append-map
+             (lambda (c) (vector-ref c 2))
+             direct-superclasses))))
+      (send 'make-instance standard-class
+            'class-precedence-list class-precedence-list
+            'slots
+            (delete-duplicates
+             (append slots (append-map
+                            (lambda (c) (vector-ref c 1))
+                            class-precedence-list)))
+            'method-names method-names
+            'method-vector method-vector))))
+}
+
+\n The procedure \q{append-map} is a composition of
+  \q{append} and \q{map}:
+
+\q{
+(define append-map
+  (lambda (f s)
+    (let loop ((s s))
+      (if (null? s) '()
+          (append (f (car s))
+                  (loop (cdr s)))))))
+}
+
+The procedure \q{send} has to search through the class precedence list
+left to right when it hunts for a method.
+
+\scmdribble{
+(define send
+  (lambda (method-name instance . args)
+    (let ((proc
+           (let ((class (class-of instance)))
+             (if (eqv? class #t) (error 'send)
+                 (let loop ((class class)
+                            (superclasses (vector-ref class 2)))
+                   (let ((k (list-position 
+                             method-name
+                             (vector-ref class 3))))
+                     (cond (k (vector-ref 
+                               (vector-ref class 4) k))
+                           ((null? superclasses) (error 'send))
+                           (else (loop (car superclasses)
+                                       (cdr superclasses))))
+                     ))))))
+      (apply proc instance args))))
+}
+
+\scmfilename appendmap.scm
+
+\scmwrite{
+(define append-map
+  (lambda (f s)
+    (let loop ((s s))
+      (if (null? s) '()
+          (append (f (car s))
+                  (loop (cdr s)))))))
+}
+
+\scmfilename bike3.scm
+
+\scmwrite{
+(define bike-class
+  (create-class
+   ()
+   (frame size parts chain tires)
+   (check-fit (lambda (me inseam)
+                (let ((bike-size (slot-value me 'size))
+                      (ideal-size (* inseam 3/5)))
+                  (let ((diff (- bike-size ideal-size)))
+                    (cond ((<= -1 diff 1) 'perfect-fit)
+                          ((<= -2 diff 2) 'fits-well)
+                          ((< diff -2) 'too-small)
+                          ((> diff 2) 'too-big))))))))
+
+(define my-bike
+  (make-instance bike-class
+                 'frame 'titanium
+                 'size 21
+                 'parts 'ultegra
+                 'chain 'sachs
+                 'tires 'continental))
+}

@@ -1,0 +1,214 @@
+\chapter{Enter Scheme}
+\label{hello}
+
+\index{begin@\q{begin}}
+\index{display@\q{display}}
+\index{newline@\q{newline}}
+The canonical first program is the one that says
+\q{"Hello, World!"} on the console.  Using your 
+favorite editor, create a file called
+\p{hello.scm} with the following contents:
+
+\q{
+;The first program
+
+(begin
+  (display "Hello, World!")
+  (newline))
+}
+
+\n 
+\index{comment}
+The first line is a comment.  When Scheme sees a
+semicolon, it ignores it and all the following text on
+the line.
+
+\index{form}
+\index{subform}
+\index{console}
+\index{standard output}
+
+The \q{begin}-{\em form} is Scheme's way of
+introducing a sequence of {\em subforms}.  In this
+case there are two subforms.  The first is a call to
+the 
+\q{display} procedure that outputs its argument
+(the string \q{"Hello, World!"}) to the console (or
+``standard output'').  It is followed by a \q{newline}
+procedure call, which outputs a carriage return.
+
+\index{command line}
+\index{MzScheme}
+
+To run this program, first start your Scheme.  This is
+usually done by  typing the name of your Scheme
+executable at the operating-system command line.
+Eg, in the case of MzScheme \cite{mzscheme},
+you type
+
+\p{
+mzscheme
+}
+
+\n at the operating-system prompt.
+
+\index{listener}
+\index{read-eval-print loop}
+\index{evaluation}
+
+This invokes the Scheme {\em listener}, which {\em read}s
+your input, {\em eval}uates it, {\em print}s the result (if
+any), and then waits for more input from you.  For this
+reason, it is often called the {\em read-eval-print loop}.
+Note that this is not much different from your
+operating-system command line, which also reads your
+commands, executes them, and then waits for more.  Like the
+operating system, the Scheme listener has its own prompt ---
+usually this is
+\p{>}, but could be something else.
+
+\index{load@\q{load}}
+
+At the listener prompt, {\em load} the file
+\p{hello.scm}.  This is done by typing
+
+\q{
+(load "hello.scm")
+}
+
+\n Scheme will now execute the contents of
+\p{hello.scm}, outputting \p{Hello, World!} followed
+by a carriage return.  After this, you will get the listener
+prompt again, waiting for more input from you.
+
+Since you have such an eager listener, you need not
+always write your programs in a file and load them.
+Sometimes, it is easier, especially when you are in an
+exploring mood, to simply type expressions directly at
+the listener prompt and see what happens.  For example,
+typing the form
+
+\q{
+(begin (display "Hello, World!")
+       (newline))
+}
+
+\n at the Scheme prompt produces
+
+\p{
+Hello, World!
+}
+
+Actually, you could simply have typed the form
+\q{"Hello, World!"} at the listener, and you would have
+obtained as result the string
+
+\q{
+"Hello, World!"
+}
+
+\n because that is the result of the listener evaluating
+\q{"Hello, World!"}.
+
+Other than the fact that the second approach produces a
+result with double-quotes around it, there is one other
+significant difference between the last two programs.
+The first (ie, the one with the \q{begin}) does not evaluate
+to anything --- the \p{Hello, World!} it emits is a
+{\em side-effect} produced by the \q{display} and
+\q{newline} procedures writing to the standard output.
+In the second program, the form
+\q{"Hello, World!"} {\em evaluates} to the result, which
+in this case is the same string as the form.
+
+Henceforth, we will use the notation \q{|evalsto} to denote
+evaluation.  Thus
+
+\q{
+E |evalsto v
+}
+
+\n indicates that the form \q{E} evaluates to a result value
+of \q{v}.  Eg,
+
+\q{
+(begin
+  (display "Hello, World!")
+  (newline))
+|evalsto
+}
+
+\n (ie, nothing or void), although it has the side-effect of writing
+
+\p{
+Hello, World!
+}
+
+\n to the standard output.
+On the other hand,
+
+\q{
+"Hello, World!"
+|evalsto "Hello, World!"
+}
+
+\n In either case, we are still at the listener.  To exit,
+type
+
+\index{exit@\q{exit}}
+\q{
+(exit)
+}
+
+\n and this will land you back at the operating-system
+command-line (which, as we've seen, is also a kind of
+listener).
+
+The listener is convenient for interactive testing of
+programs and program fragments.  However it is by no
+means necessary.  You may certainly stick to the
+tradition of creating programs in their entirety in
+files, and having Scheme execute them without any
+explicit ``listening''.  In MzScheme, for instance, you
+could say (at the operating-system prompt)
+
+\p{
+mzscheme -r hello.scm
+}
+
+\n and this will produce the greeting without making you
+deal with
+the listener.   After the greeting, \p{mzscheme} will
+return you to the
+operating-system prompt.  This is almost as if you said
+
+\p{
+echo Hello, World!
+}
+
+You could even make \p{hello.scm} seem like an
+operating-system command (a shell script or a
+batch file), but that will have to wait till
+chapter~\ref{script}.
+
+\endinput
+
+One way to do this in the Unix version of
+MzScheme is to place the following line at the head of
+\p{hello.scm}:
+
+\q{
+":";exec mzscheme -r $0 $*
+}
+
+\n (This assumes your Unix command shell is either the
+Bourne shell or \p{bash}.)
+
+Make the file executable by doing \p{chmod +x
+hello.scm}, and then simply type
+
+\p{
+hello.scm
+}
+
+\n at the Unix prompt.

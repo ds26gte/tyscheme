@@ -1,0 +1,308 @@
+% last change: 2003-06-02
+\chapter{Scheme dialects}
+\label{dialect}
+
+\index{dialects of Scheme}
+\index{R5RS}
+All major Scheme dialects implement the R5RS
+specification \cite{r5rs}.  By using only the features
+documented in the R5RS, one can write Scheme code that
+is portable across the dialects.  However, the R5RS,
+either for want of consensus or because of inevitable
+system dependencies, remains silent on several matters
+that non-trivial programming cannot ignore.  The
+various dialects have therefore had to solve these
+matters in a non-standard and idiosyncratic manner.
+
+\index{MzScheme}
+
+This book uses the MzScheme \cite{mzscheme}
+dialect of Scheme, and thereby uses several
+features that are nonstandard.  The complete
+list of the dialect-dependent features used
+in this book is: the command-line (both for
+opening a listener session and for shell scripts),
+\q{define-macro}, \q{delete-file}, \q{file-exists?},
+\q{file-or-directory-modify-seconds}, \q{fluid-let},
+\q{gensym}, \q{getenv}, \q{get-output-string},
+\q{load-relative}, \q{open-input-string},
+\q{open-output-string}, \q{read-line}, \q{reverse!},
+\q{system},  \q{unless} and \q{when}.
+
+All but two of these  
+are present in the default environment of MzScheme.  The missing two,
+\q{define-macro} and \q{system}, are provided in
+standard MzScheme libraries, which can be explicitly loaded into
+MzScheme using the forms:
+
+\q{
+(require (lib "defmacro.ss")) ;provides define-macro
+(require (lib "process.ss"))  ;provides system
+} 
+
+\n A good place to place these forms is the MzScheme
+{\em initialization file} (or {\em init file}), which, on Unix, is the file
+\p{.mzschemerc} in the user's home directory.\f{We will
+use \p{~/filename} to denote the file called
+\p{filename} in the user's home directory.}  
+
+Some of the nonstandard features (eg, \q{file-exists?},
+\q{delete-file}) are in fact de facto standards and are present
+in many Schemes.  Some other features (eg, \q{when},
+\q{unless}) have more or less ``plug-in'' definitions
+(given in this book) that can be loaded into any Scheme
+dialect that doesn't have them primitively.  The rest
+require a dialect-specific definition
+(eg, \q{load-relative}).
+
+This chapter describes how to incorporate into your
+Scheme dialect the nonstandard features used in this
+book.  For further detail about your Scheme
+dialect, consult the documentation provided by its
+implementor (appendix \ref{references}).
+
+\iffalse
+\section{Invocation and init files}
+
+\index{Guile}
+\index{SCM}
+\index{STk}
+
+
+To invoke the Guile \cite{guile} listener, type \p{guile}.  To invoke
+SCM \cite{scm}, type \p{scm}. 
+
+To invoke STk \cite{stk}, type \p{snow}.  This is the 
+``no window'' executable, which is enough for the purposes
+of this book. 
+\fi
+
+\index{init file}
+
+\section{Invocation and init files}
+
+\index{file-or-directory-modify-seconds@\q{file-or-directory-modify-seconds}}
+\index{Guile}
+
+Like MzScheme, many Scheme dialects load, if
+available, an init file, usually supplied in the user's
+home directory.  The init file is a convenient location
+in which to place definitions for nonstandard features.
+Eg, the nonstandard procedure
+\q{file-or-directory-modify-seconds} can be added to
+the Guile~\cite{guile} dialect of Scheme by putting the
+following code in Guile's init file, which is
+\p{~/.guile}:
+
+\q{
+(define file-or-directory-modify-seconds
+  (lambda (f)
+    (vector-ref (stat f) 9)))
+}
+
+Also, the various Scheme dialects have their own
+distinctively named commands to invoke their respective
+listeners.  The following
+table lists the invoking commands and init files
+for some Scheme dialects:
+
+\halign{\qquad \hfil # & # & # \cr
+{\em Dialect name} & {\em Command} & {\em Init~file} \cr
+Bigloo & \p{bigloo} & \p{~/.bigloorc} \cr
+Chicken & \p{csi} & \p{~/.csirc} \cr
+Gambit & \p{gsi} & \p{~/gambc.scm} \cr
+Gauche & \p{gosh} & \p{~/.gaucherc} \cr
+Guile & \p{guile} & \p{~/.guile} \cr
+Kawa & \p{kawa} & \p{~/.kawarc.scm} \cr
+MIT Scheme (Unix) & \p{scheme} & \p{~/.scheme.init} \cr
+MIT Scheme (Win) & \p{scheme} & \p{~/scheme.ini} \cr
+MzScheme (Unix, Mac OS X) & \p{mzscheme} &  \p{~/.mzschemerc} \cr
+MzScheme (Win, Mac OS Classic) & \p{mzscheme} & \p{~/mzschemerc.ss} \cr
+SCM & \p{scm} & \p{~/ScmInit.scm} \cr 
+STk & \p{snow} & \p{~/.stkrc} \cr
+}
+
+\iffalse
+Note, however, that for the purposes of this text, you
+don't need to insert code into \p{~/.mzschemerc},
+since we don't use any nonstandard Scheme feature not
+already defined in MzScheme.
+\fi
+
+\index{script}
+
+\section{Shell scripts}
+
+The initial line for a shell script written in Guile is:
+
+\q{
+":";exec guile -s $0 "$@"
+}
+
+In the script, the procedure-call \q{(command-line)} returns
+the list of the script's name and arguments.  To access
+just the arguments, take the \q{cdr} of this list.
+
+A Gauche~\cite{gauche} shell script starts out as:
+
+\q{
+":"; exec gosh -- $0 "$@"
+}
+
+In the script, the variable \q{*argv*} holds 
+the list of the script's arguments.
+
+A shell script written in SCM starts out as:
+
+\q{
+":";exec scm -l $0 "$@"
+}
+
+In the script, the variable \q{*argv*} contains
+the list of the Scheme executable name, the script's
+name, the option \p{-l}, and the script's arguments.
+To
+access just the arguments, take the \q{cdddr} of this list.
+
+STk~\cite{stk} shell scripts start out as:
+
+\q{
+":";exec snow -f $0 "$@"
+}
+
+In the script, the variable \q{*argv*} contains
+the list of the script's arguments.
+
+\index{define-macro@\q{define-macro}!in various dialects}
+
+\section{\q{define-macro}}
+\label{dialect-macro}
+
+\index{Bigloo}\index{Chicken}
+\index{Gambit}\index{Gauche}\index{Pocket Scheme}
+The \q{define-macro} used in the text occurs in
+the Scheme dialects Bigloo \cite{bigloo},
+Chicken~\cite{chicken}, Gambit
+\cite{gambit}, Gauche~\cite{gauche}, Guile, MzScheme and Pocket Scheme
+\cite{pocketscheme}.  There are minor variations in
+how macros are defined in the other Scheme dialects.
+The rest of this section will point out how these
+other dialects notate the following code fragment:
+
+\q{
+(define-macro MACRO-NAME
+  (lambda MACRO-ARGS
+    MACRO-BODY ...))
+}
+
+\index{MIT Scheme}
+
+\n In MIT Scheme~\cite{mitscheme} version 7.7.1 and later, this is written as:
+
+\q{
+(define-syntax MACRO-NAME
+  (rsc-macro-transformer
+    (let ((xfmr (lambda MACRO-ARGS MACRO-BODY ...)))
+      (lambda (e r)
+        (apply xfmr (cdr e))))))
+}
+
+\n In older versions of MIT Scheme:
+
+\q{
+(syntax-table-define system-global-syntax-table 'MACRO-NAME
+  (macro MACRO-ARGS
+    MACRO-BODY ...))
+}
+
+\index{Kawa}
+\index{SCM}
+
+\n  In SCM~\cite{scm}  and Kawa \cite{kawa}:
+
+\q{
+(defmacro MACRO-NAME MACRO-ARGS
+  MACRO-BODY ...)
+}
+
+\index{STk}
+
+\n In STk~\cite{stk}: 
+
+\q{
+(define-macro (MACRO-NAME . MACRO-ARGS)
+  MACRO-BODY ...)
+}
+
+
+
+
+\index{load-relative@\q{load-relative}!in various dialects}
+
+
+\section{\q{load-relative}}
+
+The procedure \q{load-relative} may be defined for Guile as follows:
+
+\q{
+(define load-relative
+  (lambda (f)
+    (let* ((n (string-length f))
+           (full-pathname?
+             (and (> n 0)
+                  (let ((c0 (string-ref f 0)))
+                    (or (char=? c0 #\/)
+                        (char=? c0 #\~))))))
+      (basic-load
+        (if full-pathname? f
+            (let ((clp (current-load-port)))
+              (if clp
+                  (string-append
+                    (dirname (port-filename clp)) "/" f)
+                  f)))))))
+}
+
+For SCM:
+
+\q{
+(define load-relative
+  (lambda (f)
+    (let* ((n (string-length f))
+           (full-pathname?
+            (and (> n 0)
+                 (let ((c0 (string-ref f 0)))
+                   (or (char=? c0 #\/)
+                       (char=? c0 #\~))))))
+    (load (if (and *load-pathname* full-pathname?)
+              (in-vicinity (program-vicinity) f)
+              f)))))
+}
+
+For STk, the following definition for \q{load-relative}
+works only if you discipline yourself to not use \q{load}:
+
+\q{
+(define *load-pathname* #f)
+
+(define stk%load load)
+
+(define load-relative
+  (lambda (f)
+    (fluid-let ((*load-pathname*
+                  (if (not *load-pathname*) f
+                      (let* ((n (string-length f))
+                             (full-pathname?
+                               (and (> n 0)
+                                    (let ((c0 (string-ref f 0)))
+                                      (or (char=? c0 #\/)
+                                          (char=? c0 #\~))))))
+                        (if full-pathname? f
+                            (string-append
+                              (dirname *load-pathname*)
+                              "/" f))))))
+      (stk%load *load-pathname*))))
+
+(define load
+  (lambda (f)
+    (error "Don't use load.  Use load-relative instead.")))
+}

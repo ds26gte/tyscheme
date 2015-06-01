@@ -1,0 +1,424 @@
+\scmkeyword{my-or}
+
+\chapter{Macros}
+\label{sugar}
+
+\index{macro}
+Users can create their own special forms by defining
+{\em macros}.  A macro is a symbol that has a {\em
+transformer procedure} associated with it.  When Scheme
+encounters a macro-expression --- ie, a form whose
+head is a macro ---, it applies the macro's transformer
+to the subforms in the macro-expression, and evaluates
+the result of the transformation.
+
+Ideally, a macro specifies a purely textual
+transformation from code text to other code text.  This
+kind of transformation is useful for abbreviating an
+involved and perhaps frequently occurring textual
+pattern.
+
+\scmkeyword{proc}
+
+\index{define-macro@\q{define-macro}}
+\index{when@\q{when}!macro for}
+
+A macro is {\em defined} using the special form
+\q{define-macro} (but see
+sec~\ref{dialect-macro}).\f{MzScheme provides
+\q{define-macro} via the \p{defmacro} library.  Use \q{(require (lib
+"defmacro.ss"))} to load this library.}
+For example, if your Scheme lacks the conditional
+special form \q{when}, you could define
+\q{when} as the following macro:
+
+\q{
+(define-macro when
+  (lambda (test . branch)
+    (list 'if test
+      (cons 'begin branch))))
+}
+
+
+\n This defines a  \q{when}-transformer that would
+convert a \q{when}-expression into the equivalent
+\q{if}-expression.   With this macro definition in
+place, the \q{when}-expression 
+
+\q{
+(when (< (pressure tube) 60)
+   (open-valve tube)
+   (attach floor-pump tube)
+   (depress floor-pump 5)
+   (detach floor-pump tube)
+   (close-valve tube))
+}
+
+\n will be converted to another expression, the result
+of applying the
+\q{when}-transformer to the \q{when}-expression's
+subforms:
+
+\q{
+(apply
+  (lambda (test . branch)
+    (list 'if test
+      (cons 'begin branch)))
+  '((< (pressure tube) 60)
+      (open-valve tube)
+      (attach floor-pump tube)
+      (depress floor-pump 5)
+      (detach floor-pump tube)
+      (close-valve tube)))
+}
+
+\n The transformation yields the list
+
+\q{
+(if (< (pressure tube) 60)
+    (begin
+      (open-valve tube)
+      (attach floor-pump tube)
+      (depress floor-pump 5)
+      (detach floor-pump tube)
+      (close-valve tube)))
+}
+
+\n Scheme will then evaluate this expression, as it
+  would any other.
+
+\index{unless@\q{unless}!macro for}
+
+As an additional example, here is the macro-definition
+for \q{when}'s counterpart \q{unless}:
+
+\q{
+(define-macro unless
+  (lambda (test . branch)
+    (list 'if
+          (list 'not test)
+          (cons 'begin branch))))
+}
+
+\n Alternatively, we could invoke \q{when} inside
+  \q{unless}'s definition:
+
+\q{
+(define-macro unless
+  (lambda (test . branch)
+    (cons 'when
+          (cons (list 'not test) branch))))
+}
+
+\n Macro expansions can refer to other macros.
+
+\section{Specifying the expansion as a template}
+
+A macro transformer takes some s-expressions and
+produces an s-expression that will be used as a form.
+Typically this output is a list.  In our
+\q{when} example, the output list is created using
+
+\q{
+(list 'if test
+  (cons 'begin branch))
+}
+
+\n where \q{test} is bound to the macro's first
+  subform, ie,
+
+\q{
+(< (pressure tube) 60)
+}
+
+\n and \q{branch} to the rest of the macro's subforms,
+ie,
+
+\q{
+((open-valve tube)
+ (attach floor-pump tube)
+ (depress floor-pump 5)
+ (detach floor-pump tube)
+ (close-valve tube))
+}
+
+\index{`@\q{`} (backquote)}
+\index{,@\q{,} (comma)}
+\index{,"@@\q{,"@} (comma-splice)}
+
+\n 
+Output lists can be quite complicated.  It is easy to
+see that a more ambitious macro than \q{when} could
+lead to quite an elaborate construction process for the
+output list.  In such cases, it is more convenient to
+specify the macro's output form as a {\em template},
+with the macro arguments inserted at appropriate places
+to fill out the template for each particular use of the
+macro.  Scheme provides the {\em backquote} syntax to
+specify such templates.    Thus the expression
+
+\q{
+(list 'IF test
+  (cons 'BEGIN branch))
+}
+
+\n is more conveniently written as
+
+\q{
+`(IF ,test
+  (BEGIN ,@branch))
+}
+
+\n We can refashion the \q{when} macro-definition as:
+
+\q{
+(define-macro when
+  (lambda (test . branch)
+    `(IF ,test
+         (BEGIN ,@branch))))
+}
+
+\n Note that the template format, unlike the earlier
+list construction, gives immediate visual indication of
+the shape of the output list.  The backquote (\q{`})
+introduces a template for a list.  The elements of the
+template appear {\em verbatim} in the resulting list,
+{\em except} when they are prefixed by a {\em comma}
+(`\q{,}') or a {\em comma-splice} (`\q{,@}').  (For the
+purpose of illustration, we have written the verbatim
+elements of the template in UPPER-CASE.)
+
+The comma and the comma-splice are used to insert the
+macro arguments into the template.  The comma inserts
+the result of evaluating its following expression.  The
+comma-splice inserts the result of evaluating its
+following expression after {\em splicing} it, ie, it
+removes the outermost set of parentheses.  (This
+implies that an expression introduced by comma-splice
+{\em must} be a list.)
+
+In our example, given the values that \q{test} and
+\q{branch} are bound to, it is easy to see that the
+template will expand to the required
+
+\q{
+(IF (< (pressure tube) 60)
+    (BEGIN
+      (open-valve tube)
+      (attach floor-pump tube)
+      (depress floor-pump 5)
+      (detach floor-pump tube)
+      (close-valve tube)))
+}
+
+\section{Avoiding variable capture inside macros}
+
+\index{macro!avoiding variable capture inside}
+A two-argument disjunction form, \q{my-or}, could be
+defined as follows:
+
+\q{
+(define-macro my-or
+  (lambda (x y)
+    `(if ,x ,x ,y)))
+}
+
+\n 
+\q{my-or} takes two arguments and returns the value of
+the first of them that is true (ie, non-\q{#f}).  In
+particular, the second argument is evaluated only if
+the first turns out to be false.
+
+\q{
+(my-or 1 2)
+|evalsto 1
+
+(my-or #f 2)
+|evalsto 2
+}
+
+There is a problem with the \q{my-or} macro as it is
+written.  It re-evaluates the first argument if it is
+true: once in the \q{if}-test, and once again in the
+``then'' branch.  This can cause undesired behavior if
+the first argument were to contain side-effects, eg,
+
+\q{
+(my-or
+  (begin 
+    (display "doing first argument")
+     (newline)
+     #t)
+  2)
+}
+
+\n displays \q{"doing first argument"} twice.
+
+This can be avoided by storing
+the \q{if}-test result in a local variable:
+
+\q{
+(define-macro my-or
+  (lambda (x y)
+    `(let ((temp ,x))
+       (if temp temp ,y))))
+}
+
+\n This is almost OK, except in the case where the
+  second argument happens to contain the same
+  identifier \q{temp} as used in the macro definition.
+  Eg,
+
+\q{
+(define temp 3)
+
+(my-or #f temp)
+|evalsto #f
+}
+
+\n Surely it should be 3!  The fiasco happens because
+the macro uses a local variable \q{temp} to store the
+value of the first argument (\q{#f}) and the 
+variable 
+\q{temp} in the second argument got {\em captured} by
+the
+\q{temp} introduced by the macro.
+
+To avoid this, we need to be careful in choosing local
+variables inside macro definitions.  We could choose
+outlandish names for such variables and hope fervently
+that nobody else comes up with them.   Eg,
+
+\q{
+(define-macro my-or
+  (lambda (x y)
+    `(let ((+temp ,x))
+       (if +temp +temp ,y))))
+}
+
+\n This will work given the tacit understanding 
+that \q{+temp} will not be used by code outside the
+macro.  This is of course an understanding waiting to
+be disillusioned.
+
+\index{gensym@\q{gensym}}
+\index{symbol!generated}
+
+A more reliable, if verbose, approach is to use {\em
+generated symbols} that are guaranteed not to be
+obtainable by other means.  The procedure \q{gensym}
+generates unique symbols each time it is called.  Here
+is a safe definition for \q{my-or} using \q{gensym}:
+
+\q{
+(define-macro my-or
+  (lambda (x y)
+    (let ((temp (gensym)))
+      `(let ((,temp ,x))
+         (if ,temp ,temp ,y)))))
+}
+
+\n In the macros defined in this document, in order to be
+concise, we will not use the \q{gensym} approach.
+Instead, we will consider the point about variable
+capture as having been made, and go ahead with the less
+cluttered \q{+}-as-prefix approach.  We will leave it
+to the astute reader to remember to convert these
+\q{+}-identifiers into gensyms in the manner outlined
+above.
+
+\index{fluid-let@\q{fluid-let}!macro for}
+
+\section{\q{fluid-let}}
+\label{fluid-let-macro}
+
+Here is a definition of a rather more complicated
+macro, \q{fluid-let} (sec~\ref{fluid-let}).
+\q{fluid-let} specifies temporary bindings for
+a set of already existing lexical variables.  Given a
+\q{fluid-let} expression such as
+
+\q{
+(fluid-let ((x 9) (y (+ y 1)))
+  (+ x y))
+}
+
+\n we want the expansion to be
+
+\q{
+(let ((OLD-X x) (OLD-Y y))
+  (set! x 9)
+  (set! y (+ y 1))
+  (let ((RESULT (begin (+ x y))))
+    (set! x OLD-X)
+    (set! y OLD-Y)
+    RESULT))
+}
+
+\n where we want the identifiers \q{OLD-X}, \q{OLD-Y},
+  and \q{RESULT} to be symbols that will not capture
+variables in the expressions in the \q{fluid-let} form.
+
+Here is how we go about fashioning a \q{fluid-let}
+macro that implements what we want:
+
+\q{
+(define-macro fluid-let
+  (lambda (xexe . body)
+    (let ((xx (map car xexe))
+          (ee (map cadr xexe))
+          (old-xx (map (lambda (ig) (gensym)) xexe))
+          (result (gensym)))
+      `(let ,(map (lambda (old-x x) `(,old-x ,x)) 
+                  old-xx xx)
+         ,@(map (lambda (x e)
+                  `(set! ,x ,e)) 
+                xx ee)
+         (let ((,result (begin ,@body)))
+           ,@(map (lambda (x old-x)
+                    `(set! ,x ,old-x)) 
+                  xx old-xx)
+           ,result)))))
+}
+
+\n The macro's arguments are:
+\q{xexe}, the list of
+variable/expression pairs introduced by the \q{fluid-let}; and  
+\q{body}, the list of
+expressions in the body of the \q{fluid-let}.  In our
+example, these are \q{((x 9) (y (+ y 1)))} and \q{((+ x
+y))} respectively.
+
+The macro body introduces a bunch of local variables:
+\q{xx} is the list of the variables extracted from the
+variable/expression pairs. 
+\q{ee} is the corresponding list of
+expressions. \q{old-xx} is a list of fresh identifiers,
+one for each variable in \q{xx}.  These are used to
+store the {\em incoming} values of the \q{xx}, so we
+can revert the \q{xx} back to them once the
+\q{fluid-let} body has been evaluated.
+\q{result} is another
+fresh identifier, used to store the value of the
+\q{fluid-let} body.  In our example, \q{xx} is \q{(x y)}
+and \q{ee} is \q{(9 (+ y 1))}.  Depending on how your
+system implements \q{gensym},
+\q{old-xx} might be the
+list \q{(GEN-63 GEN-64)}, and \q{result} might be \q{GEN-65}.
+
+The output list is created by the macro for our given
+example looks like
+
+\q{
+(let ((GEN-63 x) (GEN-64 y))
+  (set! x 9)
+  (set! y (+ y 1))
+  (let ((GEN-65 (begin (+ x y))))
+    (set! x GEN-63)
+    (set! y GEN-64)
+    GEN-65))
+}
+
+\n 
+which matches our requirement.
+
