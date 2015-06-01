@@ -2,24 +2,24 @@ README
 
 This archive contains the TeX source for the document
 "Teach Yourself Scheme in Fixnum Days".  This document
-is copyright Dorai Sitaram, 1998-2002, and is freely
+is copyright Dorai Sitaram, 1998-2015, and is freely
 readable and distributable.  It is written in
 plain TeX format and uses a BibTeX bibliography.  An
 HTML version may be browsed online at 
 
-  http://www.ccs.neu.edu/~dorai/t-y-scheme/t-y-scheme.html
+  http://ds26gte.github.io/tyscheme/index.html
 
 To get a DVI version of the document, run
 
-  tex t-y-scheme
-  bibtex t-y-scheme
-  makeindex t-y-scheme
+  tex index
+  bibtex index
+  makeindex index
   mpost numint
-  tex t-y-scheme
-  tex t-y-scheme
+  tex index
+  tex index
 
 The first tex run may cause an error because an
-EPS file is missing.  Simply type `s' at the 
+EPS file is missing.  Simply type 's' at the 
 TeX prompt to force TeX to continue. 
 
 The multiple runs of tex are needed to resolve
@@ -33,7 +33,7 @@ commands above.
 
 To get an HTML version of the document, run
 
-  tex2page t-y-scheme
+  tex2page index
 
 a few times.  As with TeX, multiple runs of tex2page
 are needed to resolve cross-references.  Each run
@@ -41,4 +41,6 @@ of tex2page will tell you if another run is necessary.
 
 The tex2page program is available at
 
-  http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html
+  https://github.com/ds26gte/tex2page
+
+Last modified: 2015-06-01
