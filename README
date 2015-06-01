@@ -24,8 +24,8 @@ TeX prompt to force TeX to continue.
 
 The multiple runs of tex are needed to resolve
 cross-references.  If the MetaPost executable
-is named `mp' on your system (e.g., MiKTeX), 
-change `mpost' to `mp'.
+is named 'mp' on your system (e.g., MiKTeX), 
+change 'mpost' to 'mp'.
 
 If you want a PDF version of
 the document, use pdftex instead of tex in the
