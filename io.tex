@@ -7,14 +7,14 @@ can be associated with the console, files or strings.
 
 \section{Reading}
 
-Scheme's reader procedures take an optional input port
+Scheme’s reader procedures take an optional input port
 argument.  If the port is not specified, the current input
 port (usually the console) is assumed.
 
 \index{eof-object?@\q{eof-object?}}
 
 Reading can be character-, line- or s-expression-based.
-Each time a read is performed, the port's state changes so
+Each time a read is performed, the port’s state changes so
 that the next read will read material following what was
 already read.  If the port has no more material to be read,
 the reader procedure returns a specific datum called the
@@ -32,7 +32,7 @@ procedure \q{read} reads the next s-expression.
 
 \section{Writing}
 
-Scheme's writer procedures take the object that is to be
+Scheme’s writer procedures take the object that is to be
 written and an optional output port argument.  If the port
 is not specified, the current output port (usually the
 console) is assumed.
@@ -51,9 +51,9 @@ The procedure \q{write-char} writes the given character
 The procedures \q{write} and \q{display} both
 write the given s-expression to the port, with one
 difference: \q{write} attempts to use a machine-readable
-format and \q{display} doesn't.  Eg, \q{write} uses double
+format and \q{display} doesn’t.  E.g., \q{write} uses double
 quotes for strings and the \p{#\} syntax for characters.
-\q{display} doesn't.
+\q{display} doesn’t.
 
 The procedure \q{newline} starts a new line on 
 the output port.
@@ -67,7 +67,7 @@ the output port.
 \index{current-output-port@\q{current-output-port}}
 \index{standard input}
 \index{standard output}
-Scheme's I/O procedures do not need a port argument if the
+Scheme’s I/O procedures do not need a port argument if the
 port happens to be standard input or standard output.
 However, if you need these ports explicitly, the
 zero-argument procedures \q{current-input-port} and
@@ -88,7 +88,7 @@ The procedure \q{open-input-file} takes a filename argument
 and returns a new input port associated with it.  The
 procedure \q{open-output-file} takes a filename argument and
 returns a new output port associated with it.  It is an
-error to open an input file that doesn't exist, or to open
+error to open an input file that doesn’t exist, or to open
 an output file that already exists.
 
 \index{close-input-port@\q{close-input-port}}
@@ -139,7 +139,7 @@ hello world
 \index{call-with-output-file@\q{call-with-output-file}}
 Scheme supplies the procedures \q{call-with-input-file} and
 \q{call-with-output-file} that will take care of opening a
-port and closing it after you're done with it.
+port and closing it after you’re done with it.
 
 The procedure \q{call-with-input-file} takes a filename
 argument and a procedure.  The procedure is applied to an
@@ -227,7 +227,7 @@ Scheme executable was called.
 Files can load other files, and this is useful in a
 large program spanning many files.  Unfortunately,
 unless full pathnames are used, the argument file of a
-\q{load} is dependent on Scheme's current
+\q{load} is dependent on Scheme’s current
 directory.  Supplying full pathnames is not always
 convenient, because we would like to move the program
 files as a unit (preserving their relative pathnames),
@@ -242,5 +242,5 @@ argument.  When a \q{load-relative} call occurs in a
 file \q{foo.scm}, the path of its argument is reckoned
 from the directory of the calling file \q{foo.scm}.  In
 particular, this pathname is reckoned independent of
-Scheme's current directory, and thus allows convenient
+Scheme’s current directory, and thus allows convenient
 multifile program development.

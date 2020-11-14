@@ -24,7 +24,7 @@ commands individually each time they require the same
 or similar sequence to be performed.  Some scripting
 languages throw in a small amount of programmability in
 the form of a conditional and a loop, but that is about
-all.  This is enough for smallish tasks, but as one's
+all.  This is enough for smallish tasks, but as one’s
 scripts become bigger and more demanding, as scripts
 invariably seem to do, one often feels the need for a
 fuller fledged programming language.  A Scheme with an
@@ -35,9 +35,9 @@ This section will describe how to write scripts in
 Scheme.  Since there is wide variation in the various
 Scheme dialects on how to accomplish this, we will
 concentrate on the MzScheme dialect, and document in
-appendix \ref{dialect} the modifications needed for
+appendix~\ref{dialect} the modifications needed for
 other dialects.  We will also concentrate on the Unix
-operating system for the moment; appendix \ref{dos}
+operating system for the moment; appendix~\ref{dos}
 will deal with the DOS counterpart.
 
 \section{Hello, World!, again}
@@ -54,7 +54,7 @@ contents that look like:
 echo Hello, World!
 }
 
-It uses the shell command \p{echo}.  The script can be
+\n It uses the shell command \p{echo}.  The script can be
 named \p{hello}, made into an executable by doing
 
 \p{
@@ -73,7 +73,7 @@ hello
 insufferable greeting.
 
 A Scheme hello script will perform the same output
-using Scheme (using the program in sec \ref{hello}),
+using Scheme (using the program in chapter~\ref{hello}),
 but we need something in the file to inform the
 operating system that it needs to construe the commands
 in the file as Scheme, and not as its default script
@@ -87,7 +87,7 @@ language.  The Scheme script file, also called
 (newline))
 }
 
-Everything following the first line is straight
+\n Everything following the first line is straight
 Scheme.  However, the first line is the magic that
 makes this into a script.  When the user types
 \p{hello} at the Unix prompt, Unix will read the file
@@ -103,7 +103,7 @@ the script.  (In this case, there are no such
 arguments.)
 
 We have now, in effect, transformed the \p{hello} shell
-command into a different shell command, viz,
+command into a different shell command, viz.,
 
 \p{
 mzscheme -r /whereveritis/hello
@@ -119,15 +119,15 @@ succeeding arguments into a vector called \q{argv}.
 
 Thus, the Scheme script will be run as a Scheme file,
 and the Scheme forms in the file will have access to
-the script's original arguments via the vector
+the script’s original arguments via the vector
 \q{argv}.
 
 Now, Scheme has to tackle the first line in the script,
-which as we've already seen, was really a well-formed,
+which as we’ve already seen, was really a well-formed,
 {\em traditional} shell script.  The \q{":"} is a
 self-evaluating string in Scheme and thus harmless.
 The
-`\p{;}' marks a Scheme comment, and so the \p{exec ...} is
+‘\p{;}’ marks a Scheme comment, and so the \p{exec ...} is
 safely ignored.  The rest of the file is of course
 straight Scheme, and the expressions therein are
 evaluated in sequence.  After all of them have been
@@ -139,7 +139,7 @@ In sum, typing \p{hello} at the shell prompt will produce
 Hello, World!
 }
 
-and return you to the shell prompt.
+\n and return you to the shell prompt.
 
 \section{Scripts with arguments}
 
@@ -161,7 +161,7 @@ echoes all its arguments, each on a line:
     (loop (+ i 1))))
 }
 
-Let's call this script \p{echoall}.  Calling \p{echoall
+Let’s call this script \p{echoall}.  Calling \p{echoall
 1 2 3} will display
 
 \p{
@@ -175,7 +175,7 @@ the argument vector.
 
 \section{Example}
 
-Let's now tackle a more substantial problem.  We need
+Let’s now tackle a more substantial problem.  We need
 to transfer files from one computer to another and the
 only method we have is to use a 3.5'' floppy as a
 ferry.  We need a script \p{split4floppy} that will
@@ -192,7 +192,7 @@ is as follows:
 (define floppy-size 1440000)
 
 ;split splits the bigfile f into the smaller, floppy-sized
-;subfiles, viz, subfile-prefix.1, subfile-prefix.2, etc.
+;subfiles, viz., subfile-prefix.1, subfile-prefix.2, etc.
 
 (define split
   (lambda (f subfile-prefix)
@@ -224,12 +224,12 @@ is as follows:
                          (loop (+ k 1))
                          #t))))))))))
 
-;bigfile = script's first arg
+;bigfile = script’s first arg
 ;        = the file that needs splitting
 
 (define bigfile (vector-ref argv 0))
 
-;subfile-prefix = script's second arg
+;subfile-prefix = script’s second arg
 ;               = the basename of the subfiles
 
 (define subfile-prefix (vector-ref argv 1))
@@ -240,7 +240,7 @@ is as follows:
 (split bigfile subfile-prefix)
 }
 
-Script \p{split4floppy} is called as follows:
+\n Script \p{split4floppy} is called as follows:
 
 \p{
 split4floppy largefile chunk

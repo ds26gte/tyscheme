@@ -3,15 +3,15 @@
 \index{nondeterminism}
 \index{logic programming}
 \index{amb@\q{amb}}
-McCarthy's nondeterministic operator
+McCarthy’s nondeterministic operator
 \q{amb} \cite{jmc:amb,wc:amb,zmc:amb} is as old as
 Lisp itself, although it is present in no Lisp.
 \q{amb} takes zero or more expressions, and makes a
-nondeterministic (or ``ambiguous'') choice among them,
+nondeterministic (or “ambiguous”) choice among them,
 preferring those choices that cause the program to
 converge meaningfully.  Here we will explore an
 embedding of \q{amb} in Scheme that makes a depth-first
-selection of the ambiguous choices, and uses Scheme's
+selection of the ambiguous choices, and uses Scheme’s
 control operator \q{call/cc} to backtrack for alternate
 choices.  The result is an elegant backtracking
 strategy that can be used for searching problem spaces
@@ -51,7 +51,7 @@ Thus,
 \n (We will examine the wording of the error message later.)
 
 In particular, \q{amb} is required to return a value if at
-least one its subexpressions converges, ie, doesn't fail.
+least one its subexpressions converges, i.e., doesn’t fail.
 Thus,
 
 \q{
@@ -70,7 +70,7 @@ Clearly, \q{amb} cannot simply be equated to its first
 subexpression, since it has to return a {\em non-failing}
 value, if this is at all possible.  However, this is not
 all: The bias for convergence is more stringent than a
-merely local choice of \q{amb}'s subexpressions.  \q{amb}
+merely local choice of \q{amb}’s subexpressions.  \q{amb}
 should furthermore return {\em that} convergent value
 that makes the {\em entire program} converge.  In
 denotational parlance, \q{amb} is an {\em angelic}
@@ -91,13 +91,13 @@ For example,
 }
 
 \n the first \q{amb}-expression {\em must} return \q{#t}.
-If it returned \q{#f}, the \q{if}'s ``else'' branch would be
+If it returned \q{#f}, the \q{if}’s “else” branch would be
 chosen, which causes the entire program to fail.
 
 \section{Implementing \q{amb} in Scheme}  
 
 In our implementation of \q{amb}, we will favor
-\q{amb}'s subexpressions from left to right.  Ie, the
+\q{amb}’s subexpressions from left to right.  I.e., the
 first subexpression is chosen, and if it leads to overall
 failure, the second is picked, and so on.  \q{amb}s occurring
 later in the control flow of the program are searched for
@@ -158,7 +158,7 @@ current at the time of entry.  This is because the
 \q{amb-fail} variable will be set to different failure
 continuations as the various alternates are tried.
 
-We then capture the \q{amb}'s {\em entry} continuation \q{+sk}, so
+We then capture the \q{amb}’s {\em entry} continuation \q{+sk}, so
 that when one of the alternates evaluates to a non-failing
 value, it can immediately exit the \q{amb}.
 
@@ -231,7 +231,7 @@ true.  Otherwise it will cause the current \q{amb} choice
 point to fail.\f{SICP names this procedure
 \q{require}.  We use the identifier \q{assert} in order to
 avoid confusion with the popular if informal use of
-the identifier \q{require} for something else, viz, an
+the identifier \q{require} for something else, viz.., an
 operator that loads code modules on a per-need basis.}
 
 Here is a procedure using \q{assert} that generates a prime
@@ -247,7 +247,7 @@ less than or equal to its argument \q{hi}:
 
 \n This seems devilishly simple, except that when called as
 a program with any number (say 20), it will produce the
-uninteresting first solution, ie, 2.
+uninteresting first solution, i.e., 2.
 
 We would certainly like to get {\em all} the solutions,
 not just the first.  In this case, we may want {\em all}
@@ -348,20 +348,20 @@ puzzle is due to Hunter \cite{hunter}.}  Their males always
 tell the truth.  Their females never make two consecutive
 true statements, or two consecutive untrue statements.
 
-An anthropologist (let's call him Worf) has begun to
+An anthropologist (let’s call him Worf) has begun to
 study them.  Worf does not yet know the Kalotan
 language.  One day, he meets a Kalotan (heterosexual)
-couple and their child Kibi.  Worf asks Kibi: ``Are you
-a boy?''  Kibi answers in Kalotan, which of course Worf
-doesn't understand.
+couple and their child Kibi.  Worf asks Kibi: “Are you
+a boy?”  Kibi answers in Kalotan, which of course Worf
+doesn’t understand.
 
 Worf turns to the parents (who know English) for
-explanation.  One of them says: ``Kibi said: `I am a
-boy.' '' The other adds: ``Kibi is a girl.  Kibi lied.''
+explanation.  One of them says: “Kibi said: ‘I am a
+boy.’ ” The other adds: “Kibi is a girl.  Kibi lied.”
 
 Solve for the sex of the parents and Kibi.
 
-\centerline{---}
+\centerline{—}
 
 The solution consists in introducing a bunch of variables,
 allowing them to take a choice of values, and
@@ -372,7 +372,7 @@ The variables: \q{parent1},
 \q{parent2}, and \q{kibi} are the sexes of the parents (in
 order of appearance) and Kibi; \q{kibi-self-desc} is
 the sex Kibi claimed to be (in Kalotan); \q{kibi-lied?}
-is the boolean on whether Kibi's claim was a lie.
+is the boolean on whether Kibi’s claim was a lie.
 
 \q{
 (define solve-kalotan-puzzle
@@ -430,7 +430,7 @@ Typing \q{(solve-kalotan-puzzle)} will solve the puzzle.
 
 It has been known for some time (but not proven until
 1976~\cite{4cp}) that four colors suffice to
-color a terrestrial map --- ie, to color the countries
+color a terrestrial map — i.e., to color the countries
 so that neighbors are distinguished.  To actually
 assign the colors is still an undertaking, and the
 following program shows how nondeterministic
@@ -440,7 +440,7 @@ The following program solves the problem of coloring a
 map of Western Europe.  The problem and a Prolog
 solution are given in {\em The Art of
 Prolog} \cite{aop}.  (It is instructive to compare
-our solution with the book's.)
+our solution with the book’s.)
 
 %\input weurope
 
@@ -455,18 +455,18 @@ returns one of four colors:
 
 \n In our solution, we create for each country a data
 structure.  The data structure is a 3-element list: The
-first element of the list is the country's name; the
+first element of the list is the country’s name; the
 second element is its assigned color; and the third
 element is the colors of its neighbors.  Note we use
 the initial of the country for its color
 variable.\f{Spain (Espa\~na) has \q{e} so as not to
-clash with Switzerland.}  Eg, the list for Belgium is
-\q{(list 'belgium b (list f h l g))}, because --- per
-the problem statement --- the neighbors of Belgium are
+clash with Switzerland.}  E.g., the list for Belgium is
+\q{(list 'belgium b (list f h l g))}, because — per
+the problem statement — the neighbors of Belgium are
 France, Holland, Luxembourg, and Germany.
 
 Once we create the lists for each country, we state the
-(single!) condition they should satisfy, viz, no
+(single!) condition they should satisfy, viz., no
 country should have the color of its neighbors.  In
 other words, for every country list, the second element
 should not be a member of the third element.
@@ -493,7 +493,7 @@ should not be a member of the third element.
       ;the name of the country; the 2nd
       ;element is its color; the 3rd
       ;element is the list of its
-      ;neighbors' colors
+      ;neighbors’ colors
       (let ((portugal
              (list 'portugal p
                    (list e)))

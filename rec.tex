@@ -1,4 +1,5 @@
 \chapter{Recursion}
+\label{rec}
 
 \index{recursion}
 \index{procedure!recursive}
@@ -61,13 +62,13 @@ variables, we could try to use a \q{let} form:
   (list (local-even? 23) (local-odd? 23)))
 }
 
-\n This won't quite work, because the occurrences of
+\n This won’t quite work, because the occurrences of
 \q{local-even?} and \q{local-odd?} in the initializations
-don't refer to the lexical variables themselves.
-Changing the \q{let} to a \q{let*} won't work either,
-for while the \q{local-even?} inside \q{local-odd?}'s body
+don’t refer to the lexical variables themselves.
+Changing the \q{let} to a \q{let*} won’t work either,
+for while the \q{local-even?} inside \q{local-odd?}’s body
 refers to the correct procedure value, the \q{local-odd?}
-in \q{local-even?}'s body still points elsewhere.
+in \q{local-even?}’s body still points elsewhere.
 
 To solve problems like this, Scheme provides the form
 \q{letrec}:
@@ -88,14 +89,13 @@ all the initializations.  \q{letrec} is thus
 tailor-made for defining recursive and mutually
 recursive local procedures.
 
-
 \index{named let@named \q{let}}
 \index{let@\q{let}!named}
 
 \section{Named \q{let}}
 
 A recursive procedure defined using \q{letrec} can
-describe loops.  Let's say we want to display a
+describe loops.  Let’s say we want to display a
 countdown from \q{10}:
 
 \q{
@@ -127,7 +127,7 @@ Scheme allows a variant of \q{let} called {\em named}
 immediately after the \q{let}.  This program is
 equivalent to the one written with \q{letrec}.  You may
 consider the named \q{let} to be a macro
-(chap \ref{sugar}) expanding to the \q{letrec} form.
+(chapter~\ref{sugar}) expanding to the \q{letrec} form.
 
 \index{iteration}
 \index{loop}
@@ -147,22 +147,22 @@ constructs.
 
 Nevertheless, the loop as defined above is a {\em
 genuine} loop, in exactly the same way that other
-languages bill their loops.  Ie, Scheme takes special
+languages bill their loops.  I.e., Scheme takes special
 care to ensure that recursion of the type used above
 will not generate the procedure call/return overhead.
 
 Scheme does this by a process called {\em tail-call
 elimination}.  If you look closely at the \q{countdown}
 procedure, you will note that when the recursive call
-occurs in \q{countdown}'s body, it is the {\em tail call},
-or the very last thing done --- each invocation of
+occurs in \q{countdown}’s body, it is the {\em tail call},
+or the very last thing done — each invocation of
 \q{countdown} either does not call itself, or when it
 does, it does so as its very last act.  To a Scheme
 implementation, this makes the recursion
 indistinguishable from iteration.  So go ahead, use
-recursion to write loops.  It's safe.
+recursion to write loops.  It’s safe.
 
-Here's another example of a useful tail-recursive
+Here’s another example of a useful tail-recursive
 procedure:
 
 \index{list-position@\q{list-position}}
@@ -181,10 +181,10 @@ occurrence of the object \q{o} in the list \q{l}.  If
 the object is not found in the list, the procedure
 returns \q{#f}.
 
-Here's yet another tail-recursive procedure, one that
-reverses its argument list ``in place'', ie, by mutating
+Here’s yet another tail-recursive procedure, one that
+reverses its argument list “in place”, i.e., by mutating
 the contents of the existing list, and without
-allocating a new one: 
+allocating a new one:
 
 \index{reverse"!@\q{reverse"!}}
 \scmfilename reverseb.scm
@@ -198,13 +198,44 @@ allocating a new one:
 	    (loop d s))))))
 }
 
-\n 
+\n
 (\q{reverse!} is a useful enough procedure that it is
-provided primitively in many Scheme dialects, eg,
-MzScheme and Guile.) 
+provided primitively in many Scheme dialects, e.g.,
+MzScheme and Guile.)
 
-For some numerical examples of recursion (including iteration),
-see Appendix~\ref{numint}.
+\index{Monte Carlo simulation}
+In the last chapter, we defined two procedures \q{throw-one-die}
+and \q{throw-two-dice} that returned the result of a single
+experiment, i.e., a single throw of one or two dice. What if we
+want to find the {\em expected} result, and we don't want to do the
+calculations? One way, the so-called Monte Carlo method, is to
+use iteration to
+run the experiment many (e.g., 10000) times, and average the results.
+
+\scmfilename montecarlo.scm
+
+\scmdribble{
+(define *num-trials* 10000)
+
+(define monte-carlo
+  (lambda (experiment)
+    (let loop ((i 0) (acc 0.0))
+      (if (= i *num-trials*)
+          (/ acc *num-trials*)
+          (loop (+ i 1) (+ acc (experiment)))))))
+}
+
+\n Now run
+
+\q{
+(monte-carlo throw-one-die)  |evalsto 3.4728
+(monte-carlo throw-two-dice) |evalsto 6.9994
+}
+
+\n The expected values should be close to 3.5 and 7 respectively.
+
+For some numerical-calculus examples of recursion (including iteration),
+see appendix~\ref{numint}.
 
 \index{map@\q{map}}
 \index{for-each@\q{for-each}}
@@ -217,7 +248,7 @@ procedures for this situation: \q{map} and \q{for-each}.
 
 The \q{map} procedure applies a given procedure to every
 element of a given list, and returns the list of the
-results.  Eg,
+results.  E.g.,
 
 \q{
 (map add2 '(1 2 3))
@@ -227,7 +258,7 @@ results.  Eg,
 The \q{for-each} procedure also applies a procedure to each
 element in a list, but returns void.  The procedure
 application is done purely for any side-effects it may
-cause.  Eg,
+cause.  E.g.,
 
 \q{
 (for-each display
@@ -242,7 +273,7 @@ need not be one-argument procedures.  For example,
 given an \q{n}-argument procedure, \q{map}
 takes \q{n} lists and applies the procedure to
 every set of \q{n} of arguments selected from across
-the lists.  Eg,
+the lists.  E.g.,
 
 \q{
 (map cons '(1 2 3) '(10 20 30))

@@ -26,7 +26,7 @@ characters, and symbols.
 \index{f@\q{#f}}
 \index{truth}
 \index{falsity}
-Scheme's booleans are \q{#t} for true and \q{#f} for false.
+Scheme’s booleans are \q{#t} for true and \q{#f} for false.
 Scheme has a predicate procedure called \q{boolean?} that
 checks if its argument is boolean.
 
@@ -55,7 +55,7 @@ any value that is not \q{#f} as a true value.
 
 \subsection{Numbers}
 
-Scheme numbers can be integers (eg, \q{42}), rationals
+Scheme numbers can be integers (e.g., \q{42}), rationals
 (\q{22/7}), reals (\q{3.1416}), or complex (\q{2+3i}).  An
 integer is a rational is a real is a complex number is a
 number.  Predicates exist for testing the various kinds of
@@ -179,6 +179,20 @@ its argument.
 (abs -4) |evalsto 4
 }
 
+\index{round@\q{round}}
+\index{ceiling@\q{ceiling}}
+\index{floor@\q{floor}}
+
+\n The procedure \q{round} returns the closest integer to the
+argument. The procedures \q{ceiling} and \q{floor} return the nearest
+integer above and below respectively.
+
+\q{
+(round 2.718)   |evalsto 3
+(ceiling 2.718) |evalsto 3
+(floor 2.718)   |evalsto 2
+}
+
 \index{atan@\q{atan}}
 \index{exp@\q{exp}}
 \index{sqrt@\q{sqrt}}
@@ -199,7 +213,7 @@ R5RS \cite{r5rs} for more details.
 Scheme character data are represented by prefixing the
 character with \p{#\}.  Thus, \q{#\c} is the character
 \p{c}.  Some non-graphic characters have more descriptive
-names, eg, \q{#\newline}, \q{#\tab}.  The character for
+names, e.g., \q{#\newline}, \q{#\tab}.  The character for
 space can be written \q{#\ }~,  or more readably, \q{#\space}.
 
 \index{char?@\q{char?}}
@@ -262,7 +276,7 @@ instead of \q{char} in the procedure name:
 
 \index{self-evaluation}
 The simple data types we saw above are {\em
-self-evaluating}.  Ie, if you typed any object from these
+self-evaluating}.  I.e., if you typed any object from these
 data types to the listener, the evaluated result returned by
 the listener will be the same as what you typed in.
 
@@ -275,7 +289,7 @@ the listener will be the same as what you typed in.
 \index{identifier}
 \index{variable}
 
-\n Symbols don't behave the same way.  This is because symbols
+\n Symbols don’t behave the same way.  This is because symbols
 are used by Scheme programs as {\em identifiers} for {\em
 variables}, and thus will evaluate to the value that the
 variable holds.  Nevertheless, symbols are a simple data
@@ -311,8 +325,8 @@ convenient abbreviation is provided.  The expression
 \index{symbol?@\q{symbol?}}
 
 \n Scheme symbols are named by a sequence of characters.  About
-the only limitation on a symbol's name is that it shouldn't
-be mistakable for some other data, eg, characters or booleans
+the only limitation on a symbol’s name is that it shouldn’t
+be mistakable for some other data, e.g., characters or booleans
 or numbers or compound data.  Thus, \q{this-is-a-symbol},
 \q{i18n},
 \q{<=>}, and \q{$!#*} are all symbols; \q{16}, \q{-i} (a
@@ -476,15 +490,15 @@ multidimensional vectors.
 
 \index{vector@\q{vector} (procedure)}
 
-Here's a way to create a vector of the first five integers:
+Here’s a way to create a vector of the first five integers:
 
 \q{
 (vector 0 1 2 3 4)
 |evalsto #(0 1 2 3 4)
 }
 
-\n Note Scheme's representation of a vector value: a \p{#}
-character followed by the vector's contents enclosed in
+\n Note Scheme’s representation of a vector value: a \p{#}
+character followed by the vector’s contents enclosed in
 parentheses.
 
 \index{make-vector@\q{make-vector}}
@@ -520,7 +534,7 @@ procedure is \q{cons}.
 }
 
 \n Dotted pairs are not self-evaluating, and so to specify
-them directly as data (ie, without producing them via
+them directly as data (i.e., without producing them via
 a \q{cons}-call), one must explicitly quote them:
 
 \q{
@@ -567,7 +581,7 @@ y
 
 \n The \q{car} of the \q{car} of this list is \q{1}.
 The \q{cdr} of the \q{car} of this list is \q{2}.
-Ie,
+I.e.,
 
 \q{
 (car (car y))
@@ -581,8 +595,8 @@ Ie,
 
 \n Scheme provides procedure abbreviations for cascaded
 compositions of the \q{car} and \q{cdr} procedures.
-Thus, \q{caar} stands for ``\q{car} of \q{car} of'',
-and \q{cdar} stands for ``\q{cdr} of \q{car} of'', etc.
+Thus, \q{caar} stands for “\q{car} of \q{car} of”,
+and \q{cdar} stands for “\q{cdr} of \q{car} of”, etc.
 
 \q{
 (caar y)
@@ -605,7 +619,7 @@ resulting expression:
 |evalsto (1 2 3 4 . 5)
 }
 
-\n Ie, \q{(1 2 3 4 . 5)} is an abbreviation for \q{(1
+\n I.e., \q{(1 2 3 4 . 5)} is an abbreviation for \q{(1
 . (2 . (3 . (4 . 5))))}.  The last cdr of this
 expression is \q{5}.
 
@@ -771,7 +785,7 @@ Symbols can be converted to strings, and vice versa:
 
 \index{procedure}
 Scheme contains some other data types.  One is the
-{\em procedure}.  We have already seen many procedures, eg,
+{\em procedure}.  We have already seen many procedures, e.g.,
 \q{display}, \q{+}, \q{cons}.  In reality, these are
 variables holding the procedure values, which are
 themselves not visible as are numbers or characters:
@@ -791,13 +805,13 @@ Yet another data type is the {\em port}.  A port is the
 conduit through which input and output is performed.
 Ports are usually associated with files and consoles.
 
-In our ``Hello, World!''\ program, we used the
+In our “Hello, World!”\ program, we used the
 procedure \q{display} to write a string to the console.
 \q{display} can take two arguments, one the value to be
 displayed, and the other the output port it should be
 displayed on.
 
-In our program, \q{display}'s second argument was
+In our program, \q{display}’s second argument was
 implicit.  The default output port used is the standard
 output port.  We can get the current standard output
 port via the procedure-call \q{(current-output-port)}.

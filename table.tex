@@ -6,7 +6,7 @@ An {\em association list}, or {\em alist}, is a Scheme
 list of a special format.  Each element of the list is
 a cons cell, the car of which is called a {\em key},
 the cdr being the {\em value} associated with the key.
-Eg,
+E.g.,
 
 \q{
 ((a . 1) (b . 2) (c . 3))
@@ -38,8 +38,8 @@ its keys.  Its fields are \q{equ} and \q{alist}.
 (defstruct table (equ eqv?) (alist '()))
 }
 
-\n (The default predicate is \q{eqv?} --- as for an
-ordinary alist --- and the alist is initially empty.)
+\n (The default predicate is \q{eqv?} — as for an
+ordinary alist — and the alist is initially empty.)
 
 We will use the procedure \q{table-get} to get the
 value (as opposed to the cons cell) associated with a
@@ -68,7 +68,7 @@ defined as:
                 (loop (cdr al))))))))
 }
 
-The procedure \q{table-put!} is used to update a key's
+The procedure \q{table-put!} is used to update a key’s
 value in the given table:
 
 \scmdribble{

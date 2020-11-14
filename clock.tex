@@ -5,16 +5,16 @@
 \index{Guile!clock}
 The Guile \cite{guile} procedure \q{alarm} provides an interruptable
 timer mechanism.  The user can set or reset the alarm
-for some time units, or stop it.  When the alarm's
+for some time units, or stop it.  When the alarm’s
 timer runs out of this time, it will set off an alarm,
-whose consequences are user-settable.  Guile's
+whose consequences are user-settable.  Guile’s
 \q{alarm} is not quite the clock of
 sec \ref{engine-clock}, but we can modify it easily
 enough.
 
-The alarm's timer is initially {\em stopped} or {\em
-quiescent}, ie, it will not set off an alarm even as
-time goes by.  To set the alarm's time-to-alarm to be
+The alarm’s timer is initially {\em stopped} or {\em
+quiescent}, i.e., it will not set off an alarm even as
+time goes by.  To set the alarm’s time-to-alarm to be
 \q{n} seconds, where \q{n} is not \q{0}, run \q{(alarm
 n)}.  If the timer was already set (but has not yet set
 off an alarm), the \q{(alarm n)} procedure call will
@@ -23,12 +23,12 @@ previous alarm setting.  If there is no previous alarm
 setting, \q{(alarm n)} returns \q{0}.
 
 The procedure call \q{(alarm 0)} {\em stops} the
-alarm's timer, ie, the countdown of time is stopped,
+alarm’s timer, i.e., the countdown of time is stopped,
 the timer becomes quiescent and no alarm will go off.
 \q{(alarm 0)} also returns the seconds remaining from a
 previous alarm setting, if any.
 
-By default, when the alarm's countdown reaches 0,
+By default, when the alarm’s countdown reaches 0,
 Guile will display a message on the console and exit.
 More useful behavior can be obtained by
 using the procedure
@@ -50,23 +50,23 @@ alarm handler that needs setting.\f{There are other
 signals with their corresponding handlers, and
 \q{sigaction} can be used to set these as well.}  The
 second argument is a unary alarm-handling procedure of
-the user's choice.  In this example, when the alarm
+the user’s choice.  In this example, when the alarm
 goes off, the handler displays \q{"Signal 14 raised.
 Continuing..."} on the console without exiting Scheme.
 (The \q{14} is the \q{SIGALRM} value that the alarm
-will pass to its handler.  Don't worry about it now.)
+will pass to its handler.  Don’t worry about it now.)
 
 From our point of view, this simple timer mechanism
 poses one problem.  A return value of \q{0} from a call
 to the procedure \q{alarm} is ambiguous: It could
 either mean that the alarm was quiescent, or that 
 it was just about to run out of time.  We could resolve
-this ambiguity if we could include ``\q{*infinity*}''
+this ambiguity if we could include “\q{*infinity*}”
 in the alarm arithmetic.  In other words, we would like
 a {\em clock} that works almost like \q{alarm},
 except that a quiescent clock is one with
 \q{*infinity*} seconds.  This will make many things
-natural, viz,
+natural, viz.,
 
 (1) \q{(clock n)} on a quiescent clock returns
     \q{*infinity*}, not \q{0}.
@@ -75,11 +75,11 @@ natural, viz,
      {\em not} \q{(clock 0)}.
 
 (3) \q{(clock 0)} is equivalent to setting the clock to
-an infinitesimally small amount of time, viz, to cause
+an infinitesimally small amount of time, viz., to cause
 it to raise an alarm instantaneously.
 
 In Guile, we can define \q{*infinity*} as the following
-``number'':
+“number”:
 
 \scmfilename guile-clock.scm
 \scmdribble{

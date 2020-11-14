@@ -7,14 +7,14 @@ browsed online at
 
 - http://ds26gte.github.io/tyscheme/index.html
 
-To get a DVI version of the document, run
+To get a PDF version of the document, run
 
-  tex index
+  luatex index
   bibtex index
   makeindex index
   mpost numint
-  tex index
-  tex index
+  luatex index
+  luatex index
 
 The first tex run may cause an error because an
 EPS file is missing.  Simply type `s` at the
@@ -24,10 +24,6 @@ The multiple runs of tex are needed to resolve
 cross-references.  If the MetaPost executable
 is named `mp` on your system (e.g., MiKTeX),
 change `mpost` to `mp`.
-
-If you want a PDF version of
-the document, use `pdftex` instead of `tex` in the
-commands above.
 
 To get an HTML version of the document, run
 
@@ -43,4 +39,4 @@ The tex2page program is available at
 
 ❧❧❧
 
-Last modified: 2015-12-13
+Last modified: 2020-11-13

@@ -2,9 +2,9 @@
 
 \index{structure}
 Data that are naturally grouped are called {\em
-structures}.  One can use Scheme's compound data types,
-eg, vectors or lists, to represent structures.  Eg,
-let's say we are dealing with grouped data relevant to
+structures}.  One can use Scheme’s compound data types,
+e.g., vectors or lists, to represent structures.  E.g.,
+let’s say we are dealing with grouped data relevant to
 a (botanical) {\em tree}.  The individual elements of
 the data, or {\em fields}, could be: {\em height}, {\em
 girth}, {\em age}, {\em leaf-shape}, and {\em
@@ -12,7 +12,7 @@ leaf-color}, making a total of 5 fields.  Such data
 could be represented as a 5-element vector.  The fields
 could be accessed using
 \q{vector-ref} and modified using \q{vector-set!}.
-Nevertheless, we wouldn't want to be saddled with the
+Nevertheless, we wouldn’t want to be saddled with the
 burden of remembering which vector index corresponds to
 which field.  That would be a thankless and error-prone
 activity, especially if fields get excluded or included
@@ -47,7 +47,7 @@ follows:
              'age 5))
 }
 
-\n The constructor's arguments are in the form of
+\n The constructor’s arguments are in the form of
 twosomes, a field name followed by its initialization.
 The fields can occur in any order, and may even be
 missing, in which case their value is undefined.

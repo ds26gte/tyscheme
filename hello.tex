@@ -28,13 +28,13 @@ the line.
 \index{console}
 \index{standard output}
 
-The \q{begin}-{\em form} is Scheme's way of
+The \q{begin}-{\em form} is Scheme’s way of
 introducing a sequence of {\em subforms}.  In this
 case there are two subforms.  The first is a call to
 the 
 \q{display} procedure that outputs its argument
 (the string \q{"Hello, World!"}) to the console (or
-``standard output'').  It is followed by a \q{newline}
+“standard output”).  It is followed by a \q{newline}
 procedure call, which outputs a carriage return.
 
 \index{command line}
@@ -43,7 +43,7 @@ procedure call, which outputs a carriage return.
 To run this program, first start your Scheme.  This is
 usually done by  typing the name of your Scheme
 executable at the operating-system command line.
-Eg, in the case of MzScheme \cite{mzscheme},
+E.g., in the case of MzScheme \cite{mzscheme},
 you type
 
 \p{
@@ -63,7 +63,7 @@ reason, it is often called the {\em read-eval-print loop}.
 Note that this is not much different from your
 operating-system command line, which also reads your
 commands, executes them, and then waits for more.  Like the
-operating system, the Scheme listener has its own prompt ---
+operating system, the Scheme listener has its own prompt —
 usually this is
 \p{>}, but could be something else.
 
@@ -113,8 +113,8 @@ obtained as result the string
 Other than the fact that the second approach produces a
 result with double-quotes around it, there is one other
 significant difference between the last two programs.
-The first (ie, the one with the \q{begin}) does not evaluate
-to anything --- the \p{Hello, World!} it emits is a
+The first (i.e., the one with the \q{begin}) does not evaluate
+to anything — the \p{Hello, World!} it emits is a
 {\em side-effect} produced by the \q{display} and
 \q{newline} procedures writing to the standard output.
 In the second program, the form
@@ -129,7 +129,7 @@ E |evalsto v
 }
 
 \n indicates that the form \q{E} evaluates to a result value
-of \q{v}.  Eg,
+of \q{v}.  E.g.,
 
 \q{
 (begin
@@ -138,7 +138,7 @@ of \q{v}.  Eg,
 |evalsto
 }
 
-\n (ie, nothing or void), although it has the side-effect of writing
+\n (i.e., nothing or void), although it has the side-effect of writing
 
 \p{
 Hello, World!
@@ -161,7 +161,7 @@ type
 }
 
 \n and this will land you back at the operating-system
-command-line (which, as we've seen, is also a kind of
+command-line (which, as we’ve seen, is also a kind of
 listener).
 
 The listener is convenient for interactive testing of
@@ -169,7 +169,7 @@ programs and program fragments.  However it is by no
 means necessary.  You may certainly stick to the
 tradition of creating programs in their entirety in
 files, and having Scheme execute them without any
-explicit ``listening''.  In MzScheme, for instance, you
+explicit “listening”.  In MzScheme, for instance, you
 could say (at the operating-system prompt)
 
 \p{

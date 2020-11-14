@@ -20,7 +20,7 @@ itself should, of course, be a class instance too).
 In concrete terms, we could rewrite our class
 implementation to itself make use of the
 object-oriented approach, provided we make sure we
-don't run into chicken-and-egg problems.  In effect, we
+don’t run into chicken-and-egg problems.  In effect, we
 will be getting rid of the \q{class} struct and its
 attendant procedures and rely on the rest of the
 machinery to define classes as objects.
@@ -32,7 +32,7 @@ should \q{standard-class} look like?
 
 We know \q{standard-class} is an instance, and we are
 representing instances by vectors.  So it is a
-vector whose first element holds its class, ie,
+vector whose first element holds its class, i.e.,
 itself, and whose remaining elements are slot values.
 We have identified four slots that all classes must
 have, so \q{standard-class} is a 5-element vector.

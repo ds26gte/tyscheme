@@ -1,6 +1,6 @@
 \section{Improper integrals}
 
-Simpson's rule cannot be directly applied to {\em
+Simpson’s rule cannot be directly applied to {\em
 improper integrals} (integrals such that either
 the value of the integrand is unbounded somewhere
 within the interval of integration, or the interval of
@@ -21,7 +21,7 @@ Indeed, if we relax the condition $n > 0$, we can use
 result (b) to extend the domain of $\Gamma(n)$ to
 include $n \le 0$, with the understanding that the function
 will diverge for {\em integer} $n \le 0$.\f{$\Gamma(n)$ for real $n > 0$ is
-itself an extension of the ``decrement-then-factorial'' function
+itself an extension of the “decrement-then-factorial” function
 that maps {\em integer} $n > 0$ to $(n-1)!$.}
 
 We first implement a Scheme procedure \q{gamma-1-to-2}
@@ -53,9 +53,9 @@ the $\Gamma$-integrand $g(x) = x^{n-1}e^x$:
              
 \n We now need to integrate $g(x)$ from 0 to $\infty$.
 Clearly we cannot deal with an infinite number of
-intervals; we therefore use Simpson's rule for only a
+intervals; we therefore use Simpson’s rule for only a
 portion of the interval $[0, \infty)$, say $[0, x_c]$
-($c$ for ``cut-off'').  For the remaining, ``tail'',
+($c$ for “cut-off”).  For the remaining, “tail”,
 interval $[x_c, \infty)$, we use a tail-integrand
 $t(x)$ that reasonably approximates $g(x)$, but has the
 advantage of being more tractable to analytic solution.
@@ -70,13 +70,13 @@ $$
 \int_{x_c}^{\infty} t(x) dx 
 $$
 %
-The first integral can be solved using Simpson's rule,
+The first integral can be solved using Simpson’s rule,
 and the second integral is just $y_c$.  To find $x_c$,
 we start with a low-ball value (say 4), and then refine
 it by successively doubling it until the ordinate at
-$2x_c$ (ie, $g(2x_c)$) is within a certain
+$2x_c$ (i.e., $g(2x_c)$) is within a certain
 tolerance of the ordinate predicted by the tail-integrand 
-(ie, $t(2x_c)$).  For both the Simpson
+(i.e., $t(2x_c)$).  For both the Simpson
 integral and the tail-integrand calculation, we will
 require a tolerance of \q{e/100}, an order of 2 less than
 the given tolerance \q{e}, so the overall
@@ -127,7 +127,7 @@ Let us now calculate $\Gamma(3/2)$.
 \ifx\shipout\UNDEFINED
 $\pi^{1/2}$\else
 $\sqrt{\pi}$\fi.)
-You can modify \q{gamma}'s  second
+You can modify \q{gamma}’s  second
 argument (the tolerance) to get as close an
 approximation as you desire.
 

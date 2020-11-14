@@ -4,16 +4,20 @@
 \ifx\shipout\UnDeFiNeD\else
 \input tex2page
 \input plainsection
+\input tgtermes
 \input btxmac
 
-\input txfonts
 
 \input miniltx
 \input color.sty
 
 \resetatcatcode
 
-\inputepsf
+\ifx\epsfbox\undefineD
+  \def\epsfbox#1{\convertMPtoPDF{#1}{1}{1}}%
+\fi
+
+%\inputepsf
 
 %\enableslatex
 

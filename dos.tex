@@ -3,8 +3,8 @@
 
 \index{script!DOS}
 DOS shell scripts are known as {\em batch files}.  A
-conventional DOS batch file that outputs ``Hello,
-World!''\ has the following contents:
+conventional DOS batch file that outputs “Hello,
+World!”\ has the following contents:
 
 \p{
 echo Hello, World!
@@ -56,16 +56,16 @@ goto :eof
 
 The lines upto \p+|#+ are standard DOS batch.  Then
 follows the Scheme code for the greeting.  Finally,
-there is one more standard DOS batch line, viz,
+there is one more standard DOS batch line, viz.,
 \p{;:eof}.  
 
 When the user types \p{hello} at the DOS prompt, DOS
 reads and runs the file \p{hello.bat} as a regular
 batch file.  The first line, \p{;@echo off}, turns off
-the echoing of the commands run --- as we don't want
+the echoing of the commands run — as we don’t want
 excessive verbiage clouding the effect of our script.
 The second line, \p{;goto :start}, causes execution to
-jump forward to the line labeled \p{:start}, ie, the
+jump forward to the line labeled \p{:start}, i.e., the
 fourth line.  The three ensuing \p{echo} lines create a
 temporary Scheme file called \p{c:\_temp.tmp} with the
 following contents:
@@ -87,7 +87,7 @@ end of the file, which contains the label
 \p{;:eof}.   The script thus ends.
 
 Now we can see how the call to Scheme does its part,
-viz, to run the Scheme expressions embedded in the
+viz., to run the Scheme expressions embedded in the
 batch file.  Loading \p{c:\_temp.scm} will cause Scheme
 to deduce the full pathname of the file \p{hello.bat}
 (using \q{find-executable-path}), and to then {\em
@@ -96,7 +96,7 @@ load}
 
 Thus, the Scheme script file will now be run as a
 Scheme file, and the Scheme forms in the file will have
-access to the script's original arguments via the
+access to the script’s original arguments via the
 vector \q{argv}.
 
 Now, Scheme has to skirt the batch commands in the

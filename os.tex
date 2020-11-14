@@ -5,9 +5,9 @@ Useful Scheme programs often need to interact with the
 underlying operating system. 
 
 %Separate filesystem
-%interface from here?  Aren't Scheme I/O procs also
+%interface from here?  Aren’t Scheme I/O procs also
 %filesystem interfacers?  Maybe I should call this the
-%_non_-standard part of Scheme's OS interface
+%_non_-standard part of Scheme’s OS interface
 
 \section{Checking for and deleting files}
 
@@ -29,7 +29,7 @@ dialect-specific.)
 \q{file-or-directory-modify-seconds} returns the time when its 
 argument file or directory was last modified.  Time is
 reckoned in seconds from 12 AM GMT, 1 January 1970.
-Eg,
+E.g.,
 
 \q{
 (file-or-directory-modify-seconds "hello.scm")
@@ -58,10 +58,10 @@ goes to standard output.
 (define fname "spot")
 
 (system (string-append "test -f " fname)) 
-;tests if file `spot' exists
+;tests if file ‘spot’ exists
 
 (system (string-append "rm -f " fname)) 
-;removes `spot'
+;removes ‘spot’
 }
 
 The last two forms are equivalent to
@@ -76,7 +76,7 @@ The last two forms are equivalent to
 
 \index{getenv@\q{getenv}}
 The \q{getenv} procedure returns the setting of an
-operating-system environment variable.  Eg,
+operating-system environment variable.  E.g.,
 
 \q{
 (getenv "HOME")

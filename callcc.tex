@@ -6,7 +6,7 @@ jumps or {\em nonlocal control}.  Specifically, Scheme
 allows program control to jump to {\em arbitrary}
 locations in the program, in contrast to the more
 restrained forms of program control flow allowed by
-conditionals and procedure calls.  Scheme's nonlocal
+conditionals and procedure calls.  Scheme’s nonlocal
 control operator is a procedure named
 \q{call-with-current-continuation}.   We will
 see how this operator can be used to create a
@@ -18,8 +18,8 @@ breathtaking variety of control idioms.
 \index{continuation}
 The operator \q{call-with-current-continuation} {\em
 call}s its argument, which must be a unary procedure,
-{\em with} a value called the ``{\em current
-continuation}''.  If nothing else, this explains the
+{\em with} a value called the “{\em current
+continuation}”.  If nothing else, this explains the
 name of the operator.  But it is a long name, and is
 often abbreviated
 \q{call/cc}.\f{If your Scheme does not already have this
@@ -62,14 +62,14 @@ the procedure
 }
 
 \n
-This procedure's body applies the continuation (bound
+This procedure’s body applies the continuation (bound
 now to the parameter \q{k}) to the argument \q{3}.
 This is when the unusual aspect of the continuation
 springs to the fore.  The continuation call abruptly
 abandons its own computation and replaces it with the
 rest of the program saved in \q{k}!  In other words,
 the part of the procedure involving the addition of
-\q{2} is jettisoned, and \q{k}'s argument \q{3} is sent
+\q{2} is jettisoned, and \q{k}’s argument \q{3} is sent
 directly to the program-with-the-hole:
 
 \q{
@@ -97,10 +97,10 @@ which returns \q{4}.  In sum,
 The above illustrates what is called an {\em
 escaping} continuation, one used to exit out of a
 computation (here: the \q{(+ 2 [])} computation).  This
-is a useful property, but Scheme's continuations can
+is a useful property, but Scheme’s continuations can
 also be used to return to previously abandoned
 contexts, and indeed to invoke them many times.  The
-``rest of the program'' enshrined in a continuation is
+“rest of the program” enshrined in a continuation is
 available whenever and how many ever times we choose to
 recall it, and this is what contributes to the great
 and sometimes confusing versatility of \q{call/cc}.  As
@@ -196,9 +196,9 @@ further calls to \q{recur}.
 
 A more involved example of continuation usage is the
 problem of determining if two trees (arbitrarily nested
-dotted pairs) have the same {\em fringe}, ie, the
+dotted pairs) have the same {\em fringe}, i.e., the
 same elements (or {\em leaves}) in the same sequence.
-Eg,
+E.g.,
 
 \q{
 (same-fringe? '(1 (2 3)) '((1 2) 3))
@@ -287,7 +287,7 @@ when it finds it.  It then calls an internal procedure
 called \q{generate-leaves} which runs a loop traversing
 the tree from left to right.  When the loop encounters
 a leaf, it will use \q{caller} to return the leaf as
-the generator's result, but it will remember to store
+the generator’s result, but it will remember to store
 the rest of the loop (captured as a \q{call/cc}
 continuation) in the \q{generate-leaves} variable.  The
 next time the generator is called, the loop is resumed
@@ -343,8 +343,8 @@ We will view a coroutine as a unary procedure, whose
 body can contain \q{resume} calls.  \q{resume} is a
 two-argument procedure used by a coroutine to resume
 another coroutine with a transfer value.  The macro \q{coroutine}
-defines such a coroutine procedure, given a variable name for 
-the coroutine's initial argument, and the body of the coroutine.
+defines such a coroutine procedure, given a variable name for
+the coroutine’s initial argument, and the body of the coroutine.
 
 \scmfilename coroutine.scm
 
@@ -364,19 +364,18 @@ the coroutine's initial argument, and the body of the coroutine.
 }
 
 \n A call of this macro creates a coroutine procedure
-(let's call it $A$) that can be called with one
+(let’s call it $A$) that can be called with one
 argument.  $A$ has an internal variable called
 \q{+local-control-state} that stores, at any point, the
 remaining computation of the coroutine.   Initially
 this is the entire coroutine computation.  When
-\q{resume} is called --- ie, invoking another coroutine
-$B$ --- the current coroutine will update its
+\q{resume} is called — i.e., invoking another coroutine
+$B$ — the current coroutine will update its
 \q{+local-control-state} value to the rest of itself,
 stop itself, and then jump to the \q{resume}d coroutine
 $B$.  When coroutine $A$ is itself \q{resume}d at
 some later point, its computation will proceed from the
 continuation stored in its \q{+local-control-state}.
-
 
 \scmfilename fringe-cor.scm
 
@@ -388,9 +387,9 @@ depends on two other coroutines to supply the leaves of
 the respective trees:
 
 \scmdribble{
-(define make-matcher-coroutine
+(define make-matcher-cor
   (lambda (tree-cor-1 tree-cor-2)
-    (coroutine dont-need-an-init-arg
+    (coroutine dummy-init-arg
       (let loop ()
         (let ((leaf1 (resume tree-cor-1 'get-a-leaf))
               (leaf2 (resume tree-cor-2 'get-a-leaf)))
@@ -404,9 +403,9 @@ The leaf-generator coroutines remember who to send
 their leaves to:
 
 \scmdribble{
-(define make-leaf-gen-coroutine
+(define make-leaf-gen-cor
   (lambda (tree matcher-cor)
-    (coroutine dont-need-an-init-arg
+    (coroutine dummy-init-arg
       (let loop ((tree tree))
         (cond ((null? tree) 'skip)
               ((pair? tree)
@@ -425,22 +424,22 @@ be written as
 (define same-fringe?
   (lambda (tree1 tree2)
     (letrec ((tree-cor-1
-              (make-leaf-gen-coroutine
+              (make-leaf-gen-cor
                tree1
                matcher-cor))
              (tree-cor-2
-              (make-leaf-gen-coroutine
+              (make-leaf-gen-cor
                tree2
                matcher-cor))
              (matcher-cor
-              (make-matcher-coroutine
+              (make-matcher-cor
                tree-cor-1
                tree-cor-2)))
-      (matcher-cor 'start-ball-rolling))))
+      (matcher-cor 'start-the-ball-rolling))))
 }
 
 \n
-Unfortunately, Scheme's \q{letrec} can resolve
+Unfortunately, Scheme’s \q{letrec} can resolve
 mutually recursive references amongst the lexical
 variables it introduces {\em only} if such variable
 references are wrapped inside a \q{lambda}.  And so we
@@ -450,18 +449,18 @@ write:
 (define same-fringe?
   (lambda (tree1 tree2)
     (letrec ((tree-cor-1
-              (make-leaf-gen-coroutine
+              (make-leaf-gen-cor
                tree1
                (lambda (v) (matcher-cor v))))
              (tree-cor-2
-              (make-leaf-gen-coroutine
+              (make-leaf-gen-cor
                tree2
                (lambda (v) (matcher-cor v))))
              (matcher-cor
-              (make-matcher-coroutine
+              (make-matcher-cor
                (lambda (v) (tree-cor-1 v))
                (lambda (v) (tree-cor-2 v)))))
-      (matcher-cor 'start-ball-rolling))))
+      (matcher-cor 'start-the-ball-rolling))))
 }
 
 \n
@@ -469,3 +468,5 @@ Note that \q{call/cc} is not called directly at all in
 this rewrite of \q{same-fringe?}.  All the continuation
 manipulation is handled for us by the
 \q{coroutine} macro.
+
+\input umbrella

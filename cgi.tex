@@ -2,7 +2,7 @@
 
 \index{script!CGI}
 {\color[rgb]{1,0,0}({\bf Warning:} CGI scripts without
-appropriate safeguards can compromise your site's
+appropriate safeguards can compromise your site’s
 security.  The scripts presented here are simple
 examples and are not assured to be secure for actual
 Web use.)}
@@ -27,7 +27,7 @@ who cannot be expected to have any
 anyway).  Therefore the introductory magic line for a
 CGI script written in Scheme needs to be a bit more
 explicit than the one we used for ordinary Scheme
-scripts.  Eg, the line
+scripts.  E.g., the line
 
 \q{
 ":";exec mzscheme -r $0 "$@"
@@ -55,7 +55,7 @@ commonly used CGI environment variables.  This
 information is returned as a new, freshly created, page
 to the browser.  The returned page is simply whatever
 the CGI script writes to its standard output.  This is
-how CGI scripts talk back to whoever called them --- by
+how CGI scripts talk back to whoever called them — by
 giving them a new page.
 
 Note that the script first outputs the line
@@ -66,9 +66,9 @@ content-type: text/plain
 
 \n {\em followed by a blank line}.  This is standard ritual
 for a web server serving up a page.  These two lines
-aren't part of what is actually displayed as the page.
+aren’t part of what is actually displayed as the page.
 They are there to inform the browser that the page being sent
-is plain (ie, un-marked-up) text, so the browser can
+is plain (i.e., un-marked-up) text, so the browser can
 display it appropriately.  If we were producing text
 marked up in HTML, the
 \p{content-type} would be
@@ -127,7 +127,7 @@ http://www.foo.org/cgi-bin/testcgi.scm
 }
 
 Alternately, \p{testcgi.scm} can occur as a link in an
-HTML file, which you can click.  Eg,
+HTML file, which you can click.  E.g.,
 
 \p{
 ... To view some common CGI environment variables, click
@@ -193,22 +193,22 @@ Enter environment variable: <input type=text name=envvar size=30>
 </html>
 }
 
-\n The user enters the desired environment variable (eg,
+\n The user enters the desired environment variable (e.g.,
 \p{GATEWAY_INTERFACE})  in the
 textbox and clicks the submit button.  This causes all
-the information in the form --- here, the setting of
+the information in the form — here, the setting of
 the parameter \p{envvar} to the value
-\p{GATEWAY_INTERFACE} --- to be collected and sent to
-the CGI script identified by the \p{form}, viz,
+\p{GATEWAY_INTERFACE} — to be collected and sent to
+the CGI script identified by the \p{form}, viz.,
 \p{testcgi2.scm}.    The information can be sent in one
-of two ways: (1) if the \p{form}'s \p{method=get} (the
+of two ways: (1) if the \p{form}’s \p{method=get} (the
 default), the information is sent via the environment
-variable called \p{QUERY_STRING}; (2) if the \p{form}'s
+variable called \p{QUERY_STRING}; (2) if the \p{form}’s
 \p{method=post}, the information is available to the
-CGI script at the latter's standard input port
+CGI script at the latter’s standard input port
 (\p{stdin}).  Our form uses \p{QUERY_STRING}.
 
-It is \p{testcgi2.scm}'s responsibility to extract the
+It is \p{testcgi2.scm}’s responsibility to extract the
 information from
 \p{QUERY_STRING}, and output the answer page
 accordingly.
@@ -220,7 +220,7 @@ The pairs are separated from each other by the \p{&}
 character.  Within a pair, the parameter occurs first
 and is separated from the argument by the \p{=}
 character.  In this case, there is only
-one parameter/argument pair, viz,
+one parameter/argument pair, viz.,
 \p{envvar=GATEWAY_INTERFACE}.
 
 The script \p{testcgi2.scm}:
@@ -285,28 +285,28 @@ the full repertoire.
 
 \section{CGI script utilities}
 
-In the example above, the parameter's name or the
+In the example above, the parameter’s name or the
 argument it assumed did not themselves contain any
-`\p{&}' or `\p{=}' characters.  In general, they may.
+‘\p{&}’ or ‘\p{=}’ characters.  In general, they may.
 To accommodate such characters, and not have them be
 mistaken for separators, the CGI argument-passing
 mechanism treats all characters other than letters,
 digits, and the underscore, as {\em special}, and
 transmits them in an encoded form.  A space is encoded
-as a `\p{+}'.  For other special characters, the
+as a ‘\p{+}’.  For other special characters, the
 encoding is a three-character sequence, and consists of
-`\p{%}' followed the special character's hexadecimal
-code.  Thus, the character sequence `\p{20% + 30% =
-50%, &c.}' will be encoded as
+‘\p{%}’ followed the special character’s hexadecimal
+code.  Thus, the character sequence ‘\p{20% + 30% =
+50%, &c.}’ will be encoded as
 
 \p{
 20%25+%2b+30%25+%3d+50%25%2c+%26c%2e
 }
 
-\n (Space become `\p{+}'; `\p{%}' becomes `\p{%25}';
-`\p{+}' becomes `\p{%2b}'; `\p{=}' becomes `\p{%3d}';
-`\p{,}' becomes `\p{%2c}'; `\p{&}' becomes `\p{%26}';
-and `\p{.}' becomes `\p{%2e}'.)
+\n (Space become ‘\p{+}’; ‘\p{%}’ becomes ‘\p{%25}’;
+‘\p{+}’ becomes ‘\p{%2b}’; ‘\p{=}’ becomes ‘\p{%3d}’;
+‘\p{,}’ becomes ‘\p{%2c}’; ‘\p{&}’ becomes ‘\p{%26}’;
+and ‘\p{.}’ becomes ‘\p{%2e}’.)
 
 Instead of dealing anew with the task of getting and
 decoding the form data in each CGI script, it is
@@ -374,7 +374,8 @@ hide the details of what \p{method} (\p{get} or
 \scmdribble{
 (define parse-form-data
   (lambda ()
-    ((if (string-ci=? (or (getenv "REQUEST_METHOD") "GET") "GET")
+    ((if (string-ci=? (or (getenv "REQUEST_METHOD") "GET")
+                      "GET")
          parse-form-data-using-query-string
          parse-form-data-using-stdin))))
 }
@@ -405,7 +406,7 @@ apart \p{QUERY_STRING}:
 }
 
 \n The  helper procedure \q{split}, and {\em its} helper
-\q{string-index}, are defined as in sec~\ref{testcgi2}.
+\q{string-index}, are defined as in section~\ref{testcgi2}.
 As noted, the incoming form data is a sequence of
 name-value pairs separated by \p{&}s.  Within each
 pair, the name comes first, followed by an \p{=}
@@ -457,11 +458,11 @@ to get their actual representation.
                  (else (cons a (loop d)))))))))))
 }
 
-\n `\p{+}' is converted into space.  A triliteral of the
-form `\p{%xy}'
+\n ‘\p{+}’ is converted into space.  A triliteral of the
+form ‘\p{%xy}’
 is converted, using the procedure \q{hex->char} into
 the character whose
-ascii encoding is the hex number `\p{xy}'.
+ascii encoding is the hex number ‘\p{xy}’.
 
 \scmdribble{
 (define hex->char
@@ -499,8 +500,9 @@ request method is \p{POST}.  The auxiliary procedure
                                    (list->string
                                      (reverse! arg)))))
                         (table-put! *form-data-table* par
-                          (cons arg (table-get *form-data-table*
-                                      par '())))
+                          (cons arg 
+                                (table-get *form-data-table*
+                                  par '())))
                         (unless (or (> i content-length)
                                     (eof-object? c))
                           (par-loop '())))
@@ -508,13 +510,13 @@ request method is \p{POST}.  The auxiliary procedure
               (par-loop (cons c par))))))))
 }
 
-\n The \p{POST} method sends form data via the script's
+\n The \p{POST} method sends form data via the script’s
 \p{stdin}.  The number of characters sent is placed in
 the environment variable \p{CONTENT_LENGTH}.
 \q{parse-form-data-using-stdin} reads the required
 number of characters from \p{stdin}, and populates the
 \q{*form-data-table*} as before, making sure to decode
-the parameters' names and values.
+the parameters’ names and values.
 
 It remains to retrieve the values for specific
 parameters from the \q{*form-data-table*}.  Note that
@@ -550,7 +552,7 @@ series of HTML pages with forms.  It is also common to
 code all the action corresponding to these various
 forms in a single CGI script.  In any case, it is
 helpful to have a utility procedure that writes out strings
-in HTML format, ie, with the HTML special characters
+in HTML format, i.e., with the HTML special characters
 encoded appropriately:
 
 \scmdribble{
@@ -575,7 +577,7 @@ encoded appropriately:
 \section{A calculator via CGI}
 
 Here is an CGI calculator script, \p{cgicalc.scm}, that
-exploits Scheme's arbitrary-precision arithmetic.
+exploits Scheme’s arbitrary-precision arithmetic.
 
 \scmfilename cgicalc.scm
 
@@ -662,7 +664,7 @@ exploits Scheme's arbitrary-precision arithmetic.
 
 %  A CGI script can accept arguments.  These may be
 %specified as extra path information tagged on to the
-%script's URL, or accumulated from various \p{<input>}
+%script’s URL, or accumulated from various \p{<input>}
 %statements inside an HTML \p{<form>}.
 
 %input, or with extra path information on the URL, which

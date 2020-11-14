@@ -7,8 +7,8 @@
 Users can create their own special forms by defining
 {\em macros}.  A macro is a symbol that has a {\em
 transformer procedure} associated with it.  When Scheme
-encounters a macro-expression --- ie, a form whose
-head is a macro ---, it applies the macro's transformer
+encounters a macro-expression — i.e., a form whose
+head is a macro —, it applies the macro’s transformer
 to the subforms in the macro-expression, and evaluates
 the result of the transformation.
 
@@ -25,7 +25,7 @@ pattern.
 
 A macro is {\em defined} using the special form
 \q{define-macro} (but see
-sec~\ref{dialect-macro}).\f{MzScheme provides
+section~\ref{dialect-macro}).\f{MzScheme provides
 \q{define-macro} via the \p{defmacro} library.  Use \q{(require (lib
 "defmacro.ss"))} to load this library.}
 For example, if your Scheme lacks the conditional
@@ -56,7 +56,7 @@ place, the \q{when}-expression
 
 \n will be converted to another expression, the result
 of applying the
-\q{when}-transformer to the \q{when}-expression's
+\q{when}-transformer to the \q{when}-expression’s
 subforms:
 
 \q{
@@ -90,7 +90,7 @@ subforms:
 \index{unless@\q{unless}!macro for}
 
 As an additional example, here is the macro-definition
-for \q{when}'s counterpart \q{unless}:
+for \q{when}’s counterpart \q{unless}:
 
 \q{
 (define-macro unless
@@ -101,7 +101,7 @@ for \q{when}'s counterpart \q{unless}:
 }
 
 \n Alternatively, we could invoke \q{when} inside
-  \q{unless}'s definition:
+  \q{unless}’s definition:
 
 \q{
 (define-macro unless
@@ -124,15 +124,15 @@ Typically this output is a list.  In our
   (cons 'begin branch))
 }
 
-\n where \q{test} is bound to the macro's first
-  subform, ie,
+\n where \q{test} is bound to the macro’s first
+  subform, i.e.,
 
 \q{
 (< (pressure tube) 60)
 }
 
-\n and \q{branch} to the rest of the macro's subforms,
-ie,
+\n and \q{branch} to the rest of the macro’s subforms,
+i.e.,
 
 \q{
 ((open-valve tube)
@@ -151,7 +151,7 @@ Output lists can be quite complicated.  It is easy to
 see that a more ambitious macro than \q{when} could
 lead to quite an elaborate construction process for the
 output list.  In such cases, it is more convenient to
-specify the macro's output form as a {\em template},
+specify the macro’s output form as a {\em template},
 with the macro arguments inserted at appropriate places
 to fill out the template for each particular use of the
 macro.  Scheme provides the {\em backquote} syntax to
@@ -184,7 +184,7 @@ the shape of the output list.  The backquote (\q{`})
 introduces a template for a list.  The elements of the
 template appear {\em verbatim} in the resulting list,
 {\em except} when they are prefixed by a {\em comma}
-(`\q{,}') or a {\em comma-splice} (`\q{,@}').  (For the
+(‘\q{,}’) or a {\em comma-splice} (‘\q{,@}’).  (For the
 purpose of illustration, we have written the verbatim
 elements of the template in UPPER-CASE.)
 
@@ -192,7 +192,7 @@ The comma and the comma-splice are used to insert the
 macro arguments into the template.  The comma inserts
 the result of evaluating its following expression.  The
 comma-splice inserts the result of evaluating its
-following expression after {\em splicing} it, ie, it
+following expression after {\em splicing} it, i.e., it
 removes the outermost set of parentheses.  (This
 implies that an expression introduced by comma-splice
 {\em must} be a list.)
@@ -225,7 +225,7 @@ defined as follows:
 
 \n 
 \q{my-or} takes two arguments and returns the value of
-the first of them that is true (ie, non-\q{#f}).  In
+the first of them that is true (i.e., non-\q{#f}).  In
 particular, the second argument is evaluated only if
 the first turns out to be false.
 
@@ -240,8 +240,8 @@ the first turns out to be false.
 There is a problem with the \q{my-or} macro as it is
 written.  It re-evaluates the first argument if it is
 true: once in the \q{if}-test, and once again in the
-``then'' branch.  This can cause undesired behavior if
-the first argument were to contain side-effects, eg,
+“then” branch.  This can cause undesired behavior if
+the first argument were to contain side-effects, e.g.,
 
 \q{
 (my-or
@@ -267,7 +267,7 @@ the \q{if}-test result in a local variable:
 \n This is almost OK, except in the case where the
   second argument happens to contain the same
   identifier \q{temp} as used in the macro definition.
-  Eg,
+  E.g.,
 
 \q{
 (define temp 3)
@@ -287,7 +287,7 @@ the
 To avoid this, we need to be careful in choosing local
 variables inside macro definitions.  We could choose
 outlandish names for such variables and hope fervently
-that nobody else comes up with them.   Eg,
+that nobody else comes up with them.   E.g.,
 
 \q{
 (define-macro my-or
@@ -333,7 +333,7 @@ above.
 \label{fluid-let-macro}
 
 Here is a definition of a rather more complicated
-macro, \q{fluid-let} (sec~\ref{fluid-let}).
+macro, \q{fluid-let} (section~\ref{fluid-let}).
 \q{fluid-let} specifies temporary bindings for
 a set of already existing lexical variables.  Given a
 \q{fluid-let} expression such as
@@ -381,7 +381,7 @@ macro that implements what we want:
            ,result)))))
 }
 
-\n The macro's arguments are:
+\n The macro’s arguments are:
 \q{xexe}, the list of
 variable/expression pairs introduced by the \q{fluid-let}; and  
 \q{body}, the list of

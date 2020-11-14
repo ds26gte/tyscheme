@@ -1,0 +1,54 @@
+\section{Pseudorandom-number generators}
+
+\index{random@\q{random}}
+\index{random-number generator}
+\index{pseudorandom-number generator}
+We see that unlike \q{add2}, the procedure \q{bump-counter}
+returns a different result each time it’s called, because it
+side-effects something outside itself. One particularly useful
+variant of this procedure generates a different {\em random}
+number each time it’s called. Many Schemes provide this as a
+primitive procedure called \q{random}\f{Writing your own version
+of \q{random} in Scheme requires quite a bit of mathematical
+chops to get something acceptable. We won’t get into that here.}:
+When called with no argument, \q{(random)} returns a
+“pseudorandom” number in the interval [0, 1), i.e., between 0
+(inclusive) and 1 (exclusive), such that the results are
+uniformly distributed within that interval.
+
+\q{
+(random) |evalsto 0.6360226737551197
+(random) |evalsto 0.8057127493871963
+(random) |evalsto 0.8595213305159558
+}
+
+\n With only a little bit of arithmetic, \q{random} can be used
+to simulate events of known probability. Consider the throwing of
+a fair, six-headed die: The outcomes 1, 2, 3, 4, 5, 6 are equally
+likely. To simulate this, we divide the interval [0, 1) into six
+equal segments, associate each segment with an outcome, and have
+\q{(random)}’s output decide which outcome occurred. One way to
+do it is to multiply the random number $n$ ($0 \le n < 1$) by 6
+and take the ceiling: I'll leave you to convince yourself that
+this takes on the value of each die face with 1/6 probability.
+
+\scmfilename dice.scm
+
+\scmdribble{
+(define throw-one-die
+  (lambda ()
+    (let ((result (ceiling (* (random) 6))))
+      result)))
+}
+
+\n \q{throw-two-dice} simply calls \q{throw-one-die} twice:
+
+\scmdribble{
+
+(define throw-two-dice
+  (lambda ()
+    (+ (throw-one-die) (throw-one-die))))
+}
+
+\n It returns an integer between 2 and 12 inclusive — not all
+equally likely!
