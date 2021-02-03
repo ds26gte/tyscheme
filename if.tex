@@ -8,7 +8,7 @@ conditionals}.  The basic form is the \q{if}:
 \q{
 (if test-expression
     then-branch
-    else-branch)
+  else-branch)
 }
 
 If \q{test-expression} evaluates to true (i.e., any value
@@ -21,7 +21,7 @@ If not, the “else” branch  is evaluated.  The
 
 (if (> p 70) 
     'safe
-    'unsafe)
+  'unsafe)
 |evalsto safe 
 
 (if (< p 90)
