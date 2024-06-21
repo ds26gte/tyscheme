@@ -64,11 +64,10 @@ class precedence list:
 \scmdribble{
 (define create-class-proc
   (lambda (direct-superclasses slots method-names method-vector)
-    (let ((class-precedence-list
-           (delete-duplicates
-            (append-map
-             (lambda (c) (vector-ref c 2))
-             direct-superclasses))))
+    (let ((class-precedence-list (append direct-superclasses (delete-duplicates
+                                   (append-map
+                                    (lambda (c) (vector-ref c 2))
+                                    direct-superclasses)))))
       (send 'make-instance standard-class
             'class-precedence-list class-precedence-list
             'slots
